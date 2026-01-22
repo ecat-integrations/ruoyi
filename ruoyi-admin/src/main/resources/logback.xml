@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 日志存放路径（可按之前的方法改为动态盘符） -->
+    <property name="log.path" value="EcatSmartStationManagementPlatform/logs/backend" />
+    <!-- 日志输出格式 -->
+    <property name="log.pattern" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - [%method,%line] - %msg%n" />
+
+    <!-- 单个日志文件最大大小（例如500MB，超过则生成新文件） -->
+    <property name="max.file.size" value="50MB" />
+    <!-- 总日志体积上限（10GB） -->
+    <property name="total.size.cap" value="10GB" />
+
+    <!-- 控制台输出 -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${log.pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 系统INFO日志（按天+大小滚动，总大小限制10GB） -->
+    <appender name="file_info" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}/sys-info.log</file>
+        <!-- 同时按时间和大小滚动 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 日志文件名格式：按天+序号拆分 -->
+            <fileNamePattern>${log.path}/sys-info.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- 单个文件最大大小 -->
+            <maxFileSize>${max.file.size}</maxFileSize>
+            <!-- 总日志体积上限（超过则删除最旧的文件） -->
+            <totalSizeCap>${total.size.cap}</totalSizeCap>
+            <!-- 保留最近7天的日志（即使没到10GB，7天前的也会删除） -->
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log.pattern}</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <!-- 系统ERROR日志（同样应用双重限制） -->
+    <appender name="file_error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}/sys-error.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${log.path}/sys-error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${max.file.size}</maxFileSize>
+            <totalSizeCap>${total.size.cap}</totalSizeCap>
+            <maxHistory>60</maxHistory> <!-- 保留60天 -->
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log.pattern}</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <!-- 用户访问日志 -->
+    <appender name="sys-user" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}/sys-user.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${log.path}/sys-user.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${max.file.size}</maxFileSize>
+            <totalSizeCap>${total.size.cap}</totalSizeCap>
+            <maxHistory>60</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log.pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 日志级别控制 -->
+    <logger name="com.ruoyi" level="info" />
+    <logger name="org.springframework" level="warn" />
+
+    <root level="info">
+        <appender-ref ref="console" />
+        <appender-ref ref="file_info" />
+        <appender-ref ref="file_error" />
+    </root>
+
+    <logger name="sys-user" level="info">
+        <appender-ref ref="sys-user"/>
+    </logger>
+</configuration>

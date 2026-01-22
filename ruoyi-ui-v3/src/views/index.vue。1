@@ -1,0 +1,530 @@
+<template>
+  <div class="container">
+    <div class="dq">
+      <div class="dh_panel">
+        <div v-for="em of dqData" :key="em.index" class="dh_data_panel">
+          <div v-for="item of em.data" :key="item.index">
+            <div style="padding: 0.2rem; box-sizing: border-box">
+              <div class="text-align:left;">
+                <span
+                  style="
+                    font-size: 14px;
+                    display: inline-block;
+                    width: 40%;
+                    margin-left: 0.4rem;
+                    font-weight: bold;
+                  "
+                >{{ item.name }}:</span
+                >
+                <span
+                  style="
+                    color: #000;
+                    font-weight: bold;
+                    display: inline-block;
+                    width: 25%;
+                    text-align: left;
+                    ont-size: 15px;
+                    font-size: 14px;
+                  "
+                >{{ item.value }}</span
+                >
+                <span
+                  style="display: inline-block; width: 25%;
+                  text-align: left;font-weight: bold;
+                  font-size: 14px;"
+                >{{ item.unit }}</span
+                >
+              </div>
+            </div>
+          </div>
+          <div style="padding: 0.2rem; box-sizing: border-box">
+            <span
+              style="margin-left: 0.4rem; font-weight: bold;font-size: 14px;"
+            >时间：</span
+            ><span
+            :style="{
+                fontWeight: 'bold',
+                fontSize: '14px'
+              }"
+          >{{ em.pickTime }}</span
+          >
+          </div>
+          <div style="padding: 0.2rem; box-sizing: border-box">
+            <span
+              style=" margin-left: 0.4rem; font-weight: bold;font-size: 14px;"
+            >数据状态：<span
+              style="margin-left: 0.4rem; color: green; font-weight: bold;font-size: 14px;"
+              v-if="em.cStatus==false">{{ handleStatus(em.cStatus) }}</span
+            ><span
+              style="margin-left: 0.4rem; color: red; font-weight: bold;font-size: 14px;"
+              v-if="em.cStatus==true">{{ handleStatus(em.cStatus) }}</span
+            ></span
+            >
+          </div>
+          <div
+            style="
+              position: absolute;
+              bottom: 0rem;
+              width: 100%;
+              background: #409EFF;
+              height: 1.6rem;
+            "
+          >
+            <span style="line-height: 1.6rem; margin-left: 0.1rem; color: #fff;font-size: 12px;"
+            >【{{ em.staName }}】</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dh">
+      <!-- <div class="dh_title">动环数据</div> -->
+      <div class="dh_panel">
+        <div v-for="item of dhData" :key="item.index" class="dh_data_panel">
+          <div class="text-align:left;">
+            <span style="font-weight: bold; font-size: 14px"
+            >{{ item.name }}:</span
+            >
+          </div>
+          <div style="font-weight: bold; font-size: 14px; text-align: center">
+            {{ item.value }}
+          </div>
+          <div>
+            <span style="font-weight: bold; color: #fff; font-size: 12px"
+            >时间：</span
+            ><span style="font-weight: bold; color: #fff; font-size: 12px">{{
+              item.dataTime
+            }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import axios from "axios";
+import { getNowData } from "@/api/login";
+export default {
+  name: "viewSet",
+  data() {
+    return {
+      dqData: [
+        {
+          staName: "pm10",
+          pickTime: "2025-01-21 15:00:00",
+          data: [
+            {
+              name: "pm10",
+              unit: "m3",
+              value: "5",
+            },
+          ],
+        },
+        {
+          staName: "pm2.5",
+          pickTime: "2025-01-21 15:00:00",
+          data: [
+            {
+              name: "pm2.5",
+              unit: "m3",
+              value: "5",
+            },
+          ],
+        },
+        {
+          staName: "pm2.5",
+          pickTime: "2025-01-21 15:00:00",
+          data: [
+            {
+              name: "pm2.5",
+              unit: "m3",
+              value: "5",
+            },
+          ],
+        },
+        {
+          staName: "pm2.5",
+          pickTime: "2025-01-21 15:00:00",
+          data: [
+            {
+              name: "pm2.5",
+              unit: "m3",
+              value: "5",
+            },
+          ],
+        },
+        {
+          staName: "pm2.5",
+          pickTime: "2025-01-21 15:00:00",
+          data: [
+            {
+              name: "pm2.5",
+              unit: "m3",
+              value: "5",
+            },
+          ],
+        },
+        {
+          staName: "pm2.5",
+          pickTime: "2025-01-21 15:00:00",
+          data: [
+            {
+              name: "pm2.5",
+              unit: "m3",
+              value: "5",
+            },
+          ],
+        },
+        {
+          staName: "pm2.5",
+          pickTime: "2025-01-21 15:00:00",
+          data: [
+            {
+              name: "pm2.5",
+              unit: "m3",
+              value: "5",
+            },
+          ],
+        },
+      ],
+      dhData: [],
+      dataArr: [],
+      odataArr: [],
+      warnStyle: "font-weight: bold; font-size: 14px; text-align: center",
+    };
+  },
+  handleStyle(dataType) {
+    if (dataType) {
+      return "font-weight: bold; font-size: 15px; color: red";
+    } else {
+      return "font-weight: bold; font-size: 15px; color: #000;";
+    }
+  },
+  created() {
+    let that = this;
+    this.requestData();
+  },
+  methods: {
+    //时间串
+    getTimeStr() {
+      let str = dateObj.currentDate();
+      console.log("........", str);
+    },
+    //跳转校准
+    handleXZ() {
+      this.$router.push({ path: "controlPage" });
+    },
+    handleStatus(status) {
+      if (status) {
+        return "离线";
+      } else {
+        return "正常";
+      }
+    },
+    //是否超过5分钟
+    isWithinFiveMinutes(timeStr) {
+      const fiveMinutesAgo = new Date();
+      fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
+
+      const targetTime = new Date(timeStr);
+
+      return fiveMinutesAgo > targetTime;
+    },
+    //请求数据
+    requestData() {
+      let that = this;
+      that.dqData.forEach((item) => {
+        if (that.isWithinFiveMinutes(item.pickTime)) {
+          //超过5分钟
+          item.cStatus = true;
+        } else {
+          item.cStatus = false;
+        }
+      });
+      getNowData().then((res) => {
+        console.log(res);
+        that.dqData = res.data;
+        if (that.dqData.length) {
+          that.dqData.forEach((item) => {
+            if (that.isWithinFiveMinutes(item.pickTime)) {
+              //超过5分钟
+              item.cStatus = true;
+            } else {
+              item.cStatus = false;
+            }
+          });
+        }
+      });
+      // axios.get("http://127.0.0.1:5053/station/data/").then((res) => {
+      //   console.log(res)
+      //   that.dqData = res.data.data;
+      //   if (that.dqData.length) {
+      //     that.dqData.forEach((item) => {
+      //       if (that.isWithinFiveMinutes(item.pickTime)) {
+      //         //超过5分钟
+      //         item.cStatus = true;
+      //       } else {
+      //         item.cStatus = false;
+      //       }
+      //     });
+      //   }
+      //   //that.handleData();
+      // });
+      setInterval(() => {
+        // axios.get("http://127.0.0.1:5052/nowdata").then((res) => {
+        //   that.dqData = res.data.data;
+        //
+        //   if (that.dqData.length) {
+        //     that.dqData.forEach((item) => {
+        //       if (that.isWithinFiveMinutes(item.pickTime)) {
+        //         //超过5分钟
+        //         item.cStatus = true;
+        //       } else {
+        //         item.cStatus = false;
+        //       }
+        //     });
+        //   }
+        //   //that.handleData();
+        // });
+        getNowData().then((res) => {
+          console.log(res);
+          that.dqData = res.data;
+          if (that.dqData.length) {
+            that.dqData.forEach((item) => {
+              if (that.isWithinFiveMinutes(item.pickTime)) {
+                //超过5分钟
+                item.cStatus = true;
+              } else {
+                item.cStatus = false;
+              }
+            });
+          }
+        });
+      }, 1000 * 10);
+    },
+    //转换时间
+    convertISOToLocal(isoString) {
+      const date = new Date(isoString);
+      return date.toLocaleString();
+    },
+    //处理数据展示
+    handleData() {
+      let geData = this.dataArr["ge_data"];
+      let deData = this.dataArr["device_data"];
+      //let deviceData = this.dataArr[1].device_data;
+      //处理动环数据
+      Object.values(geData).forEach((val) => {
+        let splitArr = val.split("|");
+        let obj = {};
+        obj.value = splitArr[0];
+        obj.name = splitArr[1];
+
+        if ("钢瓶气报警限值|零气报警限值|仪器状态".includes(obj.name)) {
+          return;
+        }
+        if (
+          "温感2状态（火警）||红外状态||烟感1状态（火警）||烟感2状态（火警）||温感1状态（火警）||水浸状态".includes(
+            obj.name
+          )
+        ) {
+          obj.value = obj.value == "0" ? "报警" : "正常";
+        }
+        if ("零气压力报警状态" == obj.name) {
+          obj.value = "正常";
+          //obj.value = obj.value == "0" ? "报警" : "正常";
+        }
+        if ("钢瓶气压力报警状态".includes(obj.name)) {
+          let value = obj.value;
+          switch (value) {
+            case "1":
+              obj.value = "钢瓶1报警";
+              break;
+            case "2":
+              obj.value = "钢瓶2报警";
+              break;
+            case "3":
+              obj.value = "钢瓶3报警";
+              break;
+          }
+        }
+
+        if (
+          "风机控制||零气继电器||校准阀1控制||校准阀2控制||校准阀3控制||校准阀4控制||声光报警".includes(
+            obj.name
+          )
+        ) {
+          obj.value = obj.value == "0" ? "关" : "开";
+        }
+        if ("CO钢瓶气泄露状态".includes(obj.name)) {
+          obj.value = obj.value == "0" ? "正常" : "漏气";
+        }
+        if ("空调2运行模式||空调1运行模式".includes(obj.name)) {
+          let value = obj.value;
+          switch (value) {
+            case "0":
+              obj.value = "自动";
+              break;
+            case "1":
+              obj.value = "制冷";
+              break;
+            case "2":
+              obj.value = "除湿";
+              break;
+            case "3":
+              obj.value = "送风";
+              break;
+            case "4":
+              obj.value = "制热";
+              break;
+          }
+        }
+        if ("空调1风速||空调2风速".includes(obj.name)) {
+          let value = obj.value;
+          switch (value) {
+            case "0":
+              obj.value = "自动风速";
+              break;
+            case "1":
+              obj.value = "1格";
+              break;
+            case "2":
+              obj.value = "2格";
+              break;
+            case "3":
+              obj.value = "3格";
+              break;
+          }
+        }
+
+        if ("空调1开机状态||空调2开机状态".includes(obj.name)) {
+          obj.value = obj.value == "0" ? "开机" : "关机";
+        }
+        if (
+          "风速||风向||温度||湿度||大气压力||累积雨量||24小时雨量||小时雨量".includes(
+            obj.name
+          )
+        ) {
+          let val = parseFloat(obj.value).toFixed(3);
+          obj.value = val.toString();
+        }
+        obj.dataTime = splitArr[2];
+        if (this.dhData.length) {
+          let idealIndex = this.dhData.findIndex(
+            (item) => item.name == obj.name
+          );
+          if (idealIndex > -1) {
+            this.dhData.splice(idealIndex, 1, obj);
+          } else {
+            this.dhData.push(obj);
+          }
+        } else {
+          this.dhData.push(obj);
+        }
+      });
+      //处理大气数据
+      Object.keys(deData).forEach((key) => {
+        let data = JSON.parse(deData[key]);
+        var name;
+
+        if (key == "m_pm10#pm") {
+          name = key.split("#")[0].substring(2);
+        } else if (key == "m_pm25#pm") {
+          name = "pm2.5";
+        } else {
+          name = data.name;
+        }
+        let unit = data.unit;
+        let value = data.value;
+        let status = data.status;
+        //let
+        let pickTime = this.convertISOToLocal(data.pick_time);
+        if (this.dqData.length) {
+          let idealIndex = this.dqData.findIndex((item) => item.name == name);
+          if (idealIndex > -1) {
+            this.dqData.splice(idealIndex, 1, {
+              unit,
+              value,
+              name,
+              pickTime,
+              status,
+            });
+          } else {
+            this.dqData.push({ unit, value, name, pickTime, status });
+          }
+        } else {
+          this.dqData.push({ unit, value, name, pickTime, status });
+        }
+      });
+      this.dqData.sort((a, b) => a.name - b.name);
+      this.dhData.sort((a, b) => a.name - b.name);
+    },
+  },
+};
+</script>
+
+<style>
+#dify-chatbot-bubble-button {
+  background-color: #1c64f2 !important;
+}
+#dify-chatbot-bubble-window {
+  width: 24rem !important;
+  height: 40rem !important;
+}
+</style>
+
+<style>
+.container {
+  width: 100%;
+  min-height: 960px;
+}
+.dq {
+  width: 100%;
+  margin: 0.6rem auto;
+}
+.dh_panel {
+  display: flex;
+  width: 98%;
+  flex-wrap: wrap;
+}
+.dh_data_panel {
+  width: 18%;
+  background: transparent;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加阴影 */
+  margin: 6px;
+  text-align: left;
+  color: #000;
+  border: 1px solid rgba(100, 98, 98, 0.5);
+  border-radius: 4px;
+  padding-bottom: 1.8rem;
+  position: relative;
+  box-sizing: border-box;
+  transition: transform 0.2s ease, box-shadow 0.2s ease; /* 添加过渡效果 */
+}
+.dh_data_panel:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+.dq_title,
+.dh_title {
+  height: 50px;
+  background: #ccc;
+  line-height: 50px;
+  font-size: 21px;
+  font-weight: bold;
+  color: #fff;
+}
+.con_in {
+  cursor: pointer;
+  display: inline-block;
+  width: 10rem;
+  height: 50px;
+  line-height: 50px;
+  position: absolute;
+  border-radius: 4%;
+  font-size: 15px;
+  right: 6px;
+  top: 0px;
+}
+</style>
+

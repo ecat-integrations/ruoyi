@@ -1,0 +1,1248 @@
+<template>
+  <div class="container">
+    <!-- 右上角控制按钮 -->
+    <div class="header-controls">
+      <el-button
+        type="primary"
+        @click="isOrchestrationModalShow = true"
+        icon="Sort"
+      >
+        设备控制编排
+      </el-button>
+    </div>
+
+    <!-- 设备面板 -->
+    <div class="device-panel">
+      <div v-if="deviceData.length > 0" class="device-grid">
+        <div
+          v-for="device in deviceData"
+          :key="device.deviceId"
+          class="device-card"
+          :class="{ 'online': isDeviceOnline(device) }"
+        >
+          <div class="device-header">
+            <div class="device-name">{{ device.deviceName }}</div>
+            <div class="device-status">
+              <span :class="isDeviceOnline(device) ? 'status-online' : 'status-offline'">
+                {{ isDeviceOnline(device) ? '在线' : '离线' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="device-content">
+            <div
+              v-for="attr in device.deviceAttrs"
+              :key="attr.attributeID"
+              class="attribute-item"
+              :class="{ 'online': isAttributeOnline(attr) }"
+            >
+              <div class="attribute-status">
+                <div
+                  class="status-indicator"
+                  :class="isAttributeOnline(attr) ? 'online' : 'offline'"
+                ></div>
+              </div>
+              <div class="attribute-info">
+                <div class="attribute-name">{{ attr.displayName }}</div>
+                <div class="attribute-value-container">
+                  <span
+                    v-if="attr.displayValue !== null"
+                    class="attribute-value"
+                  >
+                    {{ getDisplayValue(attr, device) }}
+                  </span>
+                  <span v-else class="no-data">无数据</span>
+                  <span class="attribute-unit">{{ getDisplayUnit(attr, device) }}</span>
+                </div>
+              </div>
+              <div class="attribute-time">
+                {{ formatAttributeTime(attr.updateTime) }}
+              </div>
+            </div>
+          </div>
+
+          <div class="device-footer">
+            <div class="device-model"><span class="label">型号:</span> {{ device.deviceModel }}</div>
+          </div>
+        </div>
+      </div>
+      <div v-else class="no-device-container">
+        <div class="no-device-content">
+          <i class="DataLine no-device-icon"></i>
+          <p class="no-device-text">暂无设备接入</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设备控制编排模态框 -->
+    <el-dialog
+      title="设备控制任务编排"
+      v-model="isOrchestrationModalShow"
+      :width="'80%'"
+      :height="'80%'"
+      :modal-append-to-body="false"
+      :append-to-body="true"
+      :close-on-click-modal="false"
+      :before-close="handleModalClose"
+    >
+      <div class="orchestration-container">
+        <!-- 任务控制区：包含保存、执行、清空、导出、导入 -->
+        <div class="task-controls">
+          <el-button
+            type="success"
+            @click="saveTask"
+            :disabled="isTaskRunning || taskSteps.length === 0"
+            icon="Save"
+          >
+            保存任务
+          </el-button>
+          <el-button
+            :type="isTaskRunning ? 'danger' : 'primary'"
+            @click="toggleTaskExecution"
+            :disabled="taskSteps.length === 0"
+          >
+            <i class="el-icon-video-play">{{ isTaskRunning ? '停止执行' : '开始执行' }}</i>
+          </el-button>
+          <el-button
+            type="info"
+            @click="clearTask"
+            :disabled="isTaskRunning || taskSteps.length === 0"
+            icon="Delete"
+          >
+            清空步骤
+          </el-button>
+          <!-- 导出任务按钮 -->
+          <el-button
+            type="warning"
+            @click="exportTask"
+            :disabled="isTaskRunning || taskSteps.length === 0"
+            icon="Download"
+          >
+            导出任务
+          </el-button>
+          <!-- 导入任务按钮（隐藏实际input） -->
+          <label class="import-btn-container">
+            <el-button
+              type="info"
+              :disabled="isTaskRunning"
+              icon="Upload"
+            >
+              导入任务
+            </el-button>
+            <input
+              ref="importFileRef"
+              type="file"
+              class="import-file-input"
+              accept=".json"
+              @change="handleTaskImport"
+              :disabled="isTaskRunning"
+            >
+          </label>
+        </div>
+
+        <!-- 步骤操作区 -->
+        <div class="step-operations">
+          <el-button
+            type="default"
+            @click="addStep('device')"
+            :disabled="isTaskRunning"
+            icon="Plus"
+          >
+            添加设备操作
+          </el-button>
+          <el-button
+            type="default"
+            @click="addStep('delay')"
+            :disabled="isTaskRunning"
+            icon="Clock"
+          >
+            添加延迟步骤
+          </el-button>
+        </div>
+
+        <!-- 步骤列表区 -->
+        <div class="steps-list">
+          <div
+            v-for="(step, index) in taskSteps"
+            :key="step.id"
+            class="step-item"
+            :class="{ 'active': currentExecStep === index, 'disabled': isTaskRunning }"
+          >
+            <div class="step-header">
+              <div class="step-index">{{ index + 1 }}</div>
+              <div class="step-type">
+                <el-select
+                  v-model="step.type"
+                  placeholder="选择步骤类型"
+                  :disabled="isTaskRunning"
+                  @change="handleStepTypeChange(step)"
+                  style="width: 180px;"
+                >
+                  <el-option label="设备操作" value="device"></el-option>
+                  <el-option label="延迟等待" value="delay"></el-option>
+                </el-select>
+              </div>
+              <div class="step-actions">
+                <el-button
+                  type="text"
+                  size="mini"
+                  @click="moveStep(index, 'up')"
+                  :disabled="isTaskRunning || index === 0"
+                  icon="ArrowUp"
+                  title="上移"
+                ></el-button>
+                <el-button
+                  type="text"
+                  size="mini"
+                  @click="moveStep(index, 'down')"
+                  :disabled="isTaskRunning || index === taskSteps.length - 1"
+                  icon="ArrowDown"
+                  title="下移"
+                ></el-button>
+                <el-button
+                  type="text"
+                  size="mini"
+                  @click="deleteStep(index)"
+                  :disabled="isTaskRunning"
+                  icon="Delete"
+                  title="删除"
+                  class="delete-btn"
+                ></el-button>
+              </div>
+            </div>
+
+            <div class="step-content">
+              <!-- 设备操作配置 -->
+              <div v-if="step.type === 'device'">
+                <el-form :model="step" label-width="120px" class="step-form">
+                  <el-form-item label="选择设备">
+                    <el-select
+                      v-model="step.deviceId"
+                      placeholder="请选择设备"
+                      :disabled="isTaskRunning"
+                      @change="handleDeviceChange(step)"
+                    >
+                      <el-option
+                        v-for="device in deviceData"
+                        :key="device.deviceId"
+                        :label="device.deviceName"
+                        :value="device.deviceId"
+                      ></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item
+                    label="选择属性"
+                    :disabled="!step.deviceId || isTaskRunning"
+                  >
+                    <el-select
+                      v-model="step.attributeId"
+                      placeholder="请选择可修改的属性"
+                      :disabled="!step.deviceId || isTaskRunning"
+                    >
+                      <el-option
+                        v-for="attr in getDeviceAttributes(step.deviceId)"
+                        :key="attr.attributeID"
+                        :label="attr.displayName"
+                        :value="attr.attributeID"
+                      ></el-option>
+                    </el-select>
+                    <!-- 新增：当没有可修改的属性时显示提示 -->
+                    <div v-if="step.deviceId && getDeviceAttributes(step.deviceId).length === 0" class="form-hint">
+                      该设备没有可修改的属性
+                    </div>
+                  </el-form-item>
+                  <el-form-item
+                    label="目标值"
+                    :disabled="!step.attributeId || isTaskRunning"
+                  >
+                    <el-input
+                      v-model="step.targetValue"
+                      placeholder="请输入属性目标值"
+                      :disabled="!step.attributeId || isTaskRunning"
+                    ></el-input>
+                    <div class="form-hint" v-if="step.attributeId">
+                      当前值: {{ getCurrentAttrValue(step.deviceId, step.attributeId) }}
+                    </div>
+                  </el-form-item>
+                </el-form>
+              </div>
+
+              <!-- 延迟等待配置 -->
+              <div v-if="step.type === 'delay'">
+                <el-form :model="step" label-width="120px" class="step-form">
+                  <el-form-item label="延迟时间">
+                    <el-input-number
+                      v-model="step.delayTime"
+                      :min="0.1"
+                      :step="0.1"
+                      :precision="1"
+                      placeholder="请输入延迟时间"
+                      :disabled="isTaskRunning"
+                    ></el-input-number>
+                    <span class="unit">秒</span>
+                  </el-form-item>
+                </el-form>
+              </div>
+            </div>
+          </div>
+
+          <!-- 空步骤提示 -->
+          <div class="empty-steps" v-if="taskSteps.length === 0 && !isTaskRunning">
+            <i class="Tasks"></i>
+            <p>暂无任务步骤，请点击上方按钮添加设备操作或延迟步骤</p>
+            <p class="import-hint">也可通过「导入任务」加载已保存的任务配置</p>
+          </div>
+        </div>
+
+        <!-- 执行日志区 -->
+        <div class="execution-log">
+          <h4 class="log-title"><i class="Notebook"></i> 执行日志</h4>
+          <div class="log-content">
+            <div
+              v-for="(log, idx) in executionLogs"
+              :key="idx"
+              class="log-item"
+              :class="log.type"
+            >
+              <span class="log-time">{{ log.time }}</span>
+              <span class="log-message">{{ log.content }}</span>
+            </div>
+            <div class="empty-log" v-if="executionLogs.length === 0">
+              暂无执行记录
+            </div>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { getNowData, deviceDebug } from "@/api/login";
+import {
+  ElButton,
+  ElDialog,
+  ElSelect,
+  ElOption,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage
+} from 'element-plus';
+import {
+  Sort, Delete, Download, Upload,
+  Plus, Clock, ArrowUp, ArrowDown, Notebook, DataLine
+} from '@element-plus/icons-vue';
+import {forceLogout} from "@/api/monitor/online.js";
+// 设备数据相关
+const deviceData = ref([]);
+const deviceTimer = ref(null);
+
+const { proxy } = getCurrentInstance();
+
+// 任务编排相关状态
+const isOrchestrationModalShow = ref(false);
+const taskSteps = ref([]);
+const isTaskRunning = ref(false);
+const currentExecStep = ref(-1);
+const executionLogs = ref([]);
+const taskTimer = ref(null);
+const importFileRef = ref(null);
+
+// 设备状态判断：属性是否在线（60秒内有更新）
+const isAttributeOnline = (attr) => {
+  if (!attr.updateTime) return false;
+  const updateTime = new Date(attr.updateTime);
+  const now = new Date();
+  return (now - updateTime) / 1000 <= 60;
+};
+
+// 格式化显示属性值
+const getDisplayValue = (attr, device) => {
+  if (device.deviceModel === "RACC2") {
+    switch (attr.attributeID) {
+      case "AC_SET_TEMP":
+        return attr.displayValue !== null ? parseInt(attr.displayValue) + 16 : '无数据';
+      case "AC_MODE": {
+        const modeMap = { "0": "自动", "1": "制冷", "2": "除湿", "3": "送风", "4": "制热" };
+        return modeMap[attr.displayValue] || "未知";
+      }
+      case "AC_SPEED": {
+        const speedMap = { "0": "自动风速", "1": "风速一格", "2": "风速二格", "3": "风速三格" };
+        return speedMap[attr.displayValue] || "未知";
+      }
+      case "AC_DIRECTION": {
+        const dirMap = { "0": "自动风向", "1": "风向一", "2": "风向二", "3": "风向三" };
+        return dirMap[attr.displayValue] || "未知";
+      }
+      case "AC_POWER":
+        return attr.displayValue === "0" ? "开机" : "关机";
+    }
+  }
+  return attr.displayValue ?? '无数据';
+};
+
+// 获取属性显示单位
+const getDisplayUnit = (attr, device) => {
+  if (device.deviceModel === "RACC2" && attr.attributeID === "AC_SET_TEMP") {
+    return "℃";
+  }
+  return attr.displayUnit || '';
+};
+
+// 判断设备是否在线
+const isDeviceOnline = (device) => {
+  if (!device.deviceAttrs || device.deviceAttrs.length === 0) return false;
+  return device.deviceAttrs.some(attr => isAttributeOnline(attr));
+};
+
+// 格式化属性更新时间
+const formatAttributeTime = (timeStr) => {
+  if (!timeStr) return '离线';
+
+  const updateTime = new Date(timeStr);
+  const now = new Date();
+  const diffInSeconds = (now - updateTime) / 1000;
+
+  if (diffInSeconds <= 60) return '在线';
+  if (updateTime.toDateString() === now.toDateString()) {
+    return updateTime.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  }
+  return updateTime.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+};
+
+// 请求设备数据
+const requestData = () => {
+  getNowData().then((res) => {
+    if (res.code === 200) {
+      deviceData.value = res.data;
+    }
+  }).catch((error) => {
+    console.error('获取设备数据失败:', error);
+    addExecutionLog('获取设备数据失败', 'error');
+  });
+};
+
+// 任务编排核心方法
+// 添加执行日志
+const addExecutionLog = (content, type = 'info') => {
+  const time = new Date().toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+  executionLogs.value.push({ time, content, type });
+
+  // 自动滚动到最新日志
+  setTimeout(() => {
+    const logContainer = document.querySelector('.log-content');
+    if (logContainer) logContainer.scrollTop = logContainer.scrollHeight;
+  }, 0);
+};
+
+// 生成唯一ID
+const generateUniqueId = () => Date.now() + Math.floor(Math.random() * 1000);
+
+// 添加步骤
+const addStep = (type) => {
+  const newStep = {
+    id: generateUniqueId(),
+    type,
+    deviceId: '',
+    attributeId: '',
+    targetValue: '',
+    delayTime: 2 // 默认延迟2秒
+  };
+  taskSteps.value.push(newStep);
+  addExecutionLog(`添加${type === 'device' ? '设备操作' : '延迟等待'}步骤`, 'info');
+};
+
+// 删除步骤
+const deleteStep = (index) => {
+  const step = taskSteps.value[index];
+  taskSteps.value.splice(index, 1);
+  addExecutionLog(`删除第${index + 1}步：${step.type === 'device' ? '设备操作' : '延迟等待'}`, 'info');
+
+  if (isTaskRunning.value && currentExecStep.value === index) {
+    stopTaskExecution();
+  }
+};
+
+// 移动步骤
+const moveStep = (index, direction) => {
+  if (direction === 'up' && index > 0) {
+    [taskSteps.value[index], taskSteps.value[index - 1]] =
+      [taskSteps.value[index - 1], taskSteps.value[index]];
+    addExecutionLog(`步骤${index + 1}上移至位置${index}`, 'info');
+  } else if (direction === 'down' && index < taskSteps.value.length - 1) {
+    [taskSteps.value[index], taskSteps.value[index + 1]] =
+      [taskSteps.value[index + 1], taskSteps.value[index]];
+    addExecutionLog(`步骤${index + 1}下移至位置${index + 2}`, 'info');
+  }
+};
+
+// 处理步骤类型变更
+const handleStepTypeChange = (step) => {
+  if (step.type === 'device') {
+    step.delayTime = 2;
+  } else {
+    step.deviceId = '';
+    step.attributeId = '';
+    step.targetValue = '';
+  }
+};
+
+// 处理设备选择变更
+const handleDeviceChange = (step) => {
+  step.attributeId = '';
+  step.targetValue = '';
+};
+
+// 获取设备属性列表
+const getDeviceAttributes = (deviceId) => {
+  if (!deviceId) return [];
+  const device = deviceData.value.find(d => d.deviceId === deviceId);
+  return device?.deviceAttrs.filter(attr => attr.valueChangeable === true) || [];
+};
+
+// 获取属性当前值
+const getCurrentAttrValue = (deviceId, attributeId) => {
+  if (!deviceId || !attributeId) return '';
+
+  const device = deviceData.value.find(d => d.deviceId === deviceId);
+  if (!device) return '';
+
+  const attr = device.deviceAttrs.find(a => a.attributeID === attributeId);
+  if (!attr) return '';
+
+  return getDisplayValue(attr, device) + getDisplayUnit(attr, device);
+};
+
+// 验证任务步骤合法性
+const validateTaskSteps = () => {
+  if (taskSteps.value.length === 0) {
+    addExecutionLog('任务执行失败：没有任何步骤', 'error');
+    return false;
+  }
+
+  for (let i = 0; i < taskSteps.value.length; i++) {
+    const step = taskSteps.value[i];
+    if (step.type === 'device') {
+      if (!step.deviceId) {
+        addExecutionLog(`步骤${i + 1}验证失败：未选择设备`, 'error');
+        return false;
+      }
+      if (!step.attributeId) {
+        addExecutionLog(`步骤${i + 1}验证失败：未选择属性`, 'error');
+        return false;
+      }
+      // if (!step.targetValue) {
+      //   addExecutionLog(`步骤${i + 1}验证失败：未设置目标值`, 'error');
+      //   return false;
+      // }
+    } else if (step.type === 'delay' && (!step.delayTime || step.delayTime <= 0)) {
+      addExecutionLog(`步骤${i + 1}验证失败：延迟时间不合法`, 'error');
+      return false;
+    }
+  }
+  return true;
+};
+
+// 设备控制API（预留接口）
+const controlDeviceApi = async (deviceId, attributeId, targetValue) => {
+  // 模拟接口调用
+  console.log(`控制设备：deviceId=${deviceId}, attributeId=${attributeId}, value=${targetValue}`);
+  // 调用设备调试接口
+  const debugData = {
+    deviceId: deviceId,
+    attrId: attributeId,
+    value: targetValue
+  };
+  // 下发指令 收到内容展示
+  const result = await deviceDebug(debugData);
+  addExecutionLog(`设备调试结果：${JSON.stringify(result)}`, 'info');
+  await new Promise(resolve => setTimeout(resolve, 500));
+  return { success: true, message: '控制指令已下发' };
+};
+
+// 执行单个步骤
+const executeSingleStep = async (step, index) => {
+  currentExecStep.value = index;
+  addExecutionLog(`开始执行步骤${index + 1}：${step.type === 'device' ? '设备操作' : '延迟等待'}`, 'info');
+
+  try {
+    if (step.type === 'device') {
+      const device = deviceData.value.find(d => d.deviceId === step.deviceId);
+      const attr = device?.deviceAttrs.find(a => a.attributeID === step.attributeId);
+      const deviceName = device?.deviceName || '未知设备';
+      const attrName = attr?.displayName || '未知属性';
+
+      addExecutionLog(`设备操作：${deviceName} - ${attrName} -> ${step.targetValue}`, 'info');
+
+      const result = await controlDeviceApi(step.deviceId, step.attributeId, step.targetValue);
+
+      if (result.success) {
+        addExecutionLog(`步骤${index + 1}执行成功：${result.message}`, 'success');
+      } else {
+        addExecutionLog(`步骤${index + 1}执行失败：${result.message}`, 'error');
+        throw new Error(result.message);
+      }
+    } else {
+      addExecutionLog(`开始延迟${step.delayTime}秒`, 'info');
+      await new Promise(resolve => {
+        taskTimer.value = setTimeout(resolve, step.delayTime * 1000);
+      });
+      addExecutionLog(`步骤${index + 1}延迟结束`, 'success');
+    }
+
+    if (index < taskSteps.value.length - 1) {
+      taskTimer.value = setTimeout(() => {
+        executeSingleStep(taskSteps.value[index + 1], index + 1);
+      }, 100);
+    } else {
+      addExecutionLog('所有任务步骤执行完成', 'success');
+      stopTaskExecution();
+    }
+  } catch (error) {
+    addExecutionLog(`任务中断：${error.message}`, 'error');
+    stopTaskExecution();
+  }
+};
+
+// 开始任务执行
+const startTaskExecution = () => {
+  if (!validateTaskSteps()) return;
+
+  isTaskRunning.value = true;
+  currentExecStep.value = -1;
+  executionLogs.value = [];
+  addExecutionLog('任务开始执行', 'info');
+  executeSingleStep(taskSteps.value[0], 0);
+};
+
+// 停止任务执行
+const stopTaskExecution = () => {
+  if (taskTimer.value) {
+    clearTimeout(taskTimer.value);
+    taskTimer.value = null;
+  }
+  isTaskRunning.value = false;
+  addExecutionLog(`任务已停止，执行至步骤${currentExecStep.value + 1}`, 'info');
+  currentExecStep.value = -1;
+};
+
+// 切换任务执行状态
+const toggleTaskExecution = () => {
+  isTaskRunning.value ? stopTaskExecution() : startTaskExecution();
+};
+
+// 保存任务到本地存储
+const saveTask = () => {
+  if (!validateTaskSteps()) return;
+
+  const taskData = {
+    id: generateUniqueId(),
+    name: `任务_${new Date().toLocaleString()}`,
+    createTime: new Date().toISOString(),
+    steps: JSON.parse(JSON.stringify(taskSteps.value))
+  };
+
+  const savedTasks = JSON.parse(localStorage.getItem('deviceTasks') || '[]');
+  savedTasks.push(taskData);
+  localStorage.setItem('deviceTasks', JSON.stringify(savedTasks));
+
+  addExecutionLog(`任务保存成功：${taskData.name}`, 'success');
+  ElMessage.success('任务已保存');
+};
+
+// 清空任务步骤
+const clearTask = () => {
+  if (taskSteps.value.length > 0) {
+    proxy.$modal.confirm('确定要清空所有任务步骤吗？').then(function () {
+      taskSteps.value = [];
+      addExecutionLog('所有任务步骤已清空', 'info');
+
+    }).then(() => {
+
+    }).catch(() => {});
+
+
+
+  }
+};
+
+// 导出任务配置（JSON格式）
+const exportTask = () => {
+  try {
+    // 准备导出数据（过滤不必要的字段）
+    const exportData = {
+      taskName: `设备控制任务_${new Date().toLocaleDateString()}`,
+      createTime: new Date().toISOString(),
+      steps: taskSteps.value.map(step => {
+        const { id, ...rest } = step; // 排除id字段
+        return rest;
+      })
+    };
+
+    // 转换为JSON字符串
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    // 创建下载链接
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `设备控制任务_${new Date().getTime()}.json`;
+    document.body.appendChild(a);
+    a.click();
+
+    // 清理
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    addExecutionLog('任务配置导出成功', 'success');
+    ElMessage.success('任务配置已导出');
+  } catch (error) {
+    console.error('导出任务失败:', error);
+    addExecutionLog(`任务导出失败: ${error.message}`, 'error');
+    ElMessage.error('导出失败，请重试');
+  }
+};
+
+// 处理任务导入
+const handleTaskImport = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // 验证文件类型
+  if (!file.name.endsWith('.json')) {
+    ElMessage.error('请导入JSON格式的文件');
+    resetImportFileInput();
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const content = event.target.result;
+      const importData = JSON.parse(content);
+
+      // 验证导入数据格式
+      if (!importData.steps || !Array.isArray(importData.steps)) {
+        throw new Error('导入文件格式不正确，缺少步骤数据');
+      }
+
+      // 处理导入的步骤（添加唯一ID）
+      const importedSteps = importData.steps.map(step => ({
+        ...step,
+        id: generateUniqueId(),
+        // 确保必要字段存在
+        deviceId: step.deviceId || '',
+        attributeId: step.attributeId || '',
+        targetValue: step.targetValue || '',
+        delayTime: step.delayTime || 2
+      }));
+
+      // 替换当前任务步骤
+      taskSteps.value = importedSteps;
+      addExecutionLog(`成功导入${importedSteps.length}个任务步骤`, 'success');
+      ElMessage.success('任务配置导入成功');
+    } catch (error) {
+      console.error('导入任务失败:', error);
+      addExecutionLog(`任务导入失败: ${error.message}`, 'error');
+      ElMessage.error(`导入失败: ${error.message}`);
+    } finally {
+      resetImportFileInput();
+    }
+  };
+
+  reader.onerror = () => {
+    ElMessage.error('文件读取失败');
+    resetImportFileInput();
+  };
+
+  reader.readAsText(file);
+};
+
+// 重置导入文件输入框
+const resetImportFileInput = () => {
+  if (importFileRef.value) {
+    importFileRef.value.value = '';
+  }
+};
+
+// 处理模态框关闭
+const handleModalClose = () => {
+  if (isTaskRunning.value) {
+    ElMessage.warning('请先停止任务执行再关闭窗口');
+    return false;
+  }
+  isOrchestrationModalShow.value = false;
+  return true;
+};
+
+// 生命周期
+onMounted(() => {
+  requestData();
+  // 定时刷新设备数据（10秒一次）
+  deviceTimer.value = setInterval(requestData, 10000);
+});
+
+onBeforeUnmount(() => {
+  if (deviceTimer.value) clearInterval(deviceTimer.value);
+  if (taskTimer.value) clearTimeout(taskTimer.value);
+});
+</script>
+
+<style scoped>
+.container {
+  width: 100%;
+  min-height: 960px;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: #f5f7fa;
+  position: relative;
+}
+
+.header-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+}
+
+.device-panel {
+  width: 100%;
+  margin-top: 60px;
+}
+
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.device-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid #ebeef5;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.device-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.device-card.online {
+  border-color: #b3e19d;
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.2);
+}
+
+.device-header {
+  padding: 16px;
+  border-bottom: 1px solid #ebeef5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.device-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.status-online {
+  color: #67c23a;
+  font-weight: 500;
+}
+
+.status-offline {
+  color: #606266;
+  font-weight: 500;
+}
+
+.device-content {
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 350px;
+}
+
+.attribute-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.attribute-item:hover {
+  background-color: #f5f7fa;
+}
+
+.attribute-item.online {
+  background-color: #f0f9eb;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-indicator.online {
+  background-color: #67c23a;
+  box-shadow: 0 0 6px rgba(103, 194, 58, 0.5);
+}
+
+.status-indicator.offline {
+  background-color: #dcdfe6;
+}
+
+.attribute-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.attribute-name {
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attribute-value-container {
+  display: flex;
+  align-items: baseline;
+}
+
+.attribute-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: #303133;
+  margin-right: 4px;
+}
+
+.attribute-unit {
+  font-size: 12px;
+  color: #909399;
+}
+
+.no-data {
+  color: #909399;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.attribute-time {
+  font-size: 12px;
+  color: #909399;
+  white-space: nowrap;
+  margin-left: 10px;
+}
+
+.device-footer {
+  padding: 12px 16px;
+  background-color: #f5f7fa;
+  border-top: 1px solid #ebeef5;
+  font-size: 13px;
+  color: #606266;
+}
+
+.label {
+  font-weight: 700;
+  color: #409eff;
+  margin-right: 6px;
+}
+
+/* 无设备样式 */
+.no-device-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 600px;
+  width: 100%;
+}
+
+.no-device-content {
+  text-align: center;
+  color: #909399;
+}
+
+.no-device-icon {
+  font-size: 72px;
+  margin-bottom: 20px;
+  color: #c0c4cc;
+}
+
+.no-device-text {
+  font-size: 24px;
+  font-weight: 500;
+}
+
+/* 任务编排模态框样式 */
+.orchestration-container {
+  width: 100%;
+  height: calc(100% - 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.task-controls {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ebeef5;
+  flex-wrap: wrap;
+}
+
+/* 导入按钮样式 */
+.import-btn-container {
+  position: relative;
+  display: inline-block;
+}
+
+.import-file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.step-operations {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.steps-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  background-color: #fafafa;
+}
+
+.step-item {
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.step-item.active {
+  border-left: 3px solid #409eff;
+  background-color: #f0f7ff;
+}
+
+.step-item.disabled {
+  opacity: 0.7;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.step-index {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #409eff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  margin-right: 12px;
+}
+
+.step-type {
+  flex: 1;
+}
+
+.step-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.delete-btn {
+  color: #f56c6c !important;
+}
+
+.step-content {
+  padding: 16px;
+}
+
+.step-form {
+  width: 100%;
+}
+
+.form-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.unit {
+  margin-left: 8px;
+  color: #606266;
+}
+
+.empty-steps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  color: #909399;
+  border: 1px dashed #dcdfe6;
+  border-radius: 4px;
+  padding: 20px;
+  text-align: center;
+}
+
+.empty-steps i {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.import-hint {
+  font-size: 12px;
+  margin-top: 5px;
+  color: #606266;
+}
+
+.execution-log {
+  height: 200px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.log-title {
+  margin: 0;
+  padding: 8px 16px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #ebeef5;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.log-content {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  background-color: #fff;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.log-item {
+  margin-bottom: 6px;
+  display: flex;
+}
+
+.log-time {
+  color: #909399;
+  margin-right: 8px;
+  font-family: monospace;
+  min-width: 80px;
+}
+
+.log-message {
+  flex: 1;
+}
+
+.log-info {
+  color: #606266;
+}
+
+.log-success {
+  color: #67c23a;
+}
+
+.log-error {
+  color: #f56c6c;
+}
+
+.empty-log {
+  text-align: center;
+  color: #909399;
+  padding: 20px 0;
+  font-size: 13px;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #c0c4cc;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f5f7fa;
+}
+
+@media (max-width: 768px) {
+  .device-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .container {
+    padding: 10px;
+  }
+
+  .device-panel {
+    margin-top: 50px;
+  }
+
+  .task-controls {
+    flex-wrap: wrap;
+  }
+
+  .no-device-container {
+    height: 400px;
+  }
+
+  .no-device-icon {
+    font-size: 48px;
+  }
+
+  .no-device-text {
+    font-size: 20px;
+  }
+}
+</style>

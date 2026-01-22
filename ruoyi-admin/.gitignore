@@ -1,0 +1,4 @@
+src/main/resources/static/web
+# Auto-added essential ignore rules
+*.log
+target/
