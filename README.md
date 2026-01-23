@@ -3,18 +3,12 @@
 RuoYi管理后台（ruoyi-*系列 + ecat-adapter-ruoyi）
 当前版本: 1.0.0
 
-## 概述
+## 协议声明
+1. 核心依赖：本插件基于 **ECAT Core**（Apache License 2.0）开发，Core 项目地址：https://github.com/ecat-project/ecat-core。
+2. 插件自身：本插件的源代码采用 [MIT License] 授权（基于 RuoYi 框架）。
+3. 合规说明：使用本插件需遵守 ECAT Core 的 Apache 2.0 协议规则，若复用 ECAT Core 代码片段，需保留原版权声明。
 
-此仓库是从统一StationComputer仓库自动分拆出来的独立模块。
+### 许可证获取
+- ECAT Core 完整许可证：https://github.com/ecat-project/ecat-core/blob/main/LICENSE
+- 本插件许可证：./LICENSE
 
-## 源路径
-
-- 原始路径: `ruoyi`
-- 包含模块: pom.xml, LICENSE, sql/, bin/, .env.dev, ruoyi-admin/, ruoyi-common/, ruoyi-framework/, ruoyi-generator/, ruoyi-quartz/, ruoyi-system/, ruoyi-ui-v3/, ecat-adapter-ruoyi/
-
-## 维护
-
-此仓库由ECAT仓库分拆工具自动管理。
-
----
-自动生成于 2026-01-22 09:50:15

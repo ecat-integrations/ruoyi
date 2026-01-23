@@ -267,4 +267,12 @@
       </snapshots>
     </pluginRepository>
   </pluginRepositories>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+      <comments>ruoyi integration is licensed under MIT License</comments>
+    </license>
+  </licenses>
 </project>
