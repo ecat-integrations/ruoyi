@@ -2299,6 +2299,8 @@ INSERT INTO "public"."sys_dict_data" VALUES (239, 120, '检定跨度漂移', '12
 INSERT INTO "public"."sys_dict_data" VALUES (240, 121, '检定跨度重现性', '121', 'data_sign', NULL, 'default', NULL, '0', 'admin', '2025-11-07 16:43:34.129175', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (241, 122, '检定多点跨度(线性)', '122', 'data_sign', NULL, 'default', NULL, '0', 'admin', '2025-11-07 16:43:42.137651', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (242, 123, '精密度检查', '123', 'data_sign', NULL, 'default', NULL, '0', 'admin', '2025-11-07 16:43:42.137651', NULL, NULL, NULL);
+INSERT INTO "public"."sys_dict_data" VALUES (247, 124, '温度压力校准', '124', 'data_sign', NULL, 'default', NULL, '0', 'admin', '2025-11-07 16:43:42.137651', NULL, NULL, NULL);
+INSERT INTO "public"."sys_dict_data" VALUES (248, 125, '维修更换设备', '125', 'data_sign', NULL, 'default', NULL, '0', 'admin', '2025-11-07 16:43:53.947877', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (244, 9999, '其他状态', '9999', 'data_sign', NULL, 'default', NULL, '0', 'admin', '2025-11-07 16:43:53.947877', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (245, 3, '日数据', 'day', 'data_type', NULL, 'default', NULL, '0', 'admin', '2025-12-24 12:00:00.194211', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (246, 5, '中止中', '4', 'quality_control_execution_status', NULL, 'warning', NULL, '0', 'admin', '2025-12-31 14:47:14.123191', NULL, NULL, NULL);
