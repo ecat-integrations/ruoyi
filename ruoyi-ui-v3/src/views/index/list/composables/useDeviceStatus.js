@@ -13,7 +13,7 @@ export function useDeviceStatus() {
   const hasAbnormalAttribute = (device) => {
     if (!device.deviceAttrs || device.deviceAttrs.length === 0) return false
     return device.deviceAttrs.some(attr => {
-      return attr.status && attr.status !== 'Normal' && attr.status !== 'Empty'
+      return attr.status != null && attr.status !== 1 && attr.status !== -1
     })
   }
 
@@ -61,7 +61,7 @@ export function useDeviceStatus() {
       return 'offline'
     }
 
-    if (attr.status && attr.status !== 'Normal') {
+    if (attr.status != null && attr.status !== 1) {
       return 'warning'
     }
 
