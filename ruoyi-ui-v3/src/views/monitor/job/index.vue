@@ -292,7 +292,7 @@
                         </template>
                       </el-input>
                     </template>
-                    <template v-else-if="form.jobGroup === 'ExecuteSiChuanHj212RuleTask'">
+                    <template v-else-if="['ExecuteSiChuanHj212RuleTask','ExecuteComHj212RuleTask','ExecuteCnemcHj212RuleTask'].includes(form.jobGroup)">
                       <el-input
                         v-model="form.invokeTarget"
                         placeholder="数据推送设置"
@@ -879,6 +879,10 @@
                label="通用HJ212推送协议"
                value="common"
              />
+             <el-option
+               label="总站HJ212推送协议"
+               value="cnemc"
+             />
            </el-select>
          </el-form-item>
          <!-- 设置host 及port 文本框 -->
@@ -1389,7 +1393,8 @@ const JOB_GROUP_MAPPING = {
   'CreatePartitionTables': '创建分表',
   'AggregationData': '数据聚合',
   'ExecuteSiChuanHj212RuleTask': '四川省HJ212数据推送',
-  'ExecuteComHj212RuleTask': '通用HJ212数据推送'
+  'ExecuteComHj212RuleTask': '通用HJ212数据推送',
+  'ExecuteCnemcHj212RuleTask': '总站HJ212数据推送'
 };
 
 // 方法名映射
@@ -1403,7 +1408,8 @@ const METHOD_MAPPING = {
   'mokeBus.send': '执行仪器发数',
   'CreatePartitionTablesTask.run': "创建分表",
   'ExecuteSiChuanHj212RuleTask.run': "执行四川省HJ212数据推送任务",
-  'ExecuteComHj212RuleTask.run': "执行通用HJ212数据推送任务"
+  'ExecuteComHj212RuleTask.run': "执行通用HJ212数据推送任务",
+  'ExecuteCnemcHj212RuleTask.run': "执行总站HJ212数据推送任务"
 };
 
 // 参数类型映射
@@ -1494,6 +1500,10 @@ const PARAM_ORDER_MAPPING = {
   ],
   // 执行ComHj212Rule任务参数
   'ExecuteComHj212RuleTask.run': [
+    'executeComHj212Host', 'executeComHj212Port', 'executeComHj212RuleId', 'executeComHj212StartTime', 'executeComHj212EndTime', 'executeComHj212IsTime'
+  ],
+  // 执行CnemcHj212Rule任务参数
+  'ExecuteCnemcHj212RuleTask.run': [
     'executeComHj212Host', 'executeComHj212Port', 'executeComHj212RuleId', 'executeComHj212StartTime', 'executeComHj212EndTime', 'executeComHj212IsTime'
   ],
 };
@@ -1626,7 +1636,11 @@ const parseInvokeTarget = (target) => {
         // 参数ID，显示为"全部参数"或具体参数名
         mappedValue = value === '*' ? '全部' : value;
       }
-    } else if (methodName === 'ExecuteSiChuanHj212RuleTask.run' || methodName === 'ExecuteComHj212RuleTask.run') {
+    } else if (
+      methodName === 'ExecuteSiChuanHj212RuleTask.run' ||
+      methodName === 'ExecuteComHj212RuleTask.run' ||
+      methodName === 'ExecuteCnemcHj212RuleTask.run'
+    ) {
       // HJ212推送任务：根据参数位置处理
       // 参数顺序：host, port, ruleId, startTime, endTime, isTime
       // index 0: executeComHj212Host (IP)
@@ -1881,6 +1895,8 @@ const allRuleList = ref([
   { value: '10002', label: '5分钟推送组' },
   { value: '10003', label: '1小时推送组' },
   { value: '10004', label: '1天推送组' },
+  { value: '30020', label: '分钟设备状态(5分钟)推送组' },
+  { value: '30021', label: '小时设备状态推送组' },
   { value: '10005', label: '不固定频率推送组' },
   { value: '10006', label: '质控组' },
 ]);
@@ -1920,6 +1936,8 @@ const jobTypeDict = {
     // 根据协议类型选择不同的任务方法
     if (executeComHj212Protocol === 'sichuan') {
       return `ExecuteSiChuanHj212RuleTask.run('${executeComHj212Host}', '${executeComHj212Port}', '${executeComHj212RuleId}', '${executeComHj212StartTime}', '${executeComHj212EndTime}', ${executeComHj212IsTime})`;
+    } else if (executeComHj212Protocol === 'cnemc') {
+      return `ExecuteCnemcHj212RuleTask.run('${executeComHj212Host}', '${executeComHj212Port}', '${executeComHj212RuleId}', '${executeComHj212StartTime}', '${executeComHj212EndTime}', ${executeComHj212IsTime})`;
     } else {
       return `ExecuteComHj212RuleTask.run('${executeComHj212Host}', '${executeComHj212Port}', '${executeComHj212RuleId}', '${executeComHj212StartTime}', '${executeComHj212EndTime}', ${executeComHj212IsTime})`;
     }
@@ -2338,13 +2356,14 @@ function parseAggregationDataParams(invokeTarget) {
 // 解析HJ212推送任务参数
 function parseExecuteHj212RuleTaskParams(invokeTarget) {
   if(invokeTarget != null){
-    // 解析ExecuteSiChuanHj212RuleTask.run 或 ExecuteComHj212RuleTask.run
-    let params = invokeTarget.match(/(?:ExecuteSiChuanHj212RuleTask|ExecuteComHj212RuleTask)\.run\('([^']+)', '([^']+)', '([^']+)', '([^']+)', '([^']+)', (\w+)\)/);
+    // 解析 ExecuteSiChuanHj212RuleTask.run / ExecuteComHj212RuleTask.run / ExecuteCnemcHj212RuleTask.run
+    let params = invokeTarget.match(/(?:ExecuteSiChuanHj212RuleTask|ExecuteComHj212RuleTask|ExecuteCnemcHj212RuleTask)\.run\('([^']+)', '([^']+)', '([^']+)', '([^']+)', '([^']+)', (\w+)\)/);
     if (params) {
       // 判断是哪种协议
       const isSiChuan = invokeTarget.includes('ExecuteSiChuanHj212RuleTask');
+      const isCnemc = invokeTarget.includes('ExecuteCnemcHj212RuleTask');
       return {
-        executeComHj212Protocol: isSiChuan ? 'sichuan' : 'common',
+        executeComHj212Protocol: isSiChuan ? 'sichuan' : (isCnemc ? 'cnemc' : 'common'),
         executeComHj212Host: params[1],
         executeComHj212Port: params[2],
         executeComHj212RuleId: params[3],
