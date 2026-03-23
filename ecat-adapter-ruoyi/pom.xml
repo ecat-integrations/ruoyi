@@ -5,11 +5,11 @@
     <parent>
         <groupId>com.ecat</groupId>
         <artifactId>ruoyi</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.2</version>
     </parent>
     <groupId>com.ecat.adapter</groupId>
     <artifactId>ecat-adapter-ruoyi</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
     <name>ecat-adapter-ruoyi</name>
     <description>Adapter project bridging ecat-core and ruoyi-admin</description>

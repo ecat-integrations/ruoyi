@@ -2,14 +2,14 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.ecat</groupId>
   <artifactId>ruoyi</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <name>ruoyi</name>
   <url>http://www.ruoyi.vip</url>
   <description>基于ruoyi的ECAT-WEB管理系统，ruoyi版本3.8.9</description>
   <packaging>pom</packaging>
   <properties>
     <ruoyi.version>3.8.9</ruoyi.version>
-    <ecat.ruoyi.version>1.0.1</ecat.ruoyi.version>
+    <ecat.ruoyi.version>1.0.2</ecat.ruoyi.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
@@ -192,6 +192,12 @@
       <dependency>
         <groupId>com.ecat</groupId>
         <artifactId>ruoyi-common</artifactId>
+        <version>${ecat.ruoyi.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.ecat.adapter</groupId>
+        <artifactId>ecat-adapter-ruoyi</artifactId>
         <version>${ecat.ruoyi.version}</version>
       </dependency>
 
