@@ -1895,8 +1895,8 @@ const allRuleList = ref([
   { value: '10002', label: '5分钟推送组' },
   { value: '10003', label: '1小时推送组' },
   { value: '10004', label: '1天推送组' },
-  { value: '30020', label: '分钟设备状态(5分钟)推送组' },
-  { value: '30021', label: '小时设备状态推送组' },
+  { value: '30020', label: '5分钟设备状态推送组' },
+  { value: '30021', label: '1小时设备状态推送组' },
   { value: '10005', label: '不固定频率推送组' },
   { value: '10006', label: '质控组' },
 ]);
