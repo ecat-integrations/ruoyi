@@ -2476,8 +2476,8 @@ INSERT INTO "public"."sys_job" (
     misfire_policy, concurrent, status, create_by, create_time, 
     update_by, update_time, remark
 ) VALUES 
-(11, '实时表分表', 'CreatePartitionTablesTask', 'CreatePartitionTablesTask.run(''realdata'',-2,2)', '0 0 0 * * ?', 1, 1, 0, 'admin', '2025/9/18 10:30', NULL, '2025/9/18 10:31', NULL),
-(12, '历史表分表', 'CreatePartitionTablesTask', 'CreatePartitionTablesTask.run(''his_data'',-2,2)', '0 0 0 * * ?', 1, 1, 0, 'admin', '2025/9/18 10:30', NULL, '2025/9/18 10:31', NULL),
+(11, '实时表分表', 'CreatePartitionTablesTask', 'CreatePartitionTablesTask.run(''realdata'',-2,2)', '0 0 0 * * ?', 1, 1, 1, 'admin', '2025/9/18 10:30', NULL, '2025/9/18 10:31', NULL),
+(12, '历史表分表', 'CreatePartitionTablesTask', 'CreatePartitionTablesTask.run(''his_data'',-2,2)', '0 0 0 * * ?', 1, 1, 1, 'admin', '2025/9/18 10:30', NULL, '2025/9/18 10:31', NULL),
 (13, '维护换膜', 'Maintenance', 'maintenanceTask.run(''no2_filter'')', '0 0 9 ? * 3', 1, 1, 1, 'admin', '2025/9/18 10:19', NULL, '2025/9/18 10:26', NULL),
 (14, '每日子站巡检', 'Patrol', 'patrolTask.run(''substation_patrol'')', '0 10 0 * * ?', 1, 1, 0, 'admin', '2025/9/18 10:17', NULL, '2025/9/18 10:31', NULL),
 (15, '质控报告定时自动生成', 'DEFAULT', 'qualityControlGenReportTask.run('''','''')', '0 0 1 * * ?', 1, 1, 0, 'admin', '2025/9/18 10:17', NULL, '2025/9/18 10:31', NULL),
