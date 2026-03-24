@@ -528,6 +528,11 @@ import date from "@/utils/date";
 import { ElMessage } from 'element-plus';
 import { recordPageVisit, getHomepageDisplayMode, saveHomepageDisplayMode } from '@/utils/pageState';
 import DeviceListComponent from './index_list.vue';
+import { initStatusMapper } from '@/views/index/list/utils/statusMapper'
+// 预加载状态字典
+initStatusMapper().catch(err => {
+  console.warn('状态字典加载失败:', err)
+})
 // app.mount("#app");
 export default {
   name: "viewSet",
@@ -1527,7 +1532,7 @@ export default {
     // 获取实时数据
     this.timeIntervalId2 = setInterval(() => {
       getNowData().then(res => {
-        console.log(res);
+        // console.log(res);
         this.dataList = res.data;
         this.handleData3(res.data)
       });
