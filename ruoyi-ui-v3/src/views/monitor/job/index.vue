@@ -292,7 +292,7 @@
                         </template>
                       </el-input>
                     </template>
-                    <template v-else-if="form.jobGroup === 'ExecuteSiChuanHj212RuleTask'">
+                    <template v-else-if="['ExecuteSiChuanHj212RuleTask','ExecuteComHj212RuleTask','ExecuteCnemcHj212RuleTask'].includes(form.jobGroup)">
                       <el-input
                         v-model="form.invokeTarget"
                         placeholder="数据推送设置"
@@ -879,6 +879,10 @@
                label="通用HJ212推送协议"
                value="common"
              />
+             <el-option
+               label="总站HJ212推送协议"
+               value="cnemc"
+             />
            </el-select>
          </el-form-item>
          <!-- 设置host 及port 文本框 -->
@@ -1064,10 +1068,54 @@ const manualCheckForm = ref({
   stdGasInPortName: '跨度检查'
 });
 
+// 将 crontab（Quartz）周几数字转换为 cronstrue 格式
+// crontab: 1=周日, 2=周一, ..., 7=周六
+// cronstrue (dayOfWeekStartIndexZero: true): 0=周日, 1=周一, ..., 6=周六
+function convertCrontabWeekToCronstrue(cronExpr) {
+  if (!cronExpr) return cronExpr;
+  const parts = cronExpr.split(' ');
+  if (parts.length < 6) return cronExpr;
+
+  const weekField = parts[5];
+  if (!weekField || weekField === '*' || weekField === '?') return cronExpr;
+
+  const toCronstrue = (n) => (n >= 1 && n <= 7 ? (n - 1).toString() : null);
+
+  let converted;
+  if (weekField.includes('#')) {
+    // N#M：每月第 M 个周 N；只转换 N（周几），不转换 M（第几周）
+    const [dayPart, weekOrd] = weekField.split('#');
+    const d = parseInt(dayPart);
+    const cv = toCronstrue(d);
+    converted = cv !== null ? cv + '#' + (weekOrd || '') : weekField;
+  } else if (/^\d+L$/i.test(weekField)) {
+    // NL：本月最后一个周 N；只转换 N
+    const dayPart = weekField.slice(0, -1);
+    const d = parseInt(dayPart);
+    const cv = toCronstrue(d);
+    converted = cv !== null ? cv + 'L' : weekField;
+  } else {
+    // 单个、范围、列表、步长等：仅转换 1–7 的周几数字
+    converted = weekField.replace(/(\d+)/g, (m) => {
+      const cv = toCronstrue(parseInt(m));
+      return cv !== null ? cv : m;
+    });
+  }
+
+  parts[5] = converted;
+  return parts.join(' ');
+}
+
 function analysisCrontab(data){
   if(data){
     try {
-      return cronstrue.toString(data, { locale: "zh_CN", use24HourTimeFormat: true})
+      // 转换周几数字以匹配 cronstrue 的映射规则
+      const convertedExpr = convertCrontabWeekToCronstrue(data);
+      return cronstrue.toString(convertedExpr, {
+        locale: "zh_CN",
+        use24HourTimeFormat: true,
+        dayOfWeekStartIndexZero: true  // 0=周日, 1=周一, ..., 6=周六
+      })
     }catch (error) {
       console.error('解析Cron表达式时出错:', error);
       return '周期设置错误无法解析，请重新设置！';
@@ -1080,7 +1128,7 @@ function analysisCrontab(data){
 // 解析invokeTarget参数的方法
 function parseInvokeTargetParams(invokeTarget) {
   if (!invokeTarget) return null;
-  
+
   // 匹配方法名和参数（如 "qualityControlCustomTask.run(...)")
   const methodMatch = invokeTarget.match(/^(\w+\.\w+)\((.*)\)$/);
   if (!methodMatch || methodMatch.length < 3) {
@@ -1105,7 +1153,7 @@ function parseManualCheckParams(invokeTarget) {
   }
 
   const [gas, genGasTime, readDataCount, readDataSpan, genGasConc, stdGasInPortName] = parsed.paramValues;
-  
+
   // 处理气体浓度单位转换：后台存储的是ppm，需要转换为前端显示的ppb
   let displayConcentration = null;
   if (genGasConc) {
@@ -1118,7 +1166,7 @@ function parseManualCheckParams(invokeTarget) {
       displayConcentration = ppmValue * 1000;
     }
   }
-  
+
   return {
     gas: gas || '',
     genGasTime: genGasTime ? parseInt(genGasTime) : null,
@@ -1137,7 +1185,7 @@ function parseQualityControlParams(invokeTarget) {
   }
 
   const [parameter, qcType, qcConcentration] = parsed.paramValues;
-  
+
   return {
     parameter: parameter || '',
     qcType: qcType || '',
@@ -1153,7 +1201,7 @@ function parsePatrolParams(invokeTarget) {
   }
 
   const [patrolType] = parsed.paramValues;
-  
+
   return {
     patrolType: patrolType || ''
   };
@@ -1167,7 +1215,7 @@ function parseMaintenanceParams(invokeTarget) {
   }
 
   const [maintenanceType] = parsed.paramValues;
-  
+
   return {
     maintenanceType: maintenanceType || ''
   };
@@ -1176,7 +1224,7 @@ function parseMaintenanceParams(invokeTarget) {
 function handleManualCheckOpen() {
   // 尝试从现有的invokeTarget中解析参数
   const existingParams = parseManualCheckParams(form.value.invokeTarget);
-  
+
   manualCheckForm.value = existingParams || {
     gas: '',
     genGasTime: null,
@@ -1213,7 +1261,7 @@ function formatSecondsToMinutes(seconds) {
   if (!seconds || seconds === 0) return '0秒';
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  
+
   if (minutes === 0) {
     return `${remainingSeconds}秒`;
   } else if (remainingSeconds === 0) {
@@ -1228,7 +1276,7 @@ function formatReadTime(seconds) {
   if (!seconds || seconds === 0) return '0秒';
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  
+
   if (minutes === 0) {
     return `${remainingSeconds}秒`;
   } else if (remainingSeconds === 0) {
@@ -1305,7 +1353,7 @@ function getAggregateTypeDisplayName(aggregateType) {
 // 格式化浓度显示（用于说明信息）
 function formatConcentrationDisplay(concentration, gasType) {
   if (!concentration || concentration === 0) return '0';
-  
+
   if (gasType === 'CO') {
     // CO气体：直接显示ppm
     return `${concentration}ppm`;
@@ -1321,7 +1369,7 @@ function handleManualCheckSubmit(params) {
   const strGenGasTime = genGasTime?.toString() || '';
   const strReadDataCount = readDataCount?.toString() || '';
   const strReadDataSpan = readDataSpan?.toString() || '';
-  
+
   // 处理气体浓度单位转换：CO保持ppm，SO2/NO2/O3从ppb转换为ppm
   let convertedConcentration;
   if (gas === 'CO') {
@@ -1331,7 +1379,7 @@ function handleManualCheckSubmit(params) {
     // SO2/NO2/O3气体：将ppb转换为ppm (1ppm = 1000ppb)
     convertedConcentration = (parseFloat(genGasConc) / 1000)?.toFixed(3);
   }
-  
+
   // 构建 invokeTarget 调用字符串，包含新参数
   form.value.invokeTarget = `qualityControlCustomTask.run('${gas}', '${strGenGasTime}', '${strReadDataCount}', '${strReadDataSpan}', '${convertedConcentration}', '${stdGasInPortName}')`;
 }
@@ -1345,7 +1393,8 @@ const JOB_GROUP_MAPPING = {
   'CreatePartitionTables': '创建分表',
   'AggregationData': '数据聚合',
   'ExecuteSiChuanHj212RuleTask': '四川省HJ212数据推送',
-  'ExecuteComHj212RuleTask': '通用HJ212数据推送'
+  'ExecuteComHj212RuleTask': '通用HJ212数据推送',
+  'ExecuteCnemcHj212RuleTask': '总站HJ212数据推送'
 };
 
 // 方法名映射
@@ -1359,7 +1408,8 @@ const METHOD_MAPPING = {
   'mokeBus.send': '执行仪器发数',
   'CreatePartitionTablesTask.run': "创建分表",
   'ExecuteSiChuanHj212RuleTask.run': "执行四川省HJ212数据推送任务",
-  'ExecuteComHj212RuleTask.run': "执行通用HJ212数据推送任务"
+  'ExecuteComHj212RuleTask.run': "执行通用HJ212数据推送任务",
+  'ExecuteCnemcHj212RuleTask.run': "执行总站HJ212数据推送任务"
 };
 
 // 参数类型映射
@@ -1452,6 +1502,10 @@ const PARAM_ORDER_MAPPING = {
   'ExecuteComHj212RuleTask.run': [
     'executeComHj212Host', 'executeComHj212Port', 'executeComHj212RuleId', 'executeComHj212StartTime', 'executeComHj212EndTime', 'executeComHj212IsTime'
   ],
+  // 执行CnemcHj212Rule任务参数
+  'ExecuteCnemcHj212RuleTask.run': [
+    'executeComHj212Host', 'executeComHj212Port', 'executeComHj212RuleId', 'executeComHj212StartTime', 'executeComHj212EndTime', 'executeComHj212IsTime'
+  ],
 };
 
 // 质控类型映射
@@ -1494,7 +1548,13 @@ const GAS_TYPE_MAPPING = {
 const parseCronExpression = (expression) => {
   try {
     if (!expression) return '-';
-    return cronstrue.toString(expression, { locale: "zh_CN", use24HourTimeFormat: true });
+    // 转换周几数字以匹配 cronstrue 的映射规则
+    const convertedExpr = convertCrontabWeekToCronstrue(expression);
+    return cronstrue.toString(convertedExpr, {
+      locale: "zh_CN",
+      use24HourTimeFormat: true,
+      dayOfWeekStartIndexZero: true  // 0=周日, 1=周一, ..., 6=周六
+    });
   } catch (error) {
     return '无效的Cron表达式';
   }
@@ -1576,7 +1636,11 @@ const parseInvokeTarget = (target) => {
         // 参数ID，显示为"全部参数"或具体参数名
         mappedValue = value === '*' ? '全部' : value;
       }
-    } else if (methodName === 'ExecuteSiChuanHj212RuleTask.run' || methodName === 'ExecuteComHj212RuleTask.run') {
+    } else if (
+      methodName === 'ExecuteSiChuanHj212RuleTask.run' ||
+      methodName === 'ExecuteComHj212RuleTask.run' ||
+      methodName === 'ExecuteCnemcHj212RuleTask.run'
+    ) {
       // HJ212推送任务：根据参数位置处理
       // 参数顺序：host, port, ruleId, startTime, endTime, isTime
       // index 0: executeComHj212Host (IP)
@@ -1831,6 +1895,8 @@ const allRuleList = ref([
   { value: '10002', label: '5分钟推送组' },
   { value: '10003', label: '1小时推送组' },
   { value: '10004', label: '1天推送组' },
+  { value: '30020', label: '5分钟设备状态推送组' },
+  { value: '30021', label: '1小时设备状态推送组' },
   { value: '10005', label: '不固定频率推送组' },
   { value: '10006', label: '质控组' },
 ]);
@@ -1870,6 +1936,8 @@ const jobTypeDict = {
     // 根据协议类型选择不同的任务方法
     if (executeComHj212Protocol === 'sichuan') {
       return `ExecuteSiChuanHj212RuleTask.run('${executeComHj212Host}', '${executeComHj212Port}', '${executeComHj212RuleId}', '${executeComHj212StartTime}', '${executeComHj212EndTime}', ${executeComHj212IsTime})`;
+    } else if (executeComHj212Protocol === 'cnemc') {
+      return `ExecuteCnemcHj212RuleTask.run('${executeComHj212Host}', '${executeComHj212Port}', '${executeComHj212RuleId}', '${executeComHj212StartTime}', '${executeComHj212EndTime}', ${executeComHj212IsTime})`;
     } else {
       return `ExecuteComHj212RuleTask.run('${executeComHj212Host}', '${executeComHj212Port}', '${executeComHj212RuleId}', '${executeComHj212StartTime}', '${executeComHj212EndTime}', ${executeComHj212IsTime})`;
     }
@@ -1991,7 +2059,13 @@ function handleShowCron() {
   openCron.value = true;
 
   console.log("cron: ", expression.value)
-  form.value.cronConstrue = cronstrue.toString(form.value.cronExpression, { locale: "zh_CN", use24HourTimeFormat: true});
+  // 转换周几数字以匹配 cronstrue 的映射规则
+  const convertedExpr = convertCrontabWeekToCronstrue(form.value.cronExpression);
+  form.value.cronConstrue = cronstrue.toString(convertedExpr, {
+    locale: "zh_CN",
+    use24HourTimeFormat: true,
+    dayOfWeekStartIndexZero: true  // 0=周日, 1=周一, ..., 6=周六
+  });
 }
 
 /** 确定后回传值 */
@@ -2138,7 +2212,7 @@ function setupJobNameWatch() {
 function handleQualityControlOpen() {
   // 尝试从现有的invokeTarget中解析参数
   const existingParams = parseQualityControlParams(form.value.invokeTarget);
-  
+
   qcForm.value = existingParams || {
     parameter: '',
     qcType: '',
@@ -2187,7 +2261,7 @@ function handleQualityControlSubmit(params) {
 function handlePatrolOpen() {
   // 尝试从现有的invokeTarget中解析参数
   const existingParams = parsePatrolParams(form.value.invokeTarget);
-  
+
   patrolForm.value = existingParams || {
     patrolType: '',
   };
@@ -2227,7 +2301,7 @@ function handlePatrolSubmit(params) {
 function handleMaintenanceOpen() {
   // 尝试从现有的invokeTarget中解析参数
   const existingParams = parseMaintenanceParams(form.value.invokeTarget);
-  
+
   maintenanceForm.value = existingParams || {
     maintenanceType: '',
   };
@@ -2240,17 +2314,17 @@ function parseAggregationDataParams(invokeTarget) {
     // 参数顺序：aggregateType, aggregateStartTime, aggregateEndTime, aggregateIsTime, minutes, deviceId, attributeId
     // 注意：aggregateIsTime 和 minutes 不带引号
     let newFormatParams = invokeTarget.match(/aggregationDataTask\.run\('([^']+)', '([^']+)', '([^']+)', (\w+), (\d+), '([^']*)', '([^']*)'\)/);
-    
+
     if (newFormatParams && newFormatParams.length >= 8) {
       // 新格式：7个参数
       const minutes = parseInt(newFormatParams[5]);
       const aggregateType = convertMinutesToAggregateType(minutes);
       const deviceId = newFormatParams[6] || '';
       const attributeId = newFormatParams[7] || '';
-      
+
       // 只有当 deviceId 和 attributeId 都不是 '*' 且不为空时，才认为启用了筛选
       const isFilterEnabled = (deviceId !== '' && deviceId !== '*') || (attributeId !== '' && attributeId !== '*');
-      
+
       return {
         aggregateType: aggregateType,
         aggregateStartTime: newFormatParams[2], // start time
@@ -2261,7 +2335,7 @@ function parseAggregationDataParams(invokeTarget) {
         aggregateAttributeId: attributeId === '*' ? '' : attributeId,
       };
     }
-    
+
     // 兼容旧格式：aggregationDataTask.run('aggreType', 'start', 'end', true/false)
     let oldFormatParams = invokeTarget.match(/aggregationDataTask\.run\('([^']+)', '([^']+)', '([^']+)', (\w+)\)/);
     if (oldFormatParams && oldFormatParams.length >= 5) {
@@ -2282,13 +2356,14 @@ function parseAggregationDataParams(invokeTarget) {
 // 解析HJ212推送任务参数
 function parseExecuteHj212RuleTaskParams(invokeTarget) {
   if(invokeTarget != null){
-    // 解析ExecuteSiChuanHj212RuleTask.run 或 ExecuteComHj212RuleTask.run
-    let params = invokeTarget.match(/(?:ExecuteSiChuanHj212RuleTask|ExecuteComHj212RuleTask)\.run\('([^']+)', '([^']+)', '([^']+)', '([^']+)', '([^']+)', (\w+)\)/);
+    // 解析 ExecuteSiChuanHj212RuleTask.run / ExecuteComHj212RuleTask.run / ExecuteCnemcHj212RuleTask.run
+    let params = invokeTarget.match(/(?:ExecuteSiChuanHj212RuleTask|ExecuteComHj212RuleTask|ExecuteCnemcHj212RuleTask)\.run\('([^']+)', '([^']+)', '([^']+)', '([^']+)', '([^']+)', (\w+)\)/);
     if (params) {
       // 判断是哪种协议
       const isSiChuan = invokeTarget.includes('ExecuteSiChuanHj212RuleTask');
+      const isCnemc = invokeTarget.includes('ExecuteCnemcHj212RuleTask');
       return {
-        executeComHj212Protocol: isSiChuan ? 'sichuan' : 'common',
+        executeComHj212Protocol: isSiChuan ? 'sichuan' : (isCnemc ? 'cnemc' : 'common'),
         executeComHj212Host: params[1],
         executeComHj212Port: params[2],
         executeComHj212RuleId: params[3],
@@ -2367,15 +2442,15 @@ function handleDeviceChange(deviceId) {
 async function handleAggregationDataTaskOpen(){
   console.log("handleAggregationDataTaskOpen", form.value)
   let params = parseAggregationDataParams(form.value.invokeTarget);
-  
+
   // 获取设备列表
   await fetchDeviceList();
-  
+
   aggregateOpen.value = true
   if (params) {
     // 保存参数ID，因为 handleDeviceChange 会清空它
     const savedAttributeId = params.aggregateAttributeId || '';
-    
+
     aggregateForm.value = {
       aggregateType: params.aggregateType,
       aggregateStartTime: params.aggregateStartTime,
@@ -2385,7 +2460,7 @@ async function handleAggregationDataTaskOpen(){
       aggregateDeviceId: params.aggregateDeviceId || '',
       aggregateAttributeId: savedAttributeId,
     }
-    
+
     // 如果选择了设备，更新可用属性列表
     if (params.aggregateDeviceId && params.aggregateDeviceId !== '') {
       handleDeviceChange(params.aggregateDeviceId);
@@ -2542,12 +2617,12 @@ function handleExecuteComHj212Submit(params) {
   let executeComHj212Host = params.executeComHj212Host;
   let executeComHj212Port = params.executeComHj212Port.toString();
   let executeComHj212RuleId = params.executeComHj212RuleId;
-  
+
   // 只有在启用自定义时间时才使用用户输入的时间，否则使用空字符串
   let executeComHj212StartTime = (params.executeComHj212IsTime === 'true') ? params.executeComHj212StartTime : '';
   let executeComHj212EndTime = (params.executeComHj212IsTime === 'true') ? params.executeComHj212EndTime : '';
   let executeComHj212IsTime = params.executeComHj212IsTime;
-  
+
   // 在这里编写具体的业务逻辑
   let cmd = jobTypeDict["ExecuteHj212RuleTask"](executeComHj212Protocol, executeComHj212Host, executeComHj212Port, executeComHj212RuleId, executeComHj212StartTime, executeComHj212EndTime, executeComHj212IsTime)
   console.log('执行HJ212推送任务参数提交:', params);
@@ -2560,23 +2635,23 @@ function handleAggregateSubmit(params){
   let aggregateType = params.aggregateType;
   let aggregateIsTime = params.aggregateIsTime;
   let aggregateIsFilter = params.aggregateIsFilter;
-  
+
   // 只有在启用自定义时间时才使用用户输入的时间，否则使用空字符串
   let aggregateStartTime = (aggregateIsTime === 'true') ? params.aggregateStartTime : '';
   let aggregateEndTime = (aggregateIsTime === 'true') ? params.aggregateEndTime : '';
-  
+
   // 处理设备筛选参数 - 确保所有参数都是字符串类型
   let deviceId = '*'; // 默认全部设备
   let attributeId = '*'; // 默认全部参数
-  
+
   if (aggregateIsFilter === 'true') {
     deviceId = params.aggregateDeviceId ? params.aggregateDeviceId.toString() : '*';
     attributeId = params.aggregateAttributeId ? params.aggregateAttributeId.toString() : '*';
   }
-  
+
   // 将聚合类型转换为分钟数
   let minutes = convertAggregateTypeToMinutes(aggregateType);
-  
+
   // 确保所有参数都是字符串类型
   const stringParams = {
     aggregateType: aggregateType.toString(),
@@ -2587,7 +2662,7 @@ function handleAggregateSubmit(params){
     deviceId: deviceId.toString(),
     attributeId: attributeId.toString()
   };
-  
+
   // 在这里编写具体的业务逻辑
   let cmd = jobTypeDict["aggregationDataTask"](stringParams.aggregateType, stringParams.aggregateStartTime, stringParams.aggregateEndTime, stringParams.aggregateIsTime, stringParams.minutes, stringParams.deviceId, stringParams.attributeId)
   console.log('聚合数据参数提交:', params);
