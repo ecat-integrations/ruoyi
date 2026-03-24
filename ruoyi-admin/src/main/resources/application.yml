@@ -47,6 +47,8 @@ user:
 
 # Spring配置
 spring:
+  main:
+    lazy-initialization: true   # 这个是核心！延迟初始化，不启动不查库
   # 资源信息
   messages:
     # 国际化资源文件路径
