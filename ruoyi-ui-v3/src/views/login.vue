@@ -1,6 +1,15 @@
 <template>
   <div class="login">
-    <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
+    <!-- 页面加载中 -->
+    <div v-if="pageLoading" class="page-loading-container">
+      <el-icon class="is-loading" :size="50">
+        <Loading />
+      </el-icon>
+      <p class="loading-text">加载中...</p>
+    </div>
+    
+    <!-- 登录表单 -->
+    <el-form v-show="!pageLoading" ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
       <h3 class="title">{{ title }}</h3>
       <el-form-item prop="username">
         <el-input
@@ -37,7 +46,10 @@
           <template #prefix><svg-icon icon-class="validCode" class="el-input__icon input-icon" /></template>
         </el-input>
         <div class="login-code">
-          <img :src="codeUrl" @click="getCode" class="login-code-img"/>
+          <img :src="codeUrl" @click="getCode" class="login-code-img" v-show="!codeLoading"/>
+          <el-icon v-if="codeLoading" class="is-loading" :size="38">
+            <Loading />
+          </el-icon>
         </div>
       </el-form-item>
       <el-checkbox v-model="loginForm.rememberMe" style="margin:0px 0px 25px 0px;">记住密码</el-checkbox>
@@ -69,6 +81,7 @@ import { getCodeImg } from "@/api/login";
 import Cookies from "js-cookie";
 import { encrypt, decrypt } from "@/utils/jsencrypt";
 import useUserStore from '@/store/modules/user'
+import { Loading } from '@element-plus/icons-vue'
 
 const title = import.meta.env.VITE_APP_TITLE;
 const userStore = useUserStore();
@@ -92,6 +105,7 @@ const loginRules = {
 
 const codeUrl = ref("");
 const loading = ref(false);
+const pageLoading = ref(true); // 页面加载状态
 // 验证码开关
 const captchaEnabled = ref(true);
 // 注册开关
@@ -138,13 +152,36 @@ function handleLogin() {
   });
 }
 
+let retryTimer = null; // 重试定时器
+
 function getCode() {
+  // 清除之前的定时器
+  if (retryTimer) {
+    clearInterval(retryTimer);
+    retryTimer = null;
+  }
+  
   getCodeImg().then(res => {
     captchaEnabled.value = res.captchaEnabled === undefined ? true : res.captchaEnabled;
     if (captchaEnabled.value) {
       codeUrl.value = "data:image/gif;base64," + res.img;
       loginForm.value.uuid = res.uuid;
     }
+    // 成功后关闭加载状态并清除定时器
+    pageLoading.value = false;
+    if (retryTimer) {
+      clearInterval(retryTimer);
+      retryTimer = null;
+    }
+  }).catch(error => {
+    console.error('获取验证码失败:', error);
+    // 请求失败时，禁用验证码功能
+    captchaEnabled.value = false;
+    // 设置定时器每 5 秒重试一次
+    retryTimer = setInterval(() => {
+      console.log('重试获取验证码...');
+      getCode();
+    }, 5000);
   });
 }
 
@@ -158,6 +195,14 @@ function getCookie() {
     rememberMe: rememberMe === undefined ? false : Boolean(rememberMe)
   };
 }
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (retryTimer) {
+    clearInterval(retryTimer);
+    retryTimer = null;
+  }
+});
 
 getCode();
 getCookie();
@@ -225,5 +270,17 @@ getCookie();
 .login-code-img {
   height: 40px;
   padding-left: 12px;
+}
+.page-loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  .loading-text {
+    margin-top: 20px;
+    color: #fff;
+    font-size: 16px;
+  }
 }
 </style>

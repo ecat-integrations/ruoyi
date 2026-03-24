@@ -92,20 +92,20 @@ export const constantRoutes = [
       }
     ]
   },
-  {
-    path: '/integration',
-    component: Layout,
-    hidden: false,
-    redirect: 'noredirect',
-    children: [
-      {
-        path: 'dynamicModuleLoader',
-        component: () => import('@/views/integration/dynamicModuleLoader'),
-        name: 'dynamicModuleLoader',
-        meta: { title: '组件加载', icon: 'dashboard' }
-      }
-    ]
-  }
+  // {
+  //   path: '/integration',
+  //   component: Layout,
+  //   hidden: false,
+  //   redirect: 'noredirect',
+  //   children: [
+  //     {
+  //       path: 'dynamicModuleLoader',
+  //       component: () => import('@/views/integration/dynamicModuleLoader'),
+  //       name: 'dynamicModuleLoader',
+  //       meta: { title: '组件加载', icon: 'dashboard' }
+  //     }
+  //   ]
+  // }
 ]
 
 // 动态路由，基于用户权限动态去加载
