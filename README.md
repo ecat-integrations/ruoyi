@@ -1,7 +1,7 @@
 # ruoyi
 
 RuoYi管理后台（ruoyi-*系列 + ecat-adapter-ruoyi）
-当前版本: 1.0.0
+当前版本: 1.0.1
 
 ## 协议声明
 1. 核心依赖：本插件基于 **ECAT Core**（Apache License 2.0）开发，Core 项目地址：https://github.com/ecat-project/ecat-core。
