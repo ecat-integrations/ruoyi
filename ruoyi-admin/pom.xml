@@ -81,11 +81,10 @@
             <artifactId>ecat-core</artifactId>
             <version>[1.0.0,2.0.0)</version>
         </dependency> -->
-        <!-- ecat-adapter-ruoyi -->
+        <!-- ecat-adapter-ruoyi (version managed by parent) -->
         <dependency>
             <groupId>com.ecat.adapter</groupId>
             <artifactId>ecat-adapter-ruoyi</artifactId>
-            <version>1.0.0</version>
         </dependency>
 
     </dependencies>

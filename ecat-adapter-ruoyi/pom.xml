@@ -9,7 +9,7 @@
     </parent>
     <groupId>com.ecat.adapter</groupId>
     <artifactId>ecat-adapter-ruoyi</artifactId>
-    <version>1.0.0</version>
+    <version>${ecat.adapter.version}</version>
     <packaging>jar</packaging>
     <name>ecat-adapter-ruoyi</name>
     <description>Adapter project bridging ecat-core and ruoyi-admin</description>
