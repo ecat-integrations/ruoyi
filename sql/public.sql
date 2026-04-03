@@ -661,9 +661,9 @@ COMMENT ON TABLE "public"."env_material_manager" IS '物资管理表';
 INSERT INTO "public"."env_material_manager" VALUES (1, 'CO-102NSDIU2', 'CO气罐', '1', 'ASDN50MPA', 'XX公司', '2025-06-01', '2025-07-01', '2025-06-09 17:51:16', 50.000, 'MPa', 50.000, 1, '设备旁边', NULL, 'admin', 'admin', '2025-06-09 17:52:27', '2025-06-09 17:55:07', '{"concentration":20}');
 INSERT INTO "public"."env_material_manager" VALUES (2, 'SO2-SUI2SIX', 'SO2气罐', '2', 'ASDASD50MP', 'XX公司', '2025-06-01', '2025-07-01', '2025-06-09 17:52:31', 50.000, 'MPa', 50.000, 1, '设备旁边', NULL, 'admin', 'admin', '2025-06-09 17:53:07', '2025-08-06 15:42:38', '{"concentration":20}');
 INSERT INTO "public"."env_material_manager" VALUES (3, 'NO--SD92NX', 'NOx气罐', '3', '1313SADA', 'XX公司', '2025-06-01', '2025-07-01', '2025-06-09 17:53:10', 50.000, 'MPa', 8.000, 1, '设备旁边', NULL, 'admin', 'admin', '2025-06-09 17:53:46', '2025-08-06 15:42:40', '{"concentration":20}');
-INSERT INTO "public"."env_material_manager" VALUES (4, 'PM25-23SDASDM', 'PM2.5纸袋', '5', 'ER23', '塞默森', '2025-06-01', '2025-07-01', '2025-06-09 17:54:25', 100.000, '个', 44.000, 1, 'PM2.5设备', NULL, 'admin', 'admin', '2025-06-09 17:54:58', '2025-08-06 15:42:42', '');
-INSERT INTO "public"."env_material_manager" VALUES (5, '测试PM10', 'PM10纸袋', '4', '撒旦撒', '塞默森', '2025-06-01', '2025-07-01', '2025-06-09 17:55:14', 50.000, '个', 8.000, 2, 'PM10设备', NULL, 'admin', 'admin', '2025-06-09 17:55:40', '2025-09-10 09:06:27', '{}');
-INSERT INTO "public"."env_material_manager" VALUES (6, 'PM10-ZD-2193SNDN', 'PM10纸袋', '4', 'SDWQE', '塞默森', '2025-06-01', '2025-07-01', '2025-06-09 17:53:48', 100.000, '个', 100.000, 1, 'PM10设备', NULL, 'admin', 'admin', '2025-06-09 17:54:24', '2025-09-10 09:06:29', '');
+INSERT INTO "public"."env_material_manager" VALUES (4, 'PM25-23SDASDM', 'PM2.5滤纸带', '5', 'ER23', '赛默森', '2025-06-01', '2025-07-01', '2025-06-09 17:54:25', 100.000, '个', 44.000, 1, 'PM2.5设备', NULL, 'admin', 'admin', '2025-06-09 17:54:58', '2025-08-06 15:42:42', '');
+INSERT INTO "public"."env_material_manager" VALUES (5, '测试PM10', 'PM10滤纸带', '4', '撒旦撒', '赛默森', '2025-06-01', '2025-07-01', '2025-06-09 17:55:14', 50.000, '个', 8.000, 2, 'PM10设备', NULL, 'admin', 'admin', '2025-06-09 17:55:40', '2025-09-10 09:06:27', '{}');
+INSERT INTO "public"."env_material_manager" VALUES (6, 'PM10-ZD-2193SNDN', 'PM10滤纸带', '4', 'SDWQE', '赛默森', '2025-06-01', '2025-07-01', '2025-06-09 17:53:48', 100.000, '个', 100.000, 1, 'PM10设备', NULL, 'admin', 'admin', '2025-06-09 17:54:24', '2025-09-10 09:06:29', '');
 -- ----------------------------
 -- Auto increment value for env_material_manager
 -- ----------------------------
@@ -1526,10 +1526,10 @@ INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'PM10_standa
 INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'PM2_5_actual_flow_rate', 'StationBuilding', 'float', '', '智慧数采#1', 'PM2.5工况流量', '站房信息', '0.0', 'L/min', '2025-04-09 06:04:00+00');
 INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'aircon1_current_temperature', 'AirconPower', 'float', '', '智慧数采#1', '空调1当前温度', '空调设备', '0', '℃', '2025-04-09 06:04:00+00');
 INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'aircon2_set_temperature', 'AirconPower', 'float', '', '智慧数采#1', '空调2设定温度', '空调设备', '0', NULL, '2025-04-09 06:04:00+00');
-INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'SO2_film_changing_instrument_status', 'FilmChanging', 'float', '', '智慧数采#1', 'SO2换膜仪器状态', '换模设备', '0', NULL, '2025-04-09 06:04:00+00');
-INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'NOx_film_changing_instrument_status', 'FilmChanging', 'float', '', '智慧数采#1', 'NOx换膜仪器状态', '换模设备', '0', NULL, '2025-04-09 06:04:00+00');
-INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'CO_film_changing_instrument_status', 'FilmChanging', 'float', '', '智慧数采#1', 'CO换膜仪器状态', '换模设备', '0', NULL, '2025-04-09 06:04:00+00');
-INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'O3_film_changing_instrument_status', 'FilmChanging', 'float', '', '智慧数采#1', 'O3换膜仪器状态', '换模设备', '0', NULL, '2025-04-09 06:04:00+00');
+INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'SO2_film_changing_instrument_status', 'FilmChanging', 'float', '', '智慧数采#1', 'SO2换膜仪器状态', '换膜设备', '0', NULL, '2025-04-09 06:04:00+00');
+INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'NOx_film_changing_instrument_status', 'FilmChanging', 'float', '', '智慧数采#1', 'NOx换膜仪器状态', '换膜设备', '0', NULL, '2025-04-09 06:04:00+00');
+INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'CO_film_changing_instrument_status', 'FilmChanging', 'float', '', '智慧数采#1', 'CO换膜仪器状态', '换膜设备', '0', NULL, '2025-04-09 06:04:00+00');
+INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'O3_film_changing_instrument_status', 'FilmChanging', 'float', '', '智慧数采#1', 'O3换膜仪器状态', '换膜设备', '0', NULL, '2025-04-09 06:04:00+00');
 INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'weather_wind_speed', 'WeatherDevice', 'float', 'null', '智慧数采#1', '风速', '气象设备', 'null', NULL, '2025-04-09 06:04:00+00');
 INSERT INTO "public"."nowdata" VALUES ('IntelligentDataCollection', 'weather_wind_direction', 'WeatherDevice', 'float', 'null', '智慧数采#1', '风向', '气象设备', 'null', NULL, '2025-04-09 06:04:00+00');
 
@@ -1955,7 +1955,7 @@ INSERT INTO "public"."sta_info" VALUES (23, '校准仪设备', 'Calibrator', 'CO
 INSERT INTO "public"."sta_info" VALUES (24, '报警状态', 'AlarmStatus', 'COM1', 'MOUBUS', '99', '2025-04-08 11:57:04.207', NULL, NULL, 'xianhe', 8);
 INSERT INTO "public"."sta_info" VALUES (25, 'UPS设备', 'UPS', 'COM1', 'MOUBUS', '99', '2025-04-08 11:57:20.621', NULL, NULL, 'xianhe', 9);
 INSERT INTO "public"."sta_info" VALUES (26, '空气监测设备', 'AirDevice', 'COM1', 'MOUBUS', '99', '2025-04-08 11:57:39.367', NULL, NULL, 'xianhe', 10);
-INSERT INTO "public"."sta_info" VALUES (27, '换模设备', 'FilmChanging', 'COM1', 'MOUBUS', '99', '2025-04-08 11:58:00.672', NULL, NULL, 'xianhe', 11);
+INSERT INTO "public"."sta_info" VALUES (27, '换膜设备', 'FilmChanging', 'COM1', 'MOUBUS', '99', '2025-04-08 11:58:00.672', NULL, NULL, 'xianhe', 11);
 INSERT INTO "public"."sta_info" VALUES (28, '气象设备', 'WeatherDevice', 'COM1', 'MOUBUS', '99', '2025-04-08 11:58:17.904', NULL, NULL, 'xianhe', 12);
 INSERT INTO "public"."sta_info" VALUES (29, '其他设备', 'Other', 'COM1', 'MOUBUS', '99', '2025-04-08 11:58:35.256', NULL, NULL, 'xianhe', 13);
 
@@ -2046,7 +2046,7 @@ INSERT INTO "public"."sys_dept" VALUES (108, 102, '0,100,102', '市场部门', 1
 INSERT INTO "public"."sys_dept" VALUES (109, 102, '0,100,102', '财务部门', 2, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', '2021-05-26 18:56:28', '', NULL);
 INSERT INTO "public"."sys_dept" VALUES (103, 101, '0,100,101', '研发部门', 1, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', '2021-05-26 18:56:27', 'admin', '2021-05-27 09:05:25.083296');
 INSERT INTO "public"."sys_dept" VALUES (101, 100, '0,100', '深圳总公司', 1, '若依', '15888888888', 'ry@qq.com', '0', '0', 'admin', '2021-05-26 18:56:27', 'admin', '2021-05-27 09:05:25.091901');
-INSERT INTO "public"."sys_dept" VALUES (100, 0, '0', '塞默森科技', 0, '塞默森', '15888888888', 'sms@qq.com', '0', '0', 'admin', '2021-05-26 18:56:27', 'admin', '2025-03-07 14:33:25.539159');
+INSERT INTO "public"."sys_dept" VALUES (100, 0, '0', '赛默森科技', 0, '赛默森', '15888888888', 'sms@qq.com', '0', '0', 'admin', '2021-05-26 18:56:27', 'admin', '2025-03-07 14:33:25.539159');
 
 -- ----------------------------
 -- Table structure for sys_dict_data
@@ -3041,7 +3041,7 @@ COMMENT ON TABLE "public"."sys_user" IS '用户信息表';
 -- ----------------------------
 INSERT INTO "public"."sys_user" VALUES (2, 105, 'ry', '测试', '00', 'ry@qq.com', '15666666666', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-05-25 19:58:36.506', 'admin', '2021-05-26 18:56:28', 'admin', '2025-05-25 19:58:36.49013', '测试员');
 INSERT INTO "public"."sys_user" VALUES (1, 103, 'admin', '管理员', '00', 'dreamfalls@163.com', '15888888888', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-09-18 10:02:36.896', 'admin', '2021-05-26 18:56:28', '', '2025-09-18 10:02:35.219592', '管理员');
-INSERT INTO "public"."sys_user" VALUES (3, 100, 'smsbidui', '塞默森比对', NULL, '123@qq.com', '13888888888', NULL, NULL, '$2a$10$yQdHZNK8VVx7WX0fnsPT/uVdKg54t6RVz174QlY/JYKrsOODzEKK.', '0', '0', '127.0.0.1', '2025-06-24 22:13:37.477', 'admin', '2025-03-07 14:34:39.995037', NULL, '2025-06-24 22:13:37.120127', NULL);
+INSERT INTO "public"."sys_user" VALUES (3, 100, 'smsbidui', '赛默森比对', NULL, '123@qq.com', '13888888888', NULL, NULL, '$2a$10$yQdHZNK8VVx7WX0fnsPT/uVdKg54t6RVz174QlY/JYKrsOODzEKK.', '0', '0', '127.0.0.1', '2025-06-24 22:13:37.477', 'admin', '2025-03-07 14:34:39.995037', NULL, '2025-06-24 22:13:37.120127', NULL);
 
 -- ----------------------------
 -- Table structure for sys_user_post
