@@ -1286,8 +1286,9 @@ function formatReadTime(seconds) {
   }
 }
 
-// 将聚合类型转换为分钟数
+// 前端 value 为 5minute / 1hour / 1day；兼容后端 classify：minute、hour、day
 function convertAggregateTypeToMinutes(aggregateType) {
+  const key = normalizeAggregateTypeToFormValue(aggregateType);
   const typeMapping = {
     '1minute': 1,
     '2minute': 2,
@@ -1305,11 +1306,12 @@ function convertAggregateTypeToMinutes(aggregateType) {
     '4hour': 240,
     '1day': 1440
   };
-  return typeMapping[aggregateType] || 5; // 默认5分钟
+  return typeMapping[key] || 5;
 }
 
-// 将分钟数转换为聚合类型（用于解析）
+// 将分钟数转换为聚合类型（用于解析；仅作后备，优先使用 invokeTarget 第一个参数）
 function convertMinutesToAggregateType(minutes) {
+  const m = Number(minutes);
   const minutesMapping = {
     1: '1minute',
     2: '2minute',
@@ -1324,13 +1326,35 @@ function convertMinutesToAggregateType(minutes) {
     60: '1hour',
     120: '2hour',
     180: '3hour',
-    240: '4hour'
+    240: '4hour',
+    1440: '1day'
   };
-  return minutesMapping[minutes] || '5minute'; // 默认5分钟
+  return minutesMapping[m] || '5minute';
+}
+
+/**
+ * 将后端 classify（day/hour/minute）转为前端下拉 value（1day/1hour/5minute）；已存任务若已是前端写法则不变。
+ */
+function normalizeAggregateTypeToFormValue(raw) {
+  if (raw == null || String(raw).trim() === '') {
+    return '5minute';
+  }
+  const v = String(raw).trim();
+  const legacy = {
+    day: '1day',
+    hour: '1hour',
+    minute: '5minute'
+  };
+  const lower = v.toLowerCase();
+  if (legacy[lower] !== undefined) {
+    return legacy[lower];
+  }
+  return v;
 }
 
 // 获取聚合类型的显示名称
 function getAggregateTypeDisplayName(aggregateType) {
+  const key = normalizeAggregateTypeToFormValue(aggregateType);
   const displayMapping = {
     '1minute': '1分钟',
     '2minute': '2分钟',
@@ -1345,9 +1369,10 @@ function getAggregateTypeDisplayName(aggregateType) {
     '1hour': '1小时',
     '2hour': '2小时',
     '3hour': '3小时',
-    '4hour': '4小时'
+    '4hour': '4小时',
+    '1day': '1天'
   };
-  return displayMapping[aggregateType] || aggregateType;
+  return displayMapping[key] || displayMapping[aggregateType] || aggregateType;
 }
 
 // 格式化浓度显示（用于说明信息）
@@ -2312,13 +2337,17 @@ function parseAggregationDataParams(invokeTarget) {
   if(invokeTarget != null){
     // 解析新格式：aggregationDataTask.run('aggreType', 'start', 'end', true/false, minutes, 'deviceId', 'attributeId')
     // 参数顺序：aggregateType, aggregateStartTime, aggregateEndTime, aggregateIsTime, minutes, deviceId, attributeId
-    // 注意：aggregateIsTime 和 minutes 不带引号
-    let newFormatParams = invokeTarget.match(/aggregationDataTask\.run\('([^']+)', '([^']+)', '([^']+)', (\w+), (\d+), '([^']*)', '([^']*)'\)/);
+    let newFormatParams = invokeTarget.match(/aggregationDataTask\.run\('([^']*)', '([^']*)', '([^']*)', (\w+), (\d+), '([^']*)', '([^']*)'\)/);
 
     if (newFormatParams && newFormatParams.length >= 8) {
-      // 新格式：7个参数
-      const minutes = parseInt(newFormatParams[5]);
-      const aggregateType = convertMinutesToAggregateType(minutes);
+      // 新格式：第1个参数即为保存时的 aggregateType（与下拉 value 一致）；第6个为分钟数，仅作后备
+      const minutes = parseInt(newFormatParams[5], 10);
+      const aggregateTypeFromSaved = (newFormatParams[1] || '').trim();
+      const aggregateTypeRaw =
+        aggregateTypeFromSaved !== ''
+          ? aggregateTypeFromSaved
+          : convertMinutesToAggregateType(minutes);
+      const aggregateType = normalizeAggregateTypeToFormValue(aggregateTypeRaw);
       const deviceId = newFormatParams[6] || '';
       const attributeId = newFormatParams[7] || '';
 
@@ -2337,10 +2366,10 @@ function parseAggregationDataParams(invokeTarget) {
     }
 
     // 兼容旧格式：aggregationDataTask.run('aggreType', 'start', 'end', true/false)
-    let oldFormatParams = invokeTarget.match(/aggregationDataTask\.run\('([^']+)', '([^']+)', '([^']+)', (\w+)\)/);
+    let oldFormatParams = invokeTarget.match(/aggregationDataTask\.run\('([^']*)', '([^']*)', '([^']*)', (\w+)\)/);
     if (oldFormatParams && oldFormatParams.length >= 5) {
       return {
-        aggregateType: oldFormatParams[1],
+        aggregateType: normalizeAggregateTypeToFormValue(oldFormatParams[1]),
         aggregateStartTime: oldFormatParams[2],
         aggregateEndTime: oldFormatParams[3],
         aggregateIsTime: oldFormatParams[4] === 'true',
@@ -2469,7 +2498,7 @@ async function handleAggregationDataTaskOpen(){
     }
   }else {
     aggregateForm.value = {
-      aggregateType: '5minute', // 默认5分钟聚合
+      aggregateType: '5minute',
       aggregateStartTime: '',
       aggregateEndTime: '',
       aggregateIsTime: 'false',
@@ -2522,11 +2551,11 @@ function handleMaintenanceClose() {
 }
 function handleAggregateClose(){
   aggregateForm.value = {
-    aggregateType: '5minute', // 默认5分钟聚合
+    aggregateType: '5minute',
     aggregateStartTime: '',
     aggregateEndTime: '',
-    aggregateIsTime: false,
-    aggregateIsFilter: false,
+    aggregateIsTime: 'false',
+    aggregateIsFilter: 'false',
     aggregateDeviceId: '',
     aggregateAttributeId: '',
   }
