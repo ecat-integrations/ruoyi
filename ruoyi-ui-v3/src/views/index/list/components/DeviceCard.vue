@@ -6,7 +6,19 @@
     @contextmenu="$emit('contextmenu', $event)"
   >
     <div class="device-header">
-      <div class="device-name">{{ device.deviceName }}</div>
+      <div class="device-name-wrapper">
+        <div class="device-name">{{ device.deviceName }}</div>
+        <el-button
+          v-if="showManualTagButton"
+          type="primary"
+          link
+          size="small"
+          class="manual-tag-btn"
+          @click.stop="handleManualTagClick"
+        >
+          手动标识
+        </el-button>
+      </div>
       <div class="device-status-wrapper">
         <div class="device-status">
           <span :class="statusTextClass">{{ statusText }}</span>
@@ -61,9 +73,10 @@ import AttributeItem from './AttributeItem.vue'
 import DeviceAttributeModal from './DeviceAttributeModal.vue'
 import { useDeviceStatus } from '../composables/useDeviceStatus'
 import { useAttributeDragSort } from '../composables/useAttributeDragSort'
+import { isModelSupported } from '../utils/manualTagConfig'
 import { ElMessage } from 'element-plus'
 
-const emit = defineEmits(['dblclick', 'contextmenu'])
+const emit = defineEmits(['dblclick', 'contextmenu', 'open-manual-tag'])
 
 const props = defineProps({
   device: {
@@ -214,6 +227,16 @@ const handleMoreClick = () => {
   isAttributeModalShow.value = true
 }
 
+// 是否显示手动标识按钮
+const showManualTagButton = computed(() => {
+  return isModelSupported(props.device?.deviceModel)
+})
+
+// 处理手动标识按钮点击 - 触发事件到父组件
+const handleManualTagClick = () => {
+  emit('open-manual-tag', props.device)
+}
+
 const deviceStatusClass = computed(() => getDeviceStatusClass(props.device))
 const statusText = computed(() => {
   const status = getDeviceStatusClass(props.device).replace('device-', '')
@@ -263,6 +286,21 @@ const statusTextClass = computed(() => getDeviceStatusTextClass(props.device))
   align-items: center;
   transition: border-color 0.3s ease;
   gap: 12px;
+}
+
+.device-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.manual-tag-btn {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 0 4px;
+  white-space: nowrap;
 }
 
 .device-status-wrapper {

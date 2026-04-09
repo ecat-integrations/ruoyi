@@ -30,10 +30,18 @@
         @dragend="handleDragEnd($event)"
         @dblclick="handleDoubleClick($event, index)"
         @contextmenu="handleContextMenu($event, index)"
+        @open-manual-tag="handleOpenManualTag"
       />
     </div>
 
     <EmptyState v-else />
+    
+    <!-- 手动标识弹窗 - 提升到 Panel 层级 -->
+    <ManualTagDialog
+      v-model="isManualTagDialogShow"
+      :device="currentDeviceForTag"
+      @success="handleManualTagSuccess"
+    />
   </div>
 </template>
 
@@ -41,6 +49,7 @@
 import { ref, watch } from 'vue'
 import DeviceCard from './DeviceCard.vue'
 import EmptyState from './EmptyState.vue'
+import ManualTagDialog from './ManualTagDialog.vue'
 import { recordPageVisit} from '@/utils/pageState'
 import { useDeviceCardDragSort } from '../composables/useDeviceCardDragSort'
 import { ElMessage } from 'element-plus'
@@ -192,6 +201,27 @@ const handleContextMenu = (event, index) => {
 // 三次点击计数器（用于返回大屏）
 let returnClickCount = 0
 let returnLastClickTime = 0
+
+// 手动标识相关状态
+const isManualTagDialogShow = ref(false)
+const currentDeviceForTag = ref(null)
+
+/**
+ * 处理打开手动标识对话框
+ */
+function handleOpenManualTag(device) {
+  currentDeviceForTag.value = device
+  isManualTagDialogShow.value = true
+}
+
+/**
+ * 处理手动标识成功
+ */
+function handleManualTagSuccess(data) {
+  console.log('手动标识成功:', data)
+  // 可以在这里执行额外的操作,比如刷新设备数据等
+  ElMessage.success(`设备 "${data.device.deviceName}" 标识成功,请稍等片刻生效`)
+}
 
 /**
  * 处理三次点击返回大屏
