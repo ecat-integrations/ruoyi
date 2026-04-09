@@ -47,10 +47,29 @@ public class AggregationDataTask
      */
     public void run(String triggerType, String aggType, String start, String end, Boolean istime,
                     Integer minutes, String deviceId, String attributeId) throws ParseException {
-        
-        IIntegrationTaskManagement envQualityControlTask = (IIntegrationTaskManagement) core.getIntegrationRegistry()
+
+        if (core == null) {
+            log.error("AggregationDataTask: EcatCore 未注入，无法执行聚合任务");
+            return;
+        }
+
+        IIntegrationTaskManagement envDataHandle = (IIntegrationTaskManagement) core.getIntegrationRegistry()
                 .getIntegration("integration-env-data-handle");
-        Task wantedTask = envQualityControlTask.getTaskExecutor().getTask("AggregationTask");
+        if (envDataHandle == null) {
+            log.error("AggregationDataTask: 未找到集成 integration-env-data-handle（是否未在 ecat 配置中启用或未启动成功）");
+            return;
+        }
+
+        if (envDataHandle.getTaskExecutor() == null) {
+            log.error("AggregationDataTask: integration-env-data-handle 的 TaskExecutor 为 null（集成 onStart 可能未执行或异常中断）");
+            return;
+        }
+
+        Task wantedTask = envDataHandle.getTaskExecutor().getTask("AggregationTask");
+        if (wantedTask == null) {
+            log.error("AggregationDataTask: TaskExecutor 中未注册名为 AggregationTask 的任务（请确认 EnvDataHandleIntegration 已 addTask 聚合任务）");
+            return;
+        }
 
         // 默认分钟数
         int aggregationMinutes = (minutes != null) ? minutes : 5;
