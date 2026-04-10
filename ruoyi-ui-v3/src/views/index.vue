@@ -2322,7 +2322,7 @@ body {
   height: 22rem;
 }
 .logo {
-  background: url("@/assets/image/logo-sms.99073225.png");
+  //background: url("@/assets/image/logo-sms.99073225.png");
   width: 265px;
   height: 55px;
   position: absolute;
