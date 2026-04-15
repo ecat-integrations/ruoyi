@@ -1325,7 +1325,7 @@ ALTER TABLE his_data  SET (timescaledb.compress = true,
                            timescaledb.compress_orderby = 'pick_time DESC',
                            timescaledb.compress_segmentby = 'station_id, model_id');
 -- 创建自动压缩 大于1天的直接压缩
-SELECT add_compression_policy('his_data',compress_after => INTERVAL '1 day',if_not_exists => true);
+SELECT add_compression_policy('his_data',compress_after => INTERVAL '7 day',if_not_exists => true);
 
 
 -- 自动删除超过 3 年的历史数据，后台定时清理
