@@ -8,7 +8,7 @@
           <div class="title">数智化无人运维监控平台</div>
           <div class="nav">
             <div class="nav_item_alarm" id="alarmopen"  @click="handleTripleClick">
-              <span class="version-number">软件版本号:V1.1.3</span>
+              <span class="version-number">软件版本号:V1.1.4</span>
             </div>
             <!--          <div class="nav_item" @click="addNewElement()">设置界面</div>-->
             <!--          <div class="nav_item" @click="handleRoute('/')">首页</div>-->
@@ -528,12 +528,6 @@ import date from "@/utils/date";
 import { ElMessage } from 'element-plus';
 import { recordPageVisit, getHomepageDisplayMode, saveHomepageDisplayMode } from '@/utils/pageState';
 import DeviceListComponent from './index_list.vue';
-import { initStatusMapper } from '@/views/index/list/utils/statusMapper'
-// 预加载状态字典
-initStatusMapper().catch(err => {
-  console.warn('状态字典加载失败:', err)
-})
-// app.mount("#app");
 export default {
   name: "viewSet",
   components: {
@@ -638,7 +632,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-pm10_working_flow",
+          "id": "5030iq-01-pm10-flow",
           "type": "value",
           "valuestatus": -1
         },
@@ -647,25 +641,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-pm2_5_working_flow",
-          "type": "value",
-          "valuestatus": -1
-        },
-        {
-          "name": "PM10标况流量",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-pm10_std_flow",
-          "type": "value",
-          "valuestatus": -1
-        },
-        {
-          "name": "PM2.5标况流量",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-pm2_5_std_flow",
+          "id": "5030iq-01-pm25-flow",
           "type": "value",
           "valuestatus": -1
         },
@@ -699,6 +675,24 @@ export default {
           "unit": null,
           "status": -1,
           "id": "48i-01-co-flow",
+          "type": "value",
+          "valuestatus": -1
+        },
+        {
+          "name": "校准仪零气流量",
+          "value": null,
+          "unit": null,
+          "status": -1,
+          "id": "146i-01-zflow_actual",
+          "type": "value",
+          "valuestatus": -1
+        },
+        {
+          "name": "校准仪供应气体流量",
+          "value": null,
+          "unit": null,
+          "status": -1,
+          "id": "146i-01-gflow_actual",
           "type": "value",
           "valuestatus": -1
         }
@@ -800,7 +794,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-so2_gas_temp",
+          "id": "tramc500-so2-branch_pipe_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -808,7 +802,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-co_gas_temp",
+          "id": "tramc500-co-branch_pipe_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -816,7 +810,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-o3_gas_temp",
+          "id": "tramc500-o3-branch_pipe_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -824,7 +818,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-nox_gas_temp",
+          "id": "tramc500-no2-branch_pipe_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1266,7 +1260,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_input_voltage",
+          "id": "hcups-01-input_voltage",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1274,7 +1268,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_output_voltage",
+          "id": "hcups-01-output_voltage",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1282,15 +1276,15 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_load_percent",
+          "id": "hcups-01-load_percent",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "UPS输入频率",
+          "name": "UPS输出频率",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_input_freq",
+          "id": "hcups-01-output_freq",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1298,7 +1292,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_battery_voltage",
+          "id": "hcups-01-ups_battery_voltage_status",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1306,15 +1300,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_battery_temp",
-          "type": "value",
-          "valuestatus": -1
-        },{
-          "name": "UPS状态",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-ups_status",
+          "id": "hcups-01-battery_temp",
           "type": "value",
           "valuestatus": -1
         },
@@ -1398,8 +1384,7 @@ export default {
           "unit": null,
           "status": -1,
           "id": "tramc500-so2-inventory",
-          "reduce_id": "tramc500-so2-reset_command",
-          "type": "reduce",
+          "type": "value",
           "valuestatus": -1
         },{
           "name": "NOx换膜仪器剩余量",
@@ -1407,8 +1392,7 @@ export default {
           "unit": null,
           "status": -1,
           "id": "tramc500-no2-inventory",
-          "reduce_id": "tramc500-no2-reset_command",
-          "type": "reduce",
+          "type": "value",
           "valuestatus": -1
         },{
           "name": "CO换膜仪器剩余量",
@@ -1416,8 +1400,7 @@ export default {
           "unit": null,
           "status": -1,
           "id": "tramc500-co-inventory",
-          "reduce_id": "tramc500-co-reset_command",
-          "type": "reduce",
+          "type": "value",
           "valuestatus": -1
         },{
           "name": "O3换膜仪器剩余量",
@@ -1425,8 +1408,7 @@ export default {
           "unit": null,
           "status": -1,
           "id": "tramc500-o3-inventory",
-          "reduce_id": "tramc500-o3-reset_command",
-          "type": "reduce",
+          "type": "value",
           "valuestatus": -1
         }
       ],//中间底部右侧第一列
@@ -1705,7 +1687,7 @@ export default {
         this.analysisData(item, data_dict);
       })
       this.middleRightOne.forEach(item => {
-        this.calculateData(item, data_dict);
+        this.analysisData(item, data_dict);
       })
       this.middleRightTwo.forEach(item => {
         this.analysisData(item, data_dict);
@@ -1725,30 +1707,6 @@ export default {
       // }
 
 
-    },
-    calculateData(item, data_dict){
-      let id = item.id;
-      let value = data_dict[id]?.value;
-      let type = item.type;
-      if(type === "reduce") {
-        let reduce_id = item.reduce_id;
-        let totalvalue = data_dict[reduce_id]?.value;
-        if(value && totalvalue){
-          item.value = parseInt(totalvalue) - parseInt(value);
-        }
-      }
-      // item.value = data_dict[id]?.value;
-      item.unit = data_dict[id]? data_dict[id].unit : null;
-      item.status = data_dict[id] ? data_dict[id].status : 0;
-      if(item.status == 1){
-        if(this.alertKeywords.includes(item.value)){
-          item.datastatus = 2
-        }else{
-          item.datastatus = 1
-        }
-      }else{
-        item.datastatus = -1
-      }
     },
     analysisData(item, data_dict){
       let id = item.id;
