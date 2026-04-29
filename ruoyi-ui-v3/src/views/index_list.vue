@@ -21,6 +21,7 @@ import useSettingsStore from '@/store/modules/settings'
 import DevicePanel from './index/list/components/DevicePanel.vue'
 import OrchestrationModal from './index/list/orchestration/OrchestrationModal.vue'
 import { useDeviceData } from './index/list/composables/useDeviceData'
+import { initStatusMapper } from '@/views/index/list/utils/statusMapper'
 
 // 定义props
 const props = defineProps({
@@ -45,6 +46,9 @@ const settingsStore = useSettingsStore()
 // 编排弹窗状态
 const isOrchestrationModalShow = ref(false)
 
+// 字典加载状态
+const isDictLoaded = ref(false)
+
 // 使用设备数据管理
 const { requestData, startPolling, stopPolling } = useDeviceData({ emit })
 
@@ -61,7 +65,17 @@ const handleReturnToDashboard = () => {
 }
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
+  // 先加载状态字典
+  try {
+    await initStatusMapper()
+    isDictLoaded.value = true
+  } catch (err) {
+    console.warn('状态字典加载失败:', err)
+    // 即使字典加载失败，也继续显示数据
+    isDictLoaded.value = true
+  }
+
   recordPageVisit('/index', {
     timestamp: Date.now(),
     action: 'device_list_mode_loaded',

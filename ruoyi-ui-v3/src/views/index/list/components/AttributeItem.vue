@@ -66,6 +66,9 @@ const formattedTime = computed(() => formatAttributeTime(props.attr.updateTime, 
   padding: 10px;
   border-radius: 4px;
   transition: all 0.2s;
+  cursor: grab;
+  user-select: none;
+  position: relative;
 }
 
 .attribute-item.attr-online {
@@ -82,6 +85,48 @@ const formattedTime = computed(() => formatAttributeTime(props.attr.updateTime, 
 
 .attribute-item:hover {
   background-color: #f5f7fa;
+}
+
+.attribute-item:active {
+  cursor: grabbing;
+}
+
+/* 右键菜单提示样式 */
+.attribute-item.context-menu-active {
+  background-color: #e6f7ff;
+  border: 1px solid #409eff;
+}
+
+.attribute-item.dragging {
+  opacity: 0.5;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.attribute-item.drag-over {
+  border-top: 2px solid #409eff;
+  transition: all 0.2s ease;
+}
+
+.attribute-item.drag-over::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #409eff;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .attribute-status {

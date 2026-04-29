@@ -8,355 +8,35 @@
           <div class="title">数智化无人运维监控平台</div>
           <div class="nav">
             <div class="nav_item_alarm" id="alarmopen"  @click="handleTripleClick">
-              <span class="version-number">软件版本号:V1.0.3</span>
+              <span class="version-number">软件版本号:V1.1.4</span>
             </div>
-  <!--          <div class="nav_item" @click="addNewElement()">设置界面</div>-->
-  <!--          <div class="nav_item" @click="handleRoute('/')">首页</div>-->
-  <!--          <div-->
-  <!--            class="nav_item"-->
-  <!--            style="margin-left: 2rem"-->
-  <!--            @click="handleRoute('/controlResult')"-->
-  <!--          >-->
-  <!--            质控结果-->
-  <!--          </div>-->
-  <!--          <div-->
-  <!--            class="nav_item"-->
-  <!--            style="margin-left: 2rem"-->
-  <!--            @click="handleRoute('/controlPage')"-->
-  <!--          >-->
-  <!--            手动校准-->
-  <!--          </div>-->
-  <!--          <div class="nav_item" style="margin-left: 2rem" @click="handleBD">-->
-  <!--            比对系统-->
-  <!--          </div>-->
+            <!--          <div class="nav_item" @click="addNewElement()">设置界面</div>-->
+            <!--          <div class="nav_item" @click="handleRoute('/')">首页</div>-->
+            <!--          <div-->
+            <!--            class="nav_item"-->
+            <!--            style="margin-left: 2rem"-->
+            <!--            @click="handleRoute('/controlResult')"-->
+            <!--          >-->
+            <!--            质控结果-->
+            <!--          </div>-->
+            <!--          <div-->
+            <!--            class="nav_item"-->
+            <!--            style="margin-left: 2rem"-->
+            <!--            @click="handleRoute('/controlPage')"-->
+            <!--          >-->
+            <!--            手动校准-->
+            <!--          </div>-->
+            <!--          <div class="nav_item" style="margin-left: 2rem" @click="handleBD">-->
+            <!--            比对系统-->
+            <!--          </div>-->
           </div>
         </div>
       </div>
-    <div class="main">
-      <div class="left">
-        <div class="s_box cyg">
-          <div style="display: flex">
-            <div class="s_title">【报警状态监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
-          </div>
-
-          <div class="s_content">
-            <div>
-              <div class="cy_text" :class="{
-                     'nostatus': item.status !== 1,
-                     'successstatus': item.status === 1
-                   }" v-for="(item, index) of leftOne" :key="index">
-                <span class="cy_name">{{ item.name }}:</span
-                ><span class="cy_val"><span
-               :class="{
-                     'cy_val_no_inner': item.datastatus === -1,
-                     'cy_val_success_inner': item.datastatus === 1,
-                     'cy_val_error_inner': item.datastatus === 2
-                   }">{{ item.value }}</span></span
-              ><span class="cy_unit">{{ item.unit }}</span>
-                <span class="cy_status"></span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="s_box abc_elec">
-          <div style="display: flex">
-            <div class="s_title">【流量监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
-          </div>
-          <div class="s_content">
-            <div>
-              <div class="cy_text" :class="{
-                     'nostatus': item.status !== 1,
-                     'successstatus': item.status === 1
-                   }" v-for="(item, index) of leftTwo" :key="index">
-                <span class="cy_name">{{ item.name }}:</span
-                ><span class="cy_val"><span
-                :class="{
-                     'cy_val_no_inner': item.datastatus === -1,
-                     'cy_val_success_inner': item.datastatus === 1,
-                     'cy_val_error_inner': item.datastatus === 2
-                   }">{{ item.value }}</span></span
-              ><span class="cy_unit">{{ item.unit }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="s_box hw">
-          <div style="display: flex">
-            <div class="s_title">【站房环境监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
-          </div>
-          <div class="s_content">
-            <div>
-              <!-- <div class="cy_text">
-                <span class="cy_name">站房温度:</span
-                ><span class="cy_val">33</span><span class="cy_unit">℃</span>
-              </div> -->
-              <div class="cy_text" :class="{
-                     'nostatus': item.status !== 1,
-                     'successstatus': item.status === 1
-                   }" v-for="(item, index) of leftThree" :key="index">
-                <span class="cy_name">{{ item.name }}:</span
-                ><span class="cy_val"><span
-                :class="{
-                     'cy_val_no_inner': item.datastatus === -1,
-                     'cy_val_success_inner': item.datastatus === 1,
-                     'cy_val_error_inner': item.datastatus === 2
-                   }">{{ item.value }}</span></span
-              ><span class="cy_unit">{{ item.unit }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="s_box ups">
-          <div style="display: flex">
-            <div class="s_title">【采样管设备监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
-          </div>
-          <div class="s_content">
-            <div class="cy_text" :class="{
-                     'nostatus': item.status !== 1,
-                     'successstatus': item.status === 1
-                   }" v-for="(item, index) of leftFour" :key="index">
-              <span class="cy_name">{{ item.name }}:</span
-              ><span class="cy_val"><span
-              :class="{
-                     'cy_val_no_inner': item.datastatus === -1,
-                     'cy_val_success_inner': item.datastatus === 1,
-                     'cy_val_error_inner': item.datastatus === 2
-                   }">{{ item.value }}</span></span
-            ><span class="cy_unit">{{ item.unit }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="middle h_space">
-        <div class="s_box dq_para">
-          <div style="display: flex">
-            <div class="s_title" style="height: 1.8rem; line-height: 1.8rem">
-              【大气环境监测】
-            </div>
-            <div class="s_time">{{ nowTime }}</div>
-          </div>
-
-          <div style="display: flex; margin-top: 0.8rem">
-            <!-- <div id="bar-chart" style="width: 100%; height: 80%"></div> -->
-            <div v-for="item of middleOne" :key="item.index" class="dh_data_panel">
-              <!-- <div class="text-align:left;">
-                <span style="font-weight: bold; font-size: 14px"
-                  >{{ item.name }}:</span
-                >
-              </div> -->
-              <div
-                style="
-                  font-weight: bold;
-                  font-size: 14px;
-                  text-align: center;
-                  color: #fff;
-                  margin-top: 1rem;
-                "
-
-              >
-                <span
-                  :class="{
-                     'cy_val_no_inner': item.datastatus === -1,
-                     'cy_val_success_inner': item.datastatus === 1,
-                     'cy_val_error_inner': item.datastatus === 2
-                   }">{{ item.value }}</span>
-              </div>
-              <div
-                style="
-                  margin-top: 1rem;
-                  height: 2rem;
-                  line-height: 2rem;
-                  text-align: center;
-                  background: #ccc;
-                  color: #000;
-                "
-              >
-                <span
-                  :class="{
-                     'nostatus': item.status !== 1,
-                     'successstatus': item.status === 1
-                   }" >{{ item.name }}<sub>{{ item.affix }}</sub></span
-                >
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="m_view">
-          <div style="position: relative">
-            <img
-              src="@/assets/image/air.22a18526.png"
-              style="max-width: 100%; height: 98%"
-            />
-            <div
-              style="
-                position: absolute;
-                left: 41%;
-                top: 33%;
-                color: green;
-                font-size: 10px;
-                font-weight: bold;
-              "
-              :class="{
-                     'nostatus': middleTwoDict.CO.status !== 1,
-                     'successstatus': middleTwoDict.CO.status === 1
-                   }"
-              id="costatus"
-            >
-              CO设备
-            </div>
-            <div
-              style="
-                position: absolute;
-                left: 52.5%;
-                top: 34%;
-                color: green;
-                font-size: 10px;
-                font-weight: bold;
-              " :class="{
-                     'nostatus': middleTwoDict.PM10.status !== 1,
-                     'successstatus': middleTwoDict.PM10.status === 1
-                   }"
-              id="pm10status"
-            >
-              PM<sub>10</sub>设备
-            </div>
-            <div
-              style="
-                position: absolute;
-                left: 41%;
-                top: 44%;
-                color: green;
-                font-size: 10px;
-                font-weight: bold;
-              "
-              :class="{
-                     'nostatus': middleTwoDict.O3.status !== 1,
-                     'successstatus': middleTwoDict.O3.status === 1
-                   }"
-            >
-              O<sub>3</sub>设备
-            </div>
-            <div
-              style="
-                position: absolute;
-                left: 41%;
-                top: 55%;
-                color: green;
-                font-size: 10px;
-                font-weight: bold;
-              "
-              :class="{
-                     'nostatus': middleTwoDict.NO2.status !== 1,
-                     'successstatus': middleTwoDict.NO2.status === 1
-                   }"
-            >
-              NO<sub>2</sub>设备
-            </div>
-            <div
-              style="
-                position: absolute;
-                left: 41%;
-                top: 68%;
-                color: green;
-                font-size: 10px;
-                font-weight: bold;
-              "
-              :class="{
-                     'nostatus': middleTwoDict.SO2.status !== 1,
-                     'successstatus': middleTwoDict.SO2.status === 1
-                   }"
-            >
-              SO<sub>2</sub>设备
-
-            </div>
-            <div
-              style="
-                position: absolute;
-                left: 43.5%;
-                top: 15%;
-                color: green;
-                font-size: 10px;
-                font-weight: bold;
-              "
-              :class="{
-                     'nostatus': middleTwoDict.sample_tube.status !== 1,
-                     'successstatus': middleTwoDict.sample_tube.status === 1
-                   }"
-            >
-            </div>
-            <div
-              style="
-                position: absolute;
-                left: 30%;
-                top: 14%;
-                color: green;
-                font-size: 10px;
-                font-weight: bold;
-              "
-              :class="{
-                     'nostatus': middleTwoDict.air.status !== 1,
-                     'successstatus': middleTwoDict.air.status === 1
-                   }"
-            >
-            </div>
-            <div
-              style="
-                position: absolute;
-                left: 52.5%;
-                top: 51%;
-                color: green;
-                font-size: 10px;
-                font-weight: bold;
-              "
-              :class="{
-                     'nostatus': middleTwoDict.PM2_5.status !== 1,
-                     'successstatus': middleTwoDict.PM2_5.status === 1
-                   }"
-            >
-              PM<sub>2.5</sub>设备
-            </div>
-            <div
-              style="
-                position: absolute;
-                left: 52.5%;
-                top: 66%;
-                color: green;
-                font-size: 10px;
-                font-weight: bold;
-              "
-              :class="{
-                     'nostatus': middleTwoDict.calib.status !== 1,
-                     'successstatus': middleTwoDict.calib.status === 1
-                   }"
-            >
-              校准仪
-            </div>
-            <div
-              style="
-                position: absolute;
-                left: 77%;
-                top: 60%;
-                color: green;
-                font-size: 10px;
-                font-weight: bold;
-              "
-              :class="{
-                     'nostatus': middleTwoDict.power.status !== 1,
-                     'successstatus': middleTwoDict.power.status === 1
-                   }"
-            >
-              电源
-            </div>
-          </div>
-        </div>
-        <div style="display: flex">
-          <div class="s_box pm25">
+      <div class="main">
+        <div class="left">
+          <div class="s_box cyg">
             <div style="display: flex">
-              <div class="s_title">【UPS设备】</div>
+              <div class="s_title">【报警状态监测】</div>
               <div class="s_time">{{ nowTime }}</div>
             </div>
 
@@ -365,9 +45,33 @@
                 <div class="cy_text" :class="{
                      'nostatus': item.status !== 1,
                      'successstatus': item.status === 1
-                   }" v-for="(item, index) of middleLeftOne" :key="index">
-                  <span class="cy_name">{{ item.name }}:</span
-                  ><span class="cy_val"><span
+                   }" v-for="(item, index) of leftOne" :key="index">
+                <span class="cy_name">{{ item.name }}:</span
+                ><span class="cy_val"><span
+                  :class="{
+                     'cy_val_no_inner': item.datastatus === -1,
+                     'cy_val_success_inner': item.datastatus === 1,
+                     'cy_val_error_inner': item.datastatus === 2
+                   }">{{ item.value }}</span></span
+                ><span class="cy_unit">{{ item.unit }}</span>
+                  <span class="cy_status"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s_box abc_elec">
+            <div style="display: flex">
+              <div class="s_title">【流量监测】</div>
+              <div class="s_time">{{ nowTime }}</div>
+            </div>
+            <div class="s_content">
+              <div>
+                <div class="cy_text" :class="{
+                     'nostatus': item.status !== 1,
+                     'successstatus': item.status === 1
+                   }" v-for="(item, index) of leftTwo" :key="index">
+                <span class="cy_name">{{ item.name }}:</span
+                ><span class="cy_val"><span
                   :class="{
                      'cy_val_no_inner': item.datastatus === -1,
                      'cy_val_success_inner': item.datastatus === 1,
@@ -378,32 +82,328 @@
               </div>
             </div>
           </div>
-          <div class="s_box pm10 h_space">
+          <div class="s_box hw">
             <div style="display: flex">
-              <div class="s_title">【换膜器状态】</div>
+              <div class="s_title">【站房环境监测】</div>
               <div class="s_time">{{ nowTime }}</div>
             </div>
             <div class="s_content">
               <div>
+                <!-- <div class="cy_text">
+                  <span class="cy_name">站房温度:</span
+                  ><span class="cy_val">33</span><span class="cy_unit">℃</span>
+                </div> -->
                 <div class="cy_text" :class="{
+                     'nostatus': item.status !== 1,
+                     'successstatus': item.status === 1
+                   }" v-for="(item, index) of leftThree" :key="index">
+                <span class="cy_name">{{ item.name }}:</span
+                ><span class="cy_val"><span
+                  :class="{
+                     'cy_val_no_inner': item.datastatus === -1,
+                     'cy_val_success_inner': item.datastatus === 1,
+                     'cy_val_error_inner': item.datastatus === 2
+                   }">{{ item.value }}</span></span
+                ><span class="cy_unit">{{ item.unit }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s_box ups">
+            <div style="display: flex">
+              <div class="s_title">【采样管设备监测】</div>
+              <div class="s_time">{{ nowTime }}</div>
+            </div>
+            <div class="s_content">
+              <div class="cy_text" :class="{
+                     'nostatus': item.status !== 1,
+                     'successstatus': item.status === 1
+                   }" v-for="(item, index) of leftFour" :key="index">
+              <span class="cy_name">{{ item.name }}:</span
+              ><span class="cy_val"><span
+                :class="{
+                     'cy_val_no_inner': item.datastatus === -1,
+                     'cy_val_success_inner': item.datastatus === 1,
+                     'cy_val_error_inner': item.datastatus === 2
+                   }">{{ item.value }}</span></span
+              ><span class="cy_unit">{{ item.unit }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="middle h_space">
+          <div class="s_box dq_para">
+            <div style="display: flex">
+              <div class="s_title" style="height: 1.8rem; line-height: 1.8rem">
+                【大气环境监测】
+              </div>
+              <div class="s_time">{{ nowTime }}</div>
+            </div>
+
+            <div style="display: flex; margin-top: 0.8rem">
+              <!-- <div id="bar-chart" style="width: 100%; height: 80%"></div> -->
+              <div v-for="item of middleOne" :key="item.index" class="dh_data_panel">
+                <!-- <div class="text-align:left;">
+                  <span style="font-weight: bold; font-size: 14px"
+                    >{{ item.name }}:</span
+                  >
+                </div> -->
+                <div
+                  style="
+                  font-weight: bold;
+                  font-size: 14px;
+                  text-align: center;
+                  color: #fff;
+                  margin-top: 1rem;
+                "
+
+                >
+                <span
+                  :class="{
+                     'cy_val_no_inner': item.datastatus === -1,
+                     'cy_val_success_inner': item.datastatus === 1,
+                     'cy_val_error_inner': item.datastatus === 2
+                   }">{{ item.value }}</span>
+                </div>
+                <div
+                  style="
+                  margin-top: 1rem;
+                  height: 2rem;
+                  line-height: 2rem;
+                  text-align: center;
+                  background: #ccc;
+                  color: #000;
+                "
+                >
+                <span
+                  :class="{
+                     'nostatus': item.status !== 1,
+                     'successstatus': item.status === 1
+                   }" >{{ item.name }}<sub>{{ item.affix }}</sub></span
+                >
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="m_view">
+            <div style="position: relative">
+              <img
+                src="@/assets/image/air.22a18526.png"
+                style="max-width: 100%; height: 98%"
+              />
+              <div
+                style="
+                position: absolute;
+                left: 41%;
+                top: 33%;
+                color: green;
+                font-size: 10px;
+                font-weight: bold;
+              "
+                :class="{
+                     'nostatus': middleTwoDict.CO.status !== 1,
+                     'successstatus': middleTwoDict.CO.status === 1
+                   }"
+                id="costatus"
+              >
+                CO设备
+              </div>
+              <div
+                style="
+                position: absolute;
+                left: 52.5%;
+                top: 34%;
+                color: green;
+                font-size: 10px;
+                font-weight: bold;
+              " :class="{
+                     'nostatus': middleTwoDict.PM10.status !== 1,
+                     'successstatus': middleTwoDict.PM10.status === 1
+                   }"
+                id="pm10status"
+              >
+                PM<sub>10</sub>设备
+              </div>
+              <div
+                style="
+                position: absolute;
+                left: 41%;
+                top: 44%;
+                color: green;
+                font-size: 10px;
+                font-weight: bold;
+              "
+                :class="{
+                     'nostatus': middleTwoDict.O3.status !== 1,
+                     'successstatus': middleTwoDict.O3.status === 1
+                   }"
+              >
+                O<sub>3</sub>设备
+              </div>
+              <div
+                style="
+                position: absolute;
+                left: 41%;
+                top: 55%;
+                color: green;
+                font-size: 10px;
+                font-weight: bold;
+              "
+                :class="{
+                     'nostatus': middleTwoDict.NO2.status !== 1,
+                     'successstatus': middleTwoDict.NO2.status === 1
+                   }"
+              >
+                NO<sub>2</sub>设备
+              </div>
+              <div
+                style="
+                position: absolute;
+                left: 41%;
+                top: 68%;
+                color: green;
+                font-size: 10px;
+                font-weight: bold;
+              "
+                :class="{
+                     'nostatus': middleTwoDict.SO2.status !== 1,
+                     'successstatus': middleTwoDict.SO2.status === 1
+                   }"
+              >
+                SO<sub>2</sub>设备
+
+              </div>
+              <div
+                style="
+                position: absolute;
+                left: 43.5%;
+                top: 15%;
+                color: green;
+                font-size: 10px;
+                font-weight: bold;
+              "
+                :class="{
+                     'nostatus': middleTwoDict.sample_tube.status !== 1,
+                     'successstatus': middleTwoDict.sample_tube.status === 1
+                   }"
+              >
+              </div>
+              <div
+                style="
+                position: absolute;
+                left: 30%;
+                top: 14%;
+                color: green;
+                font-size: 10px;
+                font-weight: bold;
+              "
+                :class="{
+                     'nostatus': middleTwoDict.air.status !== 1,
+                     'successstatus': middleTwoDict.air.status === 1
+                   }"
+              >
+              </div>
+              <div
+                style="
+                position: absolute;
+                left: 52.5%;
+                top: 51%;
+                color: green;
+                font-size: 10px;
+                font-weight: bold;
+              "
+                :class="{
+                     'nostatus': middleTwoDict.PM2_5.status !== 1,
+                     'successstatus': middleTwoDict.PM2_5.status === 1
+                   }"
+              >
+                PM<sub>2.5</sub>设备
+              </div>
+              <div
+                style="
+                position: absolute;
+                left: 52.5%;
+                top: 66%;
+                color: green;
+                font-size: 10px;
+                font-weight: bold;
+              "
+                :class="{
+                     'nostatus': middleTwoDict.calib.status !== 1,
+                     'successstatus': middleTwoDict.calib.status === 1
+                   }"
+              >
+                校准仪
+              </div>
+              <div
+                style="
+                position: absolute;
+                left: 77%;
+                top: 60%;
+                color: green;
+                font-size: 10px;
+                font-weight: bold;
+              "
+                :class="{
+                     'nostatus': middleTwoDict.power.status !== 1,
+                     'successstatus': middleTwoDict.power.status === 1
+                   }"
+              >
+                电源
+              </div>
+            </div>
+          </div>
+          <div style="display: flex">
+            <div class="s_box pm25">
+              <div style="display: flex">
+                <div class="s_title">【UPS设备】</div>
+                <div class="s_time">{{ nowTime }}</div>
+              </div>
+
+              <div class="s_content">
+                <div>
+                  <div class="cy_text" :class="{
+                     'nostatus': item.status !== 1,
+                     'successstatus': item.status === 1
+                   }" v-for="(item, index) of middleLeftOne" :key="index">
+                  <span class="cy_name">{{ item.name }}:</span
+                  ><span class="cy_val"><span
+                    :class="{
+                     'cy_val_no_inner': item.datastatus === -1,
+                     'cy_val_success_inner': item.datastatus === 1,
+                     'cy_val_error_inner': item.datastatus === 2
+                   }">{{ item.value }}</span></span
+                  ><span class="cy_unit">{{ item.unit }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="s_box pm10 h_space">
+              <div style="display: flex">
+                <div class="s_title">【换膜器状态】</div>
+                <div class="s_time">{{ nowTime }}</div>
+              </div>
+              <div class="s_content">
+                <div>
+                  <div class="cy_text" :class="{
                      'nostatus': item.status !== 1,
                      'successstatus': item.status === 1
                    }" v-for="(item, index) of middleRightOne" :key="index">
                   <span class="cy_name">{{ item.name }}:</span
                   ><span class="cy_val"><span
-                  class="cy_val_success_inner">{{ item.value }}</span></span
-                ><span class="cy_unit">号位</span>
+                    class="cy_val_success_inner">{{ item.value }}</span></span
+                  ><span class="cy_unit">个</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div style="display: flex">
-              <div class="s_title">【标准物质剩余量】</div>
-              <div class="s_time">{{ nowTime }}</div>
-            </div>
-            <div class="s_content">
-              <div>
-                <div class="cy_text successstatus" v-for="(item, index) of middleRightTwoMaterial" :key="index">
-                  <span class="cy_name">{{ item.materialName }}</span>
+              <div style="display: flex">
+                <div class="s_title">【标准物质剩余量】</div>
+                <div class="s_time">{{ nowTime }}</div>
+              </div>
+              <div class="s_content">
+                <div>
+                  <div class="cy_text successstatus" v-for="(item, index) of middleRightTwoMaterial" :key="index">
+                    <span class="cy_name">{{ item.materialName }}</span>
                     <div class="progress-container">
 
                       <el-progress
@@ -413,103 +413,103 @@
                         :show-text="false"
                       />
                     </div>
-                  <span class="cy_unit">{{ calculatePercentage(item) }}%/{{ item.materialRemainCapacity }}{{item.materialCapacityUnit}}</span>
-<!--                  <span class="cy_name">{{ item.name }}:</span-->
-<!--                  ><span class="cy_val"><span-->
-<!--                  :class="{-->
-<!--                     'cy_val_no_inner': item.datastatus === -1,-->
-<!--                     'cy_val_success_inner': item.datastatus === 1,-->
-<!--                     'cy_val_error_inner': item.datastatus === 2-->
-<!--                   }">{{ item.value }}</span></span-->
-<!--                ><span class="cy_unit">{{ item.unit }}</span>-->
+                    <span class="cy_unit">{{ calculatePercentage(item) }}%/{{ item.materialRemainCapacity }}{{item.materialCapacityUnit}}</span>
+                    <!--                  <span class="cy_name">{{ item.name }}:</span-->
+                    <!--                  ><span class="cy_val"><span-->
+                    <!--                  :class="{-->
+                    <!--                     'cy_val_no_inner': item.datastatus === -1,-->
+                    <!--                     'cy_val_success_inner': item.datastatus === 1,-->
+                    <!--                     'cy_val_error_inner': item.datastatus === 2-->
+                    <!--                   }">{{ item.value }}</span></span-->
+                    <!--                ><span class="cy_unit">{{ item.unit }}</span>-->
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="right h_space">
-        <div class="s_box hm">
-          <div style="display: flex">
-            <div class="s_title">【气象监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
-          </div>
-          <div class="s_content">
-            <div>
-              <div class="cy_text" :class="{
+        <div class="right h_space">
+          <div class="s_box hm">
+            <div style="display: flex">
+              <div class="s_title">【气象监测】</div>
+              <div class="s_time">{{ nowTime }}</div>
+            </div>
+            <div class="s_content">
+              <div>
+                <div class="cy_text" :class="{
                      'nostatus': item.status !== 1,
                      'successstatus': item.status === 1
                    }" v-for="(item, index) of rightOne" :key="index">
                 <span class="cy_name">{{ item.name }}:</span
                 ><span class="cy_val"><span
-                :class="{
+                  :class="{
                      'cy_val_no_inner': item.datastatus === -1,
                      'cy_val_success_inner': item.datastatus === 1,
                      'cy_val_error_inner': item.datastatus === 2
                    }">{{ item.value }}</span></span
-              ><span class="cy_unit">{{ item.unit }}</span>
+                ><span class="cy_unit">{{ item.unit }}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="s_box fjzm">
-          <div style="display: flex">
-            <div class="s_title">【控制监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
-          </div>
-          <div class="s_content">
-            <div>
-              <div class="cy_text"  :class="{
+          <div class="s_box fjzm">
+            <div style="display: flex">
+              <div class="s_title">【控制监测】</div>
+              <div class="s_time">{{ nowTime }}</div>
+            </div>
+            <div class="s_content">
+              <div>
+                <div class="cy_text"  :class="{
                      'nostatus': item.status !== 1,
                      'successstatus': item.status === 1
                    }" v-for="(item, index) of rightTwo" :key="index">
                 <span class="cy_name">{{ item.name }}:</span
                 ><span class="cy_val"><span
-                :class="{
+                  :class="{
                      'cy_val_no_inner': item.datastatus === -1,
                      'cy_val_success_inner': item.datastatus === 1,
                      'cy_val_error_inner': item.datastatus === 2
                    }">{{ item.value }}</span></span
-              ><span class="cy_unit">{{ item.unit }}</span>
+                ><span class="cy_unit">{{ item.unit }}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="s_box qx" style="height: 25rem">
-          <div style="display: flex">
-            <div class="s_title">【电力监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
-          </div>
-          <div class="s_content">
-            <div>
-              <div
-                class="cy_text" :class="{
+          <div class="s_box qx" style="height: 25rem">
+            <div style="display: flex">
+              <div class="s_title">【电力监测】</div>
+              <div class="s_time">{{ nowTime }}</div>
+            </div>
+            <div class="s_content">
+              <div>
+                <div
+                  class="cy_text" :class="{
                      'nostatus': item.status !== 1,
                      'successstatus': item.status === 1
                    }"
-                v-for="(item, index) of rightThree"
-                :key="index"
-              >
+                  v-for="(item, index) of rightThree"
+                  :key="index"
+                >
                 <span class="cy_name">{{ item.name }}:</span
                 ><span class="cy_val"><span
-                :class="{
+                  :class="{
                      'cy_val_no_inner': item.datastatus === -1,
                      'cy_val_success_inner': item.datastatus === 1,
                      'cy_val_error_inner': item.datastatus === 2
                    }">{{ item.value }}</span></span
-              ><span class="cy_unit">{{ item.unit }}</span>
+                ><span class="cy_unit">{{ item.unit }}</span>
+                </div>
               </div>
             </div>
           </div>
+          <!-- <div class="s_box zd"></div> -->
         </div>
-        <!-- <div class="s_box zd"></div> -->
       </div>
     </div>
-    </div>
-    
+
     <!-- 设备管理模式内容 -->
     <div v-else class="device-list-content">
-      <DeviceListComponent 
+      <DeviceListComponent
         @return-to-dashboard="handleReturnToDashboard"
         @update-device-data="handleDeviceDataUpdate"
         :device-data="deviceData"
@@ -528,12 +528,6 @@ import date from "@/utils/date";
 import { ElMessage } from 'element-plus';
 import { recordPageVisit, getHomepageDisplayMode, saveHomepageDisplayMode } from '@/utils/pageState';
 import DeviceListComponent from './index_list.vue';
-import { initStatusMapper } from '@/views/index/list/utils/statusMapper'
-// 预加载状态字典
-initStatusMapper().catch(err => {
-  console.warn('状态字典加载失败:', err)
-})
-// app.mount("#app");
 export default {
   name: "viewSet",
   components: {
@@ -631,14 +625,14 @@ export default {
           "id": "sms-qc-water_leak_detector",
           "type": "alarm",
           "valuestatus": -1
-      }],//左侧第一列
+        }],//左侧第一列
       leftTwo: [
         {
           "name": "PM10工况流量",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-pm10_working_flow",
+          "id": "5030iq-01-pm10-flow",
           "type": "value",
           "valuestatus": -1
         },
@@ -647,25 +641,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-pm2_5_working_flow",
-          "type": "value",
-          "valuestatus": -1
-        },
-        {
-          "name": "PM10标况流量",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-pm10_std_flow",
-          "type": "value",
-          "valuestatus": -1
-        },
-        {
-          "name": "PM2.5标况流量",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-pm2_5_std_flow",
+          "id": "5030iq-01-pm25-flow",
           "type": "value",
           "valuestatus": -1
         },
@@ -674,7 +650,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-so2-flow",
+          "id": "43i-01-so2-flow",
           "type": "value",
           "valuestatus": -1
         },{
@@ -682,7 +658,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-o3-flow",
+          "id": "49i-01-o3-flow_a",
           "type": "value",
           "valuestatus": -1
         },{
@@ -690,7 +666,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-no2-flow",
+          "id": "42i-01-no2-flow",
           "type": "value",
           "valuestatus": -1
         },{
@@ -698,7 +674,25 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-co-flow",
+          "id": "48i-01-co-flow",
+          "type": "value",
+          "valuestatus": -1
+        },
+        {
+          "name": "校准仪零气流量",
+          "value": null,
+          "unit": null,
+          "status": -1,
+          "id": "146i-01-zflow_actual",
+          "type": "value",
+          "valuestatus": -1
+        },
+        {
+          "name": "校准仪供应气体流量",
+          "value": null,
+          "unit": null,
+          "status": -1,
+          "id": "146i-01-gflow_actual",
           "type": "value",
           "valuestatus": -1
         }
@@ -800,7 +794,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-so2_gas_temp",
+          "id": "tramc500-so2-branch_pipe_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -808,7 +802,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-co_gas_temp",
+          "id": "tramc500-co-branch_pipe_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -816,7 +810,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-o3_gas_temp",
+          "id": "tramc500-o3-branch_pipe_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -824,7 +818,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-nox_gas_temp",
+          "id": "tramc500-no2-branch_pipe_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -885,22 +879,6 @@ export default {
           "unit": null,
           "status": -1,
           "id": "flying-wis-01-pressure",
-          "type": "value",
-          "valuestatus": -1
-        },{
-          "name": "24小时雨量",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "flying-wis-01-rainfall_24h",
-          "type": "value",
-          "valuestatus": -1
-        },{
-          "name": "太阳光总辐射",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "flying-wis-01-solar_radiation",
           "type": "value",
           "valuestatus": -1
         }
@@ -1110,7 +1088,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "xianhe-pm10-PM",
+          "id": "5030iq-01-pm10-pm",
           "type": "value",
           "affix":"10",
           "valuestatus": -1
@@ -1120,7 +1098,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "xianhe-pm2.5-PM",
+          "id": "5030iq-01-pm25-pm",
           "type": "value",
           "affix":"2.5",
           "valuestatus": -1
@@ -1130,7 +1108,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-co-co",
+          "id": "48i-01-co-co",
           "type": "value",
           "valuestatus": -1
         },
@@ -1139,7 +1117,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-so2-so2",
+          "id": "43i-01-so2-so2",
           "type": "value",
           "affix":"2",
           "valuestatus": -1
@@ -1149,7 +1127,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-o3-o3",
+          "id": "49i-01-o3-o3",
           "type": "value",
           "affix":"3",
           "valuestatus": -1
@@ -1159,7 +1137,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-no2-no",
+          "id": "42i-01-no2-no",
           "type": "value",
           "valuestatus": -1
         },
@@ -1168,7 +1146,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-no2-no2",
+          "id": "42i-01-no2-no2",
           "type": "value",
           "affix":"2",
           "valuestatus": -1
@@ -1178,7 +1156,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-no2-nox",
+          "id": "42i-01-no2-nox",
           "type": "value",
           "affix":"x",
           "valuestatus": -1
@@ -1190,7 +1168,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-co-co",
+          "id": "48i-01-co-co",
           "type": "value",
           "valuestatus": -1
         },
@@ -1199,7 +1177,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-o3-o3",
+          "id": "49i-01-o3-o3",
           "type": "value",
           "valuestatus": -1
         },
@@ -1208,7 +1186,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-no2-no2",
+          "id": "42i-01-no2-no2",
           "type": "value",
           "valuestatus": -1
         },
@@ -1217,7 +1195,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-so2-so2",
+          "id": "43i-01-so2-so2",
           "type": "value",
           "valuestatus": -1
         },
@@ -1226,7 +1204,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "xianhe-pm10-PM",
+          "id": "5030iq-01-pm10-pm",
           "type": "value",
           "valuestatus": -1
         },
@@ -1235,7 +1213,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "xianhe-pm2.5-PM",
+          "id": "5030iq-01-pm25-pm",
           "type": "value",
           "valuestatus": -1
         },
@@ -1244,7 +1222,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-calib-so2_std_gas_concentration",
+          "id": "146i-01-intern_temp",
           "type": "value",
           "valuestatus": -1
         },
@@ -1282,7 +1260,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_input_voltage",
+          "id": "hcups-01-input_voltage",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1290,7 +1268,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_output_voltage",
+          "id": "hcups-01-output_voltage",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1298,15 +1276,15 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_load_percent",
+          "id": "hcups-01-load_percent",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "UPS输入频率",
+          "name": "UPS输出频率",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_input_freq",
+          "id": "hcups-01-output_freq",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1314,7 +1292,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_battery_voltage",
+          "id": "hcups-01-ups_battery_voltage_status",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1322,15 +1300,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_battery_temp",
-          "type": "value",
-          "valuestatus": -1
-        },{
-          "name": "UPS状态",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-ups_status",
+          "id": "hcups-01-battery_temp",
           "type": "value",
           "valuestatus": -1
         },
@@ -1409,35 +1379,35 @@ export default {
       ],//中间底部左侧
       middleRightOne:[
         {
-          "name": "SO2换膜仪器位置",
+          "name": "SO2换膜仪器剩余量",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-so2_film_changer_status",
+          "id": "tramc500-so2-inventory",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "NOx换膜仪器位置",
+          "name": "NOx换膜仪器剩余量",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-nox_film_changer_status",
+          "id": "tramc500-no2-inventory",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "CO换膜仪器位置",
+          "name": "CO换膜仪器剩余量",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-co_film_changer_status",
+          "id": "tramc500-co-inventory",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "O3换膜仪器位置",
+          "name": "O3换膜仪器剩余量",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-o3_film_changer_status",
+          "id": "tramc500-o3-inventory",
           "type": "value",
           "valuestatus": -1
         }
@@ -1504,7 +1474,7 @@ export default {
       action: 'page_load',
       userAgent: navigator.userAgent
     });
-    
+
     // 恢复上次的首页显示模式
     const savedMode = getHomepageDisplayMode();
     if (savedMode === 'device-list') {
@@ -1514,7 +1484,7 @@ export default {
       this.isDeviceListMode = false;
       console.log('恢复大屏模式');
     }
-    
+
     // 监听主题变化
     this.updateThemeClass();
     this.themeObserver = new MutationObserver(() => {
@@ -1524,7 +1494,7 @@ export default {
       attributes: true,
       attributeFilter: ['class']
     });
-    
+
     //获取当前时间
     this.timeIntervalId1 = setInterval(() => {
       this.nowTime = date.currDate();
@@ -1532,7 +1502,7 @@ export default {
     // 获取实时数据
     this.timeIntervalId2 = setInterval(() => {
       getNowData().then(res => {
-        // console.log(res);
+        console.log(res);
         this.dataList = res.data;
         this.handleData3(res.data)
       });
@@ -1607,20 +1577,20 @@ export default {
     }, 5000);
   },
   beforeUnmount() {
-  // 清除所有定时器
-  if (this.timeIntervalId1) {
-    clearInterval(this.timeIntervalId1);
-  }
-  if (this.timeIntervalId2) {
-    clearInterval(this.timeIntervalId2);
-  }
-  if (this.timeIntervalId3) {
-    clearInterval(this.timeIntervalId3);
-  }
-  // 清理主题观察器
-  if (this.themeObserver) {
-    this.themeObserver.disconnect();
-  }
+    // 清除所有定时器
+    if (this.timeIntervalId1) {
+      clearInterval(this.timeIntervalId1);
+    }
+    if (this.timeIntervalId2) {
+      clearInterval(this.timeIntervalId2);
+    }
+    if (this.timeIntervalId3) {
+      clearInterval(this.timeIntervalId3);
+    }
+    // 清理主题观察器
+    if (this.themeObserver) {
+      this.themeObserver.disconnect();
+    }
   },
   created() {
     //let that = this;
@@ -1723,7 +1693,7 @@ export default {
         this.analysisData(item, data_dict);
       })
 
-    // 遍历 [key, value] 对
+      // 遍历 [key, value] 对
       for (const [key, value] of Object.entries(this.middleTwoDict)) {
         this.analysisData(value, data_dict);
       }
@@ -1847,24 +1817,26 @@ export default {
     },
     // 处理logo三次点击切换到设备管理模式
     handleLogoTripleClick() {
+      console.log('当前模式:', this.isDeviceListMode);
+
       // 记录页面访问状态
       recordPageVisit('/index', {
         timestamp: Date.now(),
         action: 'switch_to_device_list_mode',
         userAgent: navigator.userAgent
       });
-      
+
       // 添加页面切换动画效果
       this.$el.style.transition = 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
       this.$el.style.transform = 'translateX(-100%)';
       this.$el.style.opacity = '0.8';
-      
+
       ElMessage({
         message: '正在切换到设备管理模式...',
         type: 'info',
         duration: 1000
       });
-      
+
       // 延迟切换模式，让动画效果更自然
       setTimeout(() => {
         this.isDeviceListMode = true;
@@ -1876,7 +1848,7 @@ export default {
         this.$el.style.opacity = '1';
       }, 400);
     },
-    
+
     // 处理从设备管理模式返回大屏模式
     handleReturnToDashboard() {
       // 记录页面访问状态
@@ -1885,18 +1857,18 @@ export default {
         action: 'return_to_dashboard_mode',
         userAgent: navigator.userAgent
       });
-      
+
       // 添加页面切换动画效果
       this.$el.style.transition = 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
       this.$el.style.transform = 'translateX(100%)';
       this.$el.style.opacity = '0.8';
-      
+
       ElMessage({
         message: '正在返回大屏模式...',
         type: 'info',
         duration: 1000
       });
-      
+
       // 延迟切换模式，让动画效果更自然
       setTimeout(() => {
         this.isDeviceListMode = false;
@@ -1908,7 +1880,7 @@ export default {
         this.$el.style.opacity = '1';
       }, 400);
     },
-    
+
     // 更新主题类名
     updateThemeClass() {
       const container = this.$refs.container;
@@ -1920,12 +1892,12 @@ export default {
         }
       }
     },
-    
+
     // 处理设备数据更新
     handleDeviceDataUpdate(newDeviceData) {
       this.deviceData = newDeviceData;
     },
-    
+
     calculatePercentage(row){
       return (row.materialRemainCapacity / row.materialCapacity * 100).toFixed(1);
     },
