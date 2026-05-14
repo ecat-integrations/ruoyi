@@ -467,7 +467,7 @@
      <el-dialog
          title="人工核查任务参数设置"
          v-model="manualCheckOpen"
-         width="400px"
+         width="500px"
          append-to-body
          @close="handleManualCheckClose"
      >
@@ -509,6 +509,24 @@
            <el-input-number v-model.number="manualCheckForm.genGasConc" :min="0" :step="0.01" />
          </el-form-item>
 
+         <el-form-item prop="targetFlowLpm">
+           <template #label>
+             <span class="flow-form-label">目标流量</span>
+           </template>
+           <div class="flow-input-row">
+             <el-input-number
+               v-model.number="manualCheckForm.targetFlowLpm"
+               :min="0"
+               :max="50"
+               :step="0.1"
+               :precision="1"
+               controls-position="right"
+               class="flow-input-number"
+             />
+             <span class="flow-unit-suffix">L/min</span>
+           </div>
+         </el-form-item>
+
          <!--标准气入口-->
          <el-form-item label="标准气入口" prop="stdGasInPortName">
            <el-radio-group v-model="manualCheckForm.stdGasInPortName">
@@ -539,7 +557,7 @@
      <el-dialog
        title="质控任务参数设置"
        v-model="qualityControlOpen"
-       width="400px"
+       width="560px"
        append-to-body
        @close="handleQualityControlClose"
      >
@@ -547,13 +565,14 @@
          ref="qcFormRef"
          :model="qcForm"
          :rules="qcRules"
-         label-width="100px"
+         label-width="108px"
        >
          <el-form-item label="选择参数" prop="parameter">
            <el-select
              v-model="qcForm.parameter"
              placeholder="请选择参数"
              clearable
+             style="width: 100%"
            >
              <el-option
                v-for="item in qualityParameters"
@@ -564,11 +583,23 @@
            </el-select>
          </el-form-item>
 
-         <el-form-item label="质控类型" prop="qcType">
+         <el-form-item prop="qcType">
+           <template #label>
+             <span class="qc-type-label-with-tip">
+               质控类型
+               <el-tooltip placement="top-start" effect="dark" :show-after="200">
+                 <template #content>
+                   <div class="qc-type-tooltip-content">{{ qcTypeHelpText }}</div>
+                 </template>
+                 <el-icon class="qc-type-help-icon"><InfoFilled /></el-icon>
+               </el-tooltip>
+             </span>
+           </template>
            <el-select
              v-model="qcForm.qcType"
              placeholder="请选择质控类型"
              clearable
+             style="width: 100%"
            >
              <el-option
                v-for="item in qualityControlTypes"
@@ -579,13 +610,30 @@
            </el-select>
          </el-form-item>
 
-         <el-form-item label="质控浓度" prop="qcConcentration">
-           <el-input-number
-             v-model.number="qcForm.qcConcentration"
-             placeholder="请输入质控浓度"
-             :min="0"
-             precision="2"
-           />
+         <el-form-item
+           v-if="isQcZeroOrSpanFixedConcentration"
+           label="质控浓度"
+           prop="qcConcentration"
+         >
+           <el-input :model-value="qcFixedConcentrationLabel" readonly disabled />
+         </el-form-item>
+
+         <el-form-item prop="targetFlowLpm">
+           <template #label>
+             <span class="flow-form-label">目标流量</span>
+           </template>
+           <div class="flow-input-row">
+             <el-input-number
+               v-model.number="qcForm.targetFlowLpm"
+               :min="0"
+               :max="50"
+               :step="0.1"
+               :precision="1"
+               controls-position="right"
+               class="flow-input-number"
+             />
+             <span class="flow-unit-suffix">L/min</span>
+           </div>
          </el-form-item>
        </el-form>
 
@@ -1050,6 +1098,10 @@ const manualCheckRules = ref({
       trigger: 'blur'
     }
   ],
+  targetFlowLpm: [
+    { required: true, message: '目标流量不能为空', trigger: 'blur' },
+    { type: 'number', min: 0, max: 50, message: '流量范围 0~50 L/min', trigger: 'blur' }
+  ],
   stdGasInPortName: [
     { required: true, message: '请选择标准气入口方式', trigger: 'change' }
   ],
@@ -1060,12 +1112,14 @@ const manualCheckOpen = ref(false);
 
 // 表单数据对象
 const manualCheckForm = ref({
+  triggerType: '1',
   gas: '',
   genGasTime: null,
   readDataCount: null,
   readDataSpan: null,
   genGasConc: null,
-  stdGasInPortName: '跨度检查'
+  stdGasInPortName: '跨度检查',
+  targetFlowLpm: 4.0
 });
 
 // 将 crontab（Quartz）周几数字转换为 cronstrue 格式
@@ -1145,6 +1199,113 @@ function parseInvokeTargetParams(invokeTarget) {
   };
 }
 
+/** 质控 invokeTarget：正确格式为 4 段（parameter, qcType, calculatedValue, targetFlowLpm），首参触发类型由 Quartz 注入，勿写入括号内。兼容旧版 3 段及误写入触发的串。 */
+function normalizeQualityControlInvokeParams(vals) {
+  const n = vals.length;
+  if (n >= 5 && (vals[0] === '0' || vals[0] === '1')) {
+    return {
+      triggerType: vals[0],
+      parameter: vals[1] || '',
+      qcType: vals[2] || '',
+      conc: vals[3] ?? '',
+      flow: vals[4] ?? ''
+    };
+  }
+  if (n === 4 && (vals[0] === '0' || vals[0] === '1')) {
+    return {
+      triggerType: vals[0],
+      parameter: vals[1] || '',
+      qcType: vals[2] || '',
+      conc: vals[3] ?? '',
+      flow: ''
+    };
+  }
+  if (n === 4) {
+    return {
+      triggerType: '1',
+      parameter: vals[0] || '',
+      qcType: vals[1] || '',
+      conc: vals[2] ?? '',
+      flow: vals[3] ?? ''
+    };
+  }
+  if (n >= 5) {
+    return {
+      triggerType: '1',
+      parameter: vals[0] || '',
+      qcType: vals[1] || '',
+      conc: vals[2] ?? '',
+      flow: vals[3] ?? ''
+    };
+  }
+  return {
+    triggerType: '1',
+    parameter: vals[0] || '',
+    qcType: vals[1] || '',
+    conc: vals[2] ?? '',
+    flow: ''
+  };
+}
+
+function formatQcInvokeConcentrationDisplay(parameter, concRaw) {
+  if (concRaw === '' || concRaw == null) return '-';
+  const n = parseFloat(concRaw);
+  if (Number.isNaN(n)) return String(concRaw);
+  if (parameter === 'CO') return `${n} ppm`;
+  return `${(n * 1000).toFixed(3)} ppb`;
+}
+
+/** 人工核查：括号内应为 7 段（gas…targetFlowLpm），首参由 Quartz 注入。兼容误写 8 段（首段 0/1）及旧版 6 段无流量。 */
+function splitManualCheckParamValues(vals) {
+  const n = vals.length;
+  if (n >= 8 && (vals[0] === '0' || vals[0] === '1')) {
+    return {
+      triggerType: vals[0] || '1',
+      gas: vals[1] || '',
+      genGasTime: vals[2],
+      readDataCount: vals[3],
+      readDataSpan: vals[4],
+      genGasConc: vals[5],
+      stdGasInPortName: vals[6] || '跨度检查',
+      targetFlowLpm: vals[7]
+    };
+  }
+  if (n === 7 && (vals[0] === '0' || vals[0] === '1')) {
+    return {
+      triggerType: vals[0],
+      gas: vals[1] || '',
+      genGasTime: vals[2],
+      readDataCount: vals[3],
+      readDataSpan: vals[4],
+      genGasConc: vals[5],
+      stdGasInPortName: vals[6] || '跨度检查',
+      targetFlowLpm: null
+    };
+  }
+  if (n >= 7) {
+    return {
+      triggerType: '1',
+      gas: vals[0] || '',
+      genGasTime: vals[1],
+      readDataCount: vals[2],
+      readDataSpan: vals[3],
+      genGasConc: vals[4],
+      stdGasInPortName: vals[5] || '跨度检查',
+      targetFlowLpm: vals[6]
+    };
+  }
+  return {
+    triggerType: '1',
+    gas: vals[0] || '',
+    genGasTime: vals[1],
+    readDataCount: vals[2],
+    readDataSpan: vals[3],
+    genGasConc: vals[4],
+    stdGasInPortName: vals[5] || '跨度检查',
+    targetFlowLpm: null
+  };
+}
+
 // 解析人工核查任务参数
 function parseManualCheckParams(invokeTarget) {
   const parsed = parseInvokeTargetParams(invokeTarget);
@@ -1152,28 +1313,32 @@ function parseManualCheckParams(invokeTarget) {
     return null;
   }
 
-  const [gas, genGasTime, readDataCount, readDataSpan, genGasConc, stdGasInPortName] = parsed.paramValues;
+  const s = splitManualCheckParamValues(parsed.paramValues);
+  const gas = s.gas;
 
-  // 处理气体浓度单位转换：后台存储的是ppm，需要转换为前端显示的ppb
+  // 处理气体浓度单位转换：后台存储 ppm，前端表单为 CO 用 ppm，其余用 ppb
   let displayConcentration = null;
-  if (genGasConc) {
-    const ppmValue = parseFloat(genGasConc);
+  if (s.genGasConc != null && s.genGasConc !== '') {
+    const ppmValue = parseFloat(s.genGasConc);
     if (gas === 'CO') {
-      // CO气体：直接显示ppm值
       displayConcentration = ppmValue;
     } else {
-      // SO2/NO2/O3气体：将ppm转换为ppb显示 (1ppm = 1000ppb)
       displayConcentration = ppmValue * 1000;
     }
   }
 
   return {
+    triggerType: s.triggerType || '1',
     gas: gas || '',
-    genGasTime: genGasTime ? parseInt(genGasTime) : null,
-    readDataCount: readDataCount ? parseInt(readDataCount) : null,
-    readDataSpan: readDataSpan ? parseInt(readDataSpan) : null,
+    genGasTime: s.genGasTime ? parseInt(s.genGasTime, 10) : null,
+    readDataCount: s.readDataCount ? parseInt(s.readDataCount, 10) : null,
+    readDataSpan: s.readDataSpan ? parseInt(s.readDataSpan, 10) : null,
     genGasConc: displayConcentration,
-    stdGasInPortName: stdGasInPortName || '跨度检查'
+    stdGasInPortName: s.stdGasInPortName || '跨度检查',
+    targetFlowLpm:
+      s.targetFlowLpm != null && s.targetFlowLpm !== ''
+        ? parseFloat(s.targetFlowLpm)
+        : 4.0
   };
 }
 
@@ -1184,12 +1349,18 @@ function parseQualityControlParams(invokeTarget) {
     return null;
   }
 
-  const [parameter, qcType, qcConcentration] = parsed.paramValues;
+  const norm = normalizeQualityControlInvokeParams(parsed.paramValues);
+  const qcConcentration =
+    norm.conc !== '' && norm.conc != null ? parseFloat(norm.conc) : null;
+  const targetFlowLpm =
+    norm.flow !== '' && norm.flow != null ? parseFloat(norm.flow) : 4.0;
 
   return {
-    parameter: parameter || '',
-    qcType: qcType || '',
-    qcConcentration: qcConcentration ? parseFloat(qcConcentration) : null
+    triggerType: norm.triggerType || '1',
+    parameter: norm.parameter || '',
+    qcType: norm.qcType || '',
+    qcConcentration,
+    targetFlowLpm
   };
 }
 
@@ -1226,24 +1397,28 @@ function handleManualCheckOpen() {
   const existingParams = parseManualCheckParams(form.value.invokeTarget);
 
   manualCheckForm.value = existingParams || {
+    triggerType: '1',
     gas: '',
     genGasTime: null,
     readDataCount: null,
     readDataSpan: null,
     genGasConc: null,
-    stdGasInPortName: '跨度检查'
+    stdGasInPortName: '跨度检查',
+    targetFlowLpm: 4.0
   };
   manualCheckOpen.value = true;
 }
 
 function handleManualCheckClose() {
   manualCheckForm.value = {
+    triggerType: '1',
     gas: '',
     genGasTime: null,
     readDataCount: null,
     readDataSpan: null,
     genGasConc: null,
-    stdGasInPortName: '跨度检查'
+    stdGasInPortName: '跨度检查',
+    targetFlowLpm: 4.0
   };
 }
 
@@ -1389,24 +1564,20 @@ function formatConcentrationDisplay(concentration, gasType) {
 }
 
 function handleManualCheckSubmit(params) {
-  const { gas, genGasTime, readDataCount, readDataSpan, genGasConc, stdGasInPortName } = params;
-  // 所有参数转为字符串
+  const { gas, genGasTime, readDataCount, readDataSpan, genGasConc, stdGasInPortName, targetFlowLpm } = params;
   const strGenGasTime = genGasTime?.toString() || '';
   const strReadDataCount = readDataCount?.toString() || '';
   const strReadDataSpan = readDataSpan?.toString() || '';
 
-  // 处理气体浓度单位转换：CO保持ppm，SO2/NO2/O3从ppb转换为ppm
   let convertedConcentration;
   if (gas === 'CO') {
-    // CO气体：直接使用输入的ppm值
     convertedConcentration = parseFloat(genGasConc)?.toFixed(3);
   } else {
-    // SO2/NO2/O3气体：将ppb转换为ppm (1ppm = 1000ppb)
     convertedConcentration = (parseFloat(genGasConc) / 1000)?.toFixed(3);
   }
 
-  // 构建 invokeTarget 调用字符串，包含新参数
-  form.value.invokeTarget = `qualityControlCustomTask.run('${gas}', '${strGenGasTime}', '${strReadDataCount}', '${strReadDataSpan}', '${convertedConcentration}', '${stdGasInPortName}')`;
+  const flowStr = targetFlowLpm != null && targetFlowLpm !== '' ? String(targetFlowLpm) : '';
+  form.value.invokeTarget = `qualityControlCustomTask.run('${gas}', '${strGenGasTime}', '${strReadDataCount}', '${strReadDataSpan}', '${convertedConcentration}', '${stdGasInPortName}', '${flowStr}')`;
 }
 
 // 任务组名称映射
@@ -1450,6 +1621,8 @@ const PARAM_MAPPING = {
   'parameter': '监测参数',
   'qcType': '质控类型',
   'qcConcentration': '质控浓度',
+  'triggerType': '触发方式',
+  'targetFlowLpm': '目标流量',
   // 生成质控报告任务
   'beginTime': '开始时间',
 
@@ -1491,13 +1664,13 @@ const PARAM_MAPPING = {
 
 // 参数位置映射表（按任务类型和参数索引绑定名称）
 const PARAM_ORDER_MAPPING = {
-  // 人工核查任务：qualityControlCustomTask.run(gas, genGasTime, readDataCount, readDataSpan, genGasConc, stdGasInPortName)
+  // 人工核查：括号内 7 段，不含 Quartz 注入的触发类型
   'qualityControlCustomTask.run': [
-    'gas', 'genGasTime', 'readDataCount', 'readDataSpan', 'genGasConc', "stdGasInPortName"
+    'gas', 'genGasTime', 'readDataCount', 'readDataSpan', 'genGasConc', 'stdGasInPortName', 'targetFlowLpm'
   ],
-  // 质控任务：qualityControlTask.run(parameter, qcType, qcConcentration)
+  // 质控任务：括号内 4 段（parameter, qcType, qcConcentration, targetFlowLpm）
   'qualityControlTask.run': [
-    'parameter', 'qcType', 'qcConcentration'
+    'parameter', 'qcType', 'qcConcentration', 'targetFlowLpm'
   ],
   // 巡检任务：patrolTask.run(patrolType)
   'patrolTask.run': [
@@ -1605,6 +1778,41 @@ const parseInvokeTarget = (target) => {
   // 2. 根据方法名获取参数名称列表（按位置）
   const paramNames = PARAM_ORDER_MAPPING[methodName] || [];
 
+  if (methodName === 'qualityControlTask.run') {
+    const norm = normalizeQualityControlInvokeParams(paramValues);
+    const lines = [
+      `${PARAM_MAPPING.parameter}：${norm.parameter}`,
+      `${PARAM_MAPPING.qcType}：${QC_TYPE_MAPPING[norm.qcType] || norm.qcType}`,
+      `${PARAM_MAPPING.qcConcentration}：${formatQcInvokeConcentrationDisplay(norm.parameter, norm.conc)}`
+    ];
+    if (norm.flow !== '' && norm.flow != null) {
+      lines.push(`${PARAM_MAPPING.targetFlowLpm}：${norm.flow} L/min`);
+    }
+    return `${mappedMethod}→(\n${lines.join('，\n')}\n)`;
+  }
+
+  if (methodName === 'qualityControlCustomTask.run') {
+    const s = splitManualCheckParamValues(paramValues);
+    const gas = s.gas;
+    const concPpm = parseFloat(s.genGasConc);
+    let concDisp = String(s.genGasConc ?? '');
+    if (!Number.isNaN(concPpm)) {
+      concDisp = gas === 'CO' ? `${concPpm.toFixed(3)} ppm` : `${(concPpm * 1000).toFixed(3)} ppb`;
+    }
+    const lines = [
+      `${PARAM_MAPPING.gas}：${GAS_TYPE_MAPPING[gas] || gas}`,
+      `${PARAM_MAPPING.genGasTime}：${s.genGasTime} 秒`,
+      `${PARAM_MAPPING.readDataCount}：${s.readDataCount} 次`,
+      `${PARAM_MAPPING.readDataSpan}：${s.readDataSpan} 秒`,
+      `${PARAM_MAPPING.genGasConc}：${concDisp}`,
+      `${PARAM_MAPPING.stdGasInPortName}：${s.stdGasInPortName}`
+    ];
+    if (s.targetFlowLpm != null && s.targetFlowLpm !== '') {
+      lines.push(`${PARAM_MAPPING.targetFlowLpm}：${s.targetFlowLpm} L/min`);
+    }
+    return `${mappedMethod}→(\n${lines.join('，\n')}\n)`;
+  }
+
   // 3. 解析每个参数的名称和值
   const parsedParams = paramValues.map((value, index) => {
     // 获取参数名称（从映射表中按位置取，无则显示“参数N”）
@@ -1613,31 +1821,7 @@ const parseInvokeTarget = (target) => {
 
     // 映射参数值（根据任务类型）
     let mappedValue = value;
-    if (methodName === 'qualityControlCustomTask.run') {
-      // 人工核查任务：第0个参数是气体类型
-      // parseInvokeTarget 中针对 ManualCheck 类型做增强
-      if (index === 0) mappedValue = GAS_TYPE_MAPPING[value] || value;
-      if (index === 1) mappedValue = `${value} 秒`;
-      if (index === 2) mappedValue = `${value} 次`;
-      if (index === 3) mappedValue = `${value} 秒`;
-      if (index === 4) {
-        // 根据气体类型显示正确的浓度单位
-        const gasType = paramValues[0]; // 第0个参数是气体类型
-        const concentration = parseFloat(value);
-        if (gasType === 'CO') {
-          mappedValue = `${concentration.toFixed(3)} ppm`;
-        } else {
-          // SO2/NO2/O3显示ppb单位 (后台存储ppm，显示时转换为ppb)
-          mappedValue = `${(concentration * 1000).toFixed(3)} ppb`;
-        }
-      }
-      if (index === 5) mappedValue = value;
-    } else if (methodName === 'qualityControlTask.run') {
-      // 质控任务：第1个参数是质控类型
-      if (index === 1) mappedValue = QC_TYPE_MAPPING[value] || value;
-      // 第0个参数是监测参数（如PM2.5）
-      if (index === 0) mappedValue = value; // 直接显示参数值（如"PM2.5"）
-    } else if (methodName === 'patrolTask.run') {
+    if (methodName === 'patrolTask.run') {
       // 巡检任务：第0个参数是巡检类型
       mappedValue = PATROL_TYPE_MAPPING[value] || value;
     } else if (methodName === 'maintenanceTask.run') {
@@ -1707,14 +1891,57 @@ const qualityControlTypes = ref([
 ]);
 // 新增质控表单数据
 const qcForm = ref({
+  triggerType: '1',
   parameter: '',
   qcType: '',
   qcConcentration: null,
+  targetFlowLpm: 4.0
 });
 const qcRules = ref({
   parameter: [{ required: true, message: '参数不能为空', trigger: 'change' }],
   qcType: [{ required: true, message: '质控类型不能为空', trigger: 'change' }],
-  qcConcentration: [{ required: true, message: '质控浓度不能为空', trigger: 'blur' }],
+  targetFlowLpm: [
+    { required: true, message: '目标流量不能为空', trigger: 'blur' },
+    { type: 'number', min: 0, max: 50, message: '流量范围 0~50 L/min', trigger: 'blur' }
+  ]
+});
+const isQcZeroOrSpanFixedConcentration = computed(() => {
+  const t = qcForm.value.qcType;
+  return t === 'zero_check' || t === 'span_check';
+});
+const qcFixedConcentrationLabel = computed(() => {
+  const p = qcForm.value.parameter;
+  const t = qcForm.value.qcType;
+  if (t === 'zero_check') return p === 'CO' ? '0 ppm' : '0 ppb';
+  if (t === 'span_check') return p === 'CO' ? '40 ppm' : '400 ppb';
+  return '';
+});
+
+/** 依据 HJ818 附录 B/C 思路整理的质控类型说明（公式为常用简化表述） */
+const qcTypeHelpText = computed(() => {
+  const t = qcForm.value.qcType;
+  const map = {
+    zero_check:
+      '零点漂移检查：通入零气，稳定后记录响应得到零点漂移量 ZD，结合质控图判断；合格标准不超 ±10 ppb（ CO 为 ±1 ppm ），校准限值25ppb，（ CO 为 ±2.5 ppm）',
+    span_check:
+      '跨度漂移检查：通入约为满量程 80% 的标气（SO₂/NO₂/O₃ 常用 400 ppb、CO 常用 40 ppm，随仪器量程而定），记录响应 S′。已调零时跨度漂移 SD（%）可简化为 SD≈(S′−S)/S×100（S 为理论跨度）。合格标准不超 ±5% ，校准限值 ±5%~±10% ，超 10% 需检查仪器 。',
+    multi_check:
+      '多点校准：依次通入约 0%、10%、20%、40%、60%、80% 满量程标气；开放光程仪器需将钢瓶浓度 Ct 按 Ce=Ct×Lc/L 换算为等效浓度 Ce（Lc 为检查池长度，L 为监测光程）。用最小二乘拟合曲线，要求相关系数 r>0.999，斜率 a 在 0.95～1.05，截距在满量程 ±1% 内；不合格须保养检修后重校。',
+    precision_check:
+      '精密度审核：通入同一浓度标气（常用约满量程 20% 或接近实际浓度），先通零气至零点附近，再通气重复测量至少 6 次；由示值计算标准差 SD 与相对标准偏差 RSD=SD/Ȳ×100%，以 RSD 表征重复性。',
+    accuracy_check:
+      '准确度审核：依次通入约 10%、20%、40%、60%、80% 满量程标气，记录示值 Yi 与标称 Xi，计算各点相对误差 di=|Yi−Xi|/Xi×100% 及平均相对误差 D；也可结合多点校准曲线的斜率、截距与 r 综合评价准确度。',
+    calibration:
+      '校准设备量值传递：对臭氧校准设备的量值溯源和传递，用传递标准对臭氧监测仪做多点校准，绘制校准曲线，验证仪器线性。',
+    particle_quality_control:
+      '颗粒物自动质控：按规范对颗粒物监测设备开展周期性检查与漂移控制，保证采样与测量环节满足质控要求。',
+    conversion_check:
+      '转换效率核查：按设备 GPT/转换流程检查 NO–O₃ 等转换效率是否达标，保证 NO₂ 等衍生量测量准确。'
+  };
+  return (
+    map[t] ||
+    '请先选择质控类型。说明依据HJ818标准（四气态）HJ817标准（颗粒物）'
+  );
 });
 const qualityControlOpen = ref(false);
 // 新增巡检类型相关数据
@@ -1839,19 +2066,19 @@ const aggregateRules = ref({
 const aggregateOpen = ref(false);
 const aggregateTypes = ref([
   { value: '1minute', label: '1分钟' },
-  { value: '2minute', label: '2分钟' },
-  { value: '3minute', label: '3分钟' },
-  { value: '4minute', label: '4分钟' },
+  // { value: '2minute', label: '2分钟' },
+  // { value: '3minute', label: '3分钟' },
+  // { value: '4minute', label: '4分钟' },
   { value: '5minute', label: '5分钟' },
   { value: '10minute', label: '10分钟' },
   { value: '15minute', label: '15分钟' },
-  { value: '20minute', label: '20分钟' },
-  { value: '30minute', label: '30分钟' },
-  { value: '45minute', label: '45分钟' },
+  // { value: '20minute', label: '20分钟' },
+  // { value: '30minute', label: '30分钟' },
+  // { value: '45minute', label: '45分钟' },
   { value: '1hour', label: '1小时' },
-  { value: '2hour', label: '2小时' },
-  { value: '3hour', label: '3小时' },
-  { value: '4hour', label: '4小时' },
+  // { value: '2hour', label: '2小时' },
+  // { value: '3hour', label: '3小时' },
+  // { value: '4hour', label: '4小时' },
   { value: '1day', label: '1天' },
 ]);
 const partitionTableList = ref(["realdata","his_data"]);
@@ -1945,14 +2172,14 @@ const filteredRuleList = computed(() => {
 const { form, queryParams, rules } = toRefs(data);
 
 const jobTypeDict = {
-  "QualityControl": (param,type,concentration) =>
-      `qualityControlTask.run('${param}','${type}','${concentration}')`,
+  "QualityControl": (param, type, concentration, targetFlowLpm) =>
+      `qualityControlTask.run('${param}','${type}','${concentration}','${targetFlowLpm ?? ''}')`,
   "Patrol": (param) =>
       `patrolTask.run('${param}')`,
   "Maintenance": (param) =>
       `maintenanceTask.run('${param}')`,
-  "ManualCheck": (gas, genGasTime, readDataCount, readDataSpan, genGasConc, stdGasInPortName) =>
-      `qualityControlCustomTask.run('${gas}', ${genGasTime}, ${readDataCount}, ${readDataSpan}, ${genGasConc}, '${stdGasInPortName}')`,
+  "ManualCheck": (gas, genGasTime, readDataCount, readDataSpan, genGasConc, stdGasInPortName, targetFlowLpm) =>
+      `qualityControlCustomTask.run('${gas}', '${genGasTime}', '${readDataCount}', '${readDataSpan}', '${genGasConc}', '${stdGasInPortName}', '${targetFlowLpm ?? ''}')`,
   "aggregationDataTask": (aggregateType, aggregateStartTime, aggregateEndTime, aggregateIsTime, minutes, deviceId, attributeId) =>
       `aggregationDataTask.run('${aggregateType}', '${aggregateStartTime}', '${aggregateEndTime}', ${aggregateIsTime}, ${minutes}, '${deviceId}', '${attributeId}')`,
   "CreatePartitionTablesTask": (table,startWeek, endWeek) =>
@@ -2202,17 +2429,21 @@ function setupJobNameWatch() {
     () => form.value.jobGroup,
     // 若有其他影响 parseInvokeTarget 结果的参数，也添加到这里
     () => manualCheckForm.value,
+    () => manualCheckForm.value.triggerType,
     () => manualCheckForm.value.gas,
     () => manualCheckForm.value.genGasConc,
     () => manualCheckForm.value.genGasTime,
     () => manualCheckForm.value.readDataCount,
     () => manualCheckForm.value.readDataSpan,
     () => manualCheckForm.value.stdGasInPortName,
+    () => manualCheckForm.value.targetFlowLpm,
     // 质控任务参数监听
     () => qcForm.value,
+    () => qcForm.value.triggerType,
     () => qcForm.value.parameter,
     () => qcForm.value.qcConcentration,
     () => qcForm.value.qcType,
+    () => qcForm.value.targetFlowLpm,
     // 巡检任务参数监听
     () => patrolForm.value,
     () => patrolForm.value.patrolType,
@@ -2239,9 +2470,11 @@ function handleQualityControlOpen() {
   const existingParams = parseQualityControlParams(form.value.invokeTarget);
 
   qcForm.value = existingParams || {
+    triggerType: '1',
     parameter: '',
     qcType: '',
     qcConcentration: null,
+    targetFlowLpm: 4.0
   };
   qualityControlOpen.value = true;
 }
@@ -2249,9 +2482,11 @@ function handleQualityControlOpen() {
 // 关闭对话框时重置表单
 function handleQualityControlClose() {
   qcForm.value = {
+    triggerType: '1',
     parameter: '',
     qcType: '',
     qcConcentration: null,
+    targetFlowLpm: 4.0
   };
 }
 
@@ -2270,13 +2505,29 @@ function handleQualityControlConfirm() {
   });
 }
 
+function qcCalculatedValueForInvoke(parameter, qcType, qcConcentration) {
+  if (qcType === 'zero_check') return '0';
+  if (qcType === 'span_check') return parameter === 'CO' ? '40' : '0.4';
+  const noUserConcentrationTypes = new Set([
+    'multi_check',
+    'particle_quality_control',
+    'conversion_check',
+    'calibration',
+    'precision_check',
+    'accuracy_check'
+  ]);
+  if (noUserConcentrationTypes.has(qcType)) return '0';
+  if (qcConcentration === null || qcConcentration === undefined || qcConcentration === '') return '';
+  return String(qcConcentration);
+}
+
 // 预留的自定义逻辑方法
 function handleQualityControlSubmit(params) {
-  let parameter = params.parameter;
-  let qcType = params.qcType;
-  let qcConcentration = params.qcConcentration;
-  // 在这里编写具体的业务逻辑
-  let cmd = jobTypeDict["QualityControl"](parameter, qcType, qcConcentration)
+  const parameter = params.parameter;
+  const qcType = params.qcType;
+  const calculatedValue = qcCalculatedValueForInvoke(parameter, qcType, params.qcConcentration);
+  const targetFlowLpm = params.targetFlowLpm != null && params.targetFlowLpm !== '' ? String(params.targetFlowLpm) : '';
+  const cmd = jobTypeDict['QualityControl'](parameter, qcType, calculatedValue, targetFlowLpm);
   console.log('质控参数提交:', params);
   console.log('质控参数提交:', cmd);
   form.value.invokeTarget = cmd;
@@ -2780,5 +3031,47 @@ function handleSortChange({ column, prop, order }) {
 }
 .valid-cron, .valid-invoke {
   color: green;
+}
+.qc-type-label-with-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.qc-type-help-icon {
+  cursor: help;
+  color: var(--el-color-info);
+  font-size: 15px;
+}
+.qc-type-tooltip-content {
+  max-width: 400px;
+  line-height: 1.55;
+  font-size: 13px;
+  white-space: normal;
+}
+.flow-form-label {
+  white-space: nowrap;
+}
+.flow-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 100%;
+}
+.flow-input-row :deep(.flow-input-number) {
+  flex: 1;
+  min-width: 120px;
+  max-width: 300px;
+}
+.flow-input-row :deep(.flow-input-number .el-input__wrapper) {
+  width: 100%;
+}
+.flow-unit-suffix {
+  flex-shrink: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+  line-height: 1;
 }
 </style>

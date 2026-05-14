@@ -29,7 +29,14 @@ public class QualityControlTask
 
     private static final Logger log = LoggerFactory.getLogger(QualityControlTask.class);
 
-    public void run(String triggerType, String parameter, String qualityControlType, String calculatedValue){
+    public void run(String triggerType, String parameter, String qualityControlType, String calculatedValue) {
+        run(triggerType, parameter, qualityControlType, calculatedValue, null);
+    }
+
+    /**
+     * @param targetFlowLpm 目标总流量 L/min（0–50），可为 null 表示不按任务覆盖流量
+     */
+    public void run(String triggerType, String parameter, String qualityControlType, String calculatedValue, String targetFlowLpm){
 
         IIntegrationTaskManagement envQualityControlTask = (IIntegrationTaskManagement) core.getIntegrationRegistry()
                 .getIntegration("integration-env-quality-control-manager");
@@ -49,6 +56,9 @@ public class QualityControlTask
         parameters.put("qualityControlType", qualityControlType);
         parameters.put("parameter", parameter);
         parameters.put("calculatedValue", Double.valueOf(calculatedValue));
+        if (targetFlowLpm != null && !targetFlowLpm.trim().isEmpty()) {
+            parameters.put("targetFlowLpm", Double.valueOf(targetFlowLpm.trim()));
+        }
 
         parameters.put("core", core);
         parameters.put("taskName", wantedTask.getTaskName());

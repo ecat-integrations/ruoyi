@@ -30,7 +30,13 @@ public class QualityControCustomTask
 
     public void run(String triggerType,
                     String gas, String stable_time, String read_data_times, String read_data_time_span,
-                    String gas_concentration, String stdGasInPortName){
+                    String gas_concentration, String stdGasInPortName) {
+        run(triggerType, gas, stable_time, read_data_times, read_data_time_span, gas_concentration, stdGasInPortName, null);
+    }
+
+    public void run(String triggerType,
+                    String gas, String stable_time, String read_data_times, String read_data_time_span,
+                    String gas_concentration, String stdGasInPortName, String targetFlowLpm){
 
         IIntegrationTaskManagement envQualityControlCustomTask = (IIntegrationTaskManagement) core.getIntegrationRegistry()
                 .getIntegration("integration-env-quality-control-manager");
@@ -48,6 +54,9 @@ public class QualityControCustomTask
         float genGasConc = Double.valueOf(gas_concentration).floatValue();
         parameters.put("genGasConc", genGasConc);
         parameters.put("stdGasInPortName", stdGasInPortName);
+        if (targetFlowLpm != null && !targetFlowLpm.trim().isEmpty()) {
+            parameters.put("targetFlowLpm", Double.valueOf(targetFlowLpm.trim()));
+        }
 
         parameters.put("core", core);
         parameters.put("taskName", wantedTask.getTaskName());
