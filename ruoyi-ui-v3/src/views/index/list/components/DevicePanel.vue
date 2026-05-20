@@ -5,6 +5,26 @@
         <h2 class="hidden-title" @click="handleTripleClick"> </h2>
       </div>
       <div class="panel-controls">
+        <!-- 设备类型筛选 -->
+        <div class="device-type-filters">
+          <div 
+            class="filter-item" 
+            :class="{ active: deviceTypeFilter.includes('physical') }"
+            @click="toggleFilter('physical')"
+          >
+            <el-icon size="16"><Monitor /></el-icon>
+            <span>物理设备</span>
+          </div>
+          <div 
+            class="filter-item" 
+            :class="{ active: deviceTypeFilter.includes('logical') }"
+            @click="toggleFilter('logical')"
+          >
+            <el-icon size="16"><Connection /></el-icon>
+            <span>逻辑设备</span>
+          </div>
+        </div>
+        
         <el-button
           type="primary"
           @click="$emit('open-orchestration')"
@@ -15,9 +35,9 @@
       </div>
     </div>
 
-    <div v-if="orderedDevices.length > 0" class="device-grid">
+    <div v-if="filteredDevices.length > 0" class="device-grid">
       <DeviceCard
-        v-for="(device, index) in orderedDevices"
+        v-for="(device, index) in filteredDevices"
         :key="device.deviceId"
         :device="device"
         :data-index="index"
@@ -46,7 +66,8 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
+import { Monitor, Connection } from '@element-plus/icons-vue'
 import DeviceCard from './DeviceCard.vue'
 import EmptyState from './EmptyState.vue'
 import ManualTagDialog from './ManualTagDialog.vue'
@@ -68,6 +89,66 @@ const { applyCachedOrder, handleDragEnd: saveDragEnd, moveDeviceToFirst } = useD
 
 // 应用缓存的排序顺序
 const orderedDevices = ref(applyCachedOrder(props.deviceData || []))
+
+// 设备类型筛选（从 localStorage 加载）
+const STORAGE_KEY = 'device_type_filter'
+const deviceTypeFilter = ref(['physical', 'logical']) // 默认全选
+
+// 从 localStorage 加载筛选配置
+onMounted(() => {
+  try {
+    const savedFilter = localStorage.getItem(STORAGE_KEY)
+    if (savedFilter) {
+      const parsed = JSON.parse(savedFilter)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        deviceTypeFilter.value = parsed
+      }
+    }
+  } catch (err) {
+    console.warn('加载设备类型筛选配置失败:', err)
+  }
+})
+
+// 根据筛选条件过滤设备
+const filteredDevices = computed(() => {
+  if (!orderedDevices.value || orderedDevices.value.length === 0) {
+    return []
+  }
+  
+  // 如果都没有选中，返回空数组
+  if (deviceTypeFilter.value.length === 0) {
+    return []
+  }
+  
+  return orderedDevices.value.filter(device => {
+    const deviceType = device.deviceType || 'physical' // 默认为物理设备
+    return deviceTypeFilter.value.includes(deviceType)
+  })
+})
+
+// 处理筛选变化，保存到 localStorage
+const handleFilterChange = (value) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
+  } catch (err) {
+    console.warn('保存设备类型筛选配置失败:', err)
+  }
+}
+
+// 切换单个筛选状态
+const toggleFilter = (type) => {
+  const index = deviceTypeFilter.value.indexOf(type)
+  if (index > -1) {
+    // 如果已选中，则取消（但至少保留一个）
+    if (deviceTypeFilter.value.length > 1) {
+      deviceTypeFilter.value.splice(index, 1)
+    }
+  } else {
+    // 如果未选中，则添加
+    deviceTypeFilter.value.push(type)
+  }
+  handleFilterChange(deviceTypeFilter.value)
+}
 
 // 监听设备数据变化，重新应用缓存顺序
 watch(
@@ -316,6 +397,55 @@ const handleReturnToDashboard = () => {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+/* 设备类型筛选器样式（模仿 DeviceCard footer 样式） */
+.device-type-filters {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+  background-color: rgba(144, 147, 153, 0.1);
+  color: #909399;
+}
+
+.filter-item:hover {
+  opacity: 0.8;
+}
+
+.filter-item.active[type="physical"],
+.filter-item.active:has(span:contains("物理设备")) {
+  background-color: rgba(64, 158, 255, 0.1);
+  color: #409eff;
+}
+
+.filter-item.active[type="logical"],
+.filter-item.active:has(span:contains("逻辑设备")) {
+  background-color: rgba(144, 89, 255, 0.1);
+  color: #9059ff;
+}
+
+/* 使用属性选择器的替代方案 */
+.filter-item:nth-child(1).active {
+  background-color: rgba(64, 158, 255, 0.1);
+  color: #409eff;
+}
+
+.filter-item:nth-child(2).active {
+  background-color: rgba(144, 89, 255, 0.1);
+  color: #9059ff;
 }
 
 .device-grid {

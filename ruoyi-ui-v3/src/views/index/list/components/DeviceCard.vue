@@ -57,6 +57,11 @@
       <div class="device-model">
         <span class="label">型号:</span> {{ device.deviceModel }}
       </div>
+      <div class="device-type-indicator" :class="deviceTypeClass">
+        <el-icon v-if="device.deviceType === 'physical'" size="16"><Monitor /></el-icon>
+        <el-icon v-else-if="device.deviceType === 'logical'" size="16"><Connection /></el-icon>
+        <span>{{ deviceTypeText }}</span>
+      </div>
     </div>
 
     <!-- 属性详情弹窗 -->
@@ -69,6 +74,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { Monitor, Connection } from '@element-plus/icons-vue'
 import AttributeItem from './AttributeItem.vue'
 import DeviceAttributeModal from './DeviceAttributeModal.vue'
 import { useDeviceStatus } from '../composables/useDeviceStatus'
@@ -244,6 +250,15 @@ const statusText = computed(() => {
   return textMap[status] || '离线'
 })
 const statusTextClass = computed(() => getDeviceStatusTextClass(props.device))
+
+// 设备类型相关计算属性
+const deviceTypeClass = computed(() => {
+  return props.device.deviceType === 'logical' ? 'type-logical' : 'type-physical'
+})
+
+const deviceTypeText = computed(() => {
+  return props.device.deviceType === 'logical' ? '逻辑设备' : '物理设备'
+})
 </script>
 
 <style scoped>
@@ -263,6 +278,7 @@ const statusTextClass = computed(() => getDeviceStatusTextClass(props.device))
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
+/* 设备状态样式（颜色表示在线/离线/报警） */
 .device-card.device-online {
   border-color: #67c23a;
   box-shadow: 0 2px 8px rgba(103, 194, 58, 0.2);
@@ -410,11 +426,36 @@ const statusTextClass = computed(() => getDeviceStatusTextClass(props.device))
   transition: background-color 0.3s ease, color 0.3s ease;
   margin-top: auto;
   border-radius: 0 0 8px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .label {
   font-weight: 700;
   color: #409eff;
   margin-right: 6px;
+}
+
+/* 设备类型指示器（footer 右侧） */
+.device-type-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.device-type-indicator.type-physical {
+  background-color: rgba(64, 158, 255, 0.1);
+  color: #409eff;
+}
+
+.device-type-indicator.type-logical {
+  background-color: rgba(144, 89, 255, 0.1);
+  color: #9059ff;
 }
 </style>
