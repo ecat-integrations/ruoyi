@@ -9,7 +9,6 @@ from pathlib import Path
 import time
 import sys
 import threading
-from queue import Queue
 import colorama
 
 # 初始化colorama用于彩色输出
@@ -20,11 +19,69 @@ MAX_WORKERS = 4  # 最大并行数
 SHOW_PROGRESS = True  # 是否显示进度条
 PROGRESS_BAR_LENGTH = 30  # 进度条长度
 
+# 底部固定进度条（并行构建阶段使用）
+console = None
+
+
+class BottomProgressBar:
+    """进度条固定在终端最底行，普通日志在其上方滚动"""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._line = ""
+        self._active = False
+        self._stop_event = threading.Event()
+
+    def log(self, message="", end="\n"):
+        with self._lock:
+            if self._active and self._line:
+                sys.stdout.write("\r\033[K")
+            sys.stdout.write(message)
+            if end:
+                sys.stdout.write(end)
+            if self._active and self._line:
+                sys.stdout.write(self._line)
+            sys.stdout.flush()
+
+    def set_line(self, line):
+        with self._lock:
+            self._line = line
+            if self._active:
+                sys.stdout.write("\r\033[K" + line)
+                sys.stdout.flush()
+
+    def start(self):
+        with self._lock:
+            self._active = True
+            sys.stdout.write("\n")
+            if self._line:
+                sys.stdout.write(self._line)
+            sys.stdout.flush()
+
+    def stop(self):
+        with self._lock:
+            self._active = False
+            self._line = ""
+            sys.stdout.write("\r\033[K")
+            sys.stdout.flush()
+
+    def request_stop(self):
+        self._stop_event.set()
+
+    def wait(self, timeout):
+        return self._stop_event.wait(timeout)
+
+    def should_stop(self):
+        return self._stop_event.is_set()
+
 def main():
+    global console
+    console = BottomProgressBar()
+
     # 获取脚本所在目录的父目录，即A目录
     script_dir = Path(__file__).resolve().parent
-    a_dir = script_dir.parent
-    search_dir = a_dir / "ecat-integrations"
+    proj_root = script_dir.parent.parent.parent
+    search_dir = proj_root / "ecat-integrations"
 
     # 确定npm路径
     npm_path = get_npm_path()
@@ -34,33 +91,33 @@ def main():
     print(f"开始搜索Vue项目...")
     print(f"搜索目录: {search_dir}")
 
-    # 递归查找所有以vue-modules结尾的目录，排除target目录
-    vue_module_dirs = find_vue_module_dirs(search_dir)
+    # 递归查找可构建的 vue-modules 目录（须含 package.json，排除 target 等）
+    all_modules = find_vue_module_dirs(search_dir)
 
-    if not vue_module_dirs:
-        print("未找到以vue-modules结尾的目录！")
+    if not all_modules:
+        print("未找到可构建的 Vue 模块目录（需为 *vue-modules 且含 package.json）！")
         return
 
-    print(f"搜索完成！共找到 {len(vue_module_dirs)} 个Vue模块目录。")
+    print(f"搜索完成！共找到 {len(all_modules)} 个Vue模块目录。")
 
     # 自动模式处理所有项目
     print(f"开始并行处理项目，最大并行数: {MAX_WORKERS}")
     a = time.time()
 
-    # 存储所有模块信息，用于状态统计
-    all_modules = find_vue_module_dirs(search_dir)
     total = len(all_modules)
 
-    # 启动进度显示线程
+    progress_thread = None
     if SHOW_PROGRESS:
-        progress_thread = threading.Thread(target=show_progress, args=(all_modules,))
-        progress_thread.daemon = True
+        console.start()
+        progress_thread = threading.Thread(
+            target=show_progress, args=(all_modules, console), name="progress"
+        )
         progress_thread.start()
 
     # 使用线程池并行处理项目
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         future_to_module = {
-            executor.submit(process_module, module, npm_path, all_modules): module
+            executor.submit(process_module, module, npm_path): module
             for module in all_modules
         }
 
@@ -71,14 +128,14 @@ def main():
                 future.result()
             except Exception as e:
                 module_name = module['name']
-                print(f"\n{colorama.Fore.RED}警告: 处理模块 {module_name} 时发生异常: {e}{colorama.Style.RESET_ALL}")
+                _log(f"{colorama.Fore.RED}警告: 处理模块 {module_name} 时发生异常: {e}{colorama.Style.RESET_ALL}")
                 module['status'] = 'failed'
                 module['message'] = str(e)
 
-    # 等待进度线程完成
-    if SHOW_PROGRESS:
-        # 发送结束信号
-        time.sleep(1)  # 等待最后一次更新
+    if SHOW_PROGRESS and progress_thread:
+        console.request_stop()
+        progress_thread.join(timeout=3)
+        console.stop()
 
     # 统计结果
     success = sum(1 for m in all_modules if m.get('status') == 'success')
@@ -134,36 +191,57 @@ def check_environment(npm_path):
         print(f"{colorama.Fore.RED}错误: 未找到npm。请确保已安装Node.js并配置好PATH环境变量。{colorama.Style.RESET_ALL}")
         return False
 
+SKIP_DIR_NAMES = frozenset({"target", "node_modules", ".git", "dist", "build"})
+
+
+def _module_display_name(vue_modules_dir: Path) -> str:
+    """从路径提取集成模块名，便于区分各 vue-modules 目录"""
+    parts = vue_modules_dir.parts
+    for i, part in enumerate(parts):
+        if part == "ecat-integrations" and i + 1 < len(parts):
+            return parts[i + 1]
+    return vue_modules_dir.name
+
+
 def find_vue_module_dirs(directory: Path):
-    """递归查找所有以vue-modules结尾的目录，排除target目录"""
+    """递归查找可构建的 vue-modules 目录（须含 package.json，排除 target 等）"""
     module_dirs = []
 
     if not directory.exists() or not directory.is_dir():
         return module_dirs
 
-    # 排除target目录
-    if directory.name == "target":
+    if directory.name in SKIP_DIR_NAMES:
         return []
 
-    # 检查当前目录是否以vue-modules结尾
+    # 仅收录含 package.json 的 vue-modules，避免空目录或 target 副本被计入后跳过
     if directory.name.endswith("vue-modules"):
-        module_dirs.append({
-            'path': directory,
-            'name': directory.name,
-            'status': 'pending',
-            'message': '',
-            'start_time': 0,
-            'end_time': 0
-        })
+        package_json = directory / "package.json"
+        if package_json.is_file():
+            module_dirs.append({
+                'path': directory.resolve(),
+                'name': _module_display_name(directory),
+                'status': 'pending',
+                'message': '',
+                'start_time': 0,
+                'end_time': 0
+            })
+            return module_dirs
 
-    # 递归检查所有子目录
     for item in directory.iterdir():
-        if item.is_dir():
+        if item.is_dir() and item.name not in SKIP_DIR_NAMES:
             module_dirs.extend(find_vue_module_dirs(item))
 
     return module_dirs
 
-def process_module(module_info, npm_path, all_modules):
+def _log(message):
+    """并行阶段日志：有进度条时写入其上方，否则直接 print"""
+    if SHOW_PROGRESS and console is not None:
+        console.log(message)
+    else:
+        print(message)
+
+
+def process_module(module_info, npm_path):
     """处理单个模块，执行npm install和npm run dev"""
     module_dir = module_info['path']
     module_name = module_info['name']
@@ -172,130 +250,94 @@ def process_module(module_info, npm_path, all_modules):
     try:
         # 标记开始处理
         module_info['status'] = 'processing'
-        print(f"\n{colorama.Fore.CYAN}开始处理模块: {module_name} (路径: {module_dir}){colorama.Style.RESET_ALL}")
+        _log(f"{colorama.Fore.CYAN}开始处理模块: {module_name}{colorama.Style.RESET_ALL}")
 
-        # 检查package.json是否存在
-        package_json = module_dir / "package.json"
-        if not package_json.exists():
-            module_info['status'] = 'skipped'
-            module_info['message'] = "缺少package.json文件"
-            return
-
-        # 执行npm install命令
-        print(f"{colorama.Fore.YELLOW}正在执行: npm install  in {module_name}{colorama.Style.RESET_ALL}")
+        _log(f"{colorama.Fore.YELLOW}正在执行: npm install  ({module_name}){colorama.Style.RESET_ALL}")
         run_command([npm_path, "install"], module_dir)
         install_time = time.time() - module_info['start_time']
-        print(f"{colorama.Fore.GREEN}模块 {module_name} 依赖安装完成！(耗时: {install_time:.2f}秒){colorama.Style.RESET_ALL}")
+        _log(f"{colorama.Fore.GREEN}模块 {module_name} 依赖安装完成 (耗时: {install_time:.2f}s){colorama.Style.RESET_ALL}")
 
-        # 执行npm run dev命令
-        print(f"{colorama.Fore.YELLOW}正在执行: npm run dev  in {module_name}{colorama.Style.RESET_ALL}")
+        _log(f"{colorama.Fore.YELLOW}正在执行: npm run dev  ({module_name}){colorama.Style.RESET_ALL}")
         run_command([npm_path, "run", "dev"], module_dir)
         build_time = time.time() - module_info['start_time']
-        print(f"{colorama.Fore.GREEN}模块 {module_name} 构建成功！(总耗时: {build_time:.2f}秒){colorama.Style.RESET_ALL}")
+        _log(f"{colorama.Fore.GREEN}模块 {module_name} 构建成功 (总耗时: {build_time:.2f}s){colorama.Style.RESET_ALL}")
 
         module_info['status'] = 'success'
         module_info['end_time'] = time.time()
 
     except subprocess.CalledProcessError as e:
         error_time = time.time() - module_info['start_time']
-        print(f"{colorama.Fore.RED}模块 {module_name} 执行命令失败！(耗时: {error_time:.2f}秒){colorama.Style.RESET_ALL}")
-        print(f"{colorama.Fore.RED}错误输出: {e.stderr}{colorama.Style.RESET_ALL}")
+        _log(f"{colorama.Fore.RED}模块 {module_name} 执行命令失败 (耗时: {error_time:.2f}s){colorama.Style.RESET_ALL}")
+        _log(f"{colorama.Fore.RED}错误输出: {e.stderr}{colorama.Style.RESET_ALL}")
         module_info['status'] = 'failed'
         module_info['message'] = f"命令失败: {e.stderr}"
         module_info['end_time'] = time.time()
     except Exception as e:
         error_time = time.time() - module_info['start_time']
-        print(f"{colorama.Fore.RED}处理模块 {module_name} 时发生未知错误！(耗时: {error_time:.2f}秒){colorama.Style.RESET_ALL}")
-        print(f"{colorama.Fore.RED}{e}{colorama.Style.RESET_ALL}")
+        _log(f"{colorama.Fore.RED}处理模块 {module_name} 时发生未知错误 (耗时: {error_time:.2f}s){colorama.Style.RESET_ALL}")
+        _log(f"{colorama.Fore.RED}{e}{colorama.Style.RESET_ALL}")
         module_info['status'] = 'failed'
         module_info['message'] = str(e)
         module_info['end_time'] = time.time()
 
 def run_command(command, cwd):
-    """执行命令并实时输出结果，处理环境变量差异"""
-    print(f"执行命令: {' '.join(command)}")
-
-    # 根据操作系统设置shell参数
+    """静默执行命令，仅在失败时通过异常附带输出"""
     use_shell = platform.system() == "Windows"
 
-    # 复制当前环境变量
     env = os.environ.copy()
-
-    # 如果是Windows且找不到npm，尝试添加常见路径
     if use_shell and "nodejs" not in env["PATH"].lower():
         node_path = r"C:\Program Files\nodejs"
         if os.path.exists(node_path):
             env["PATH"] = f"{node_path};{env['PATH']}"
 
-    process = subprocess.Popen(
+    result = subprocess.run(
         command,
         cwd=cwd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        encoding='utf-8',
+        capture_output=True,
         text=True,
-        bufsize=1,
+        encoding="utf-8",
         shell=use_shell,
-        env=env  # 显式传递环境变量
+        env=env,
     )
-    # 实时输出命令执行结果，显示所属模块
-    for line in iter(process.stdout.read, ''):
-        # 为日志添加模块标识
-        module_log = f"[模块: {os.path.basename(cwd)}] {line}"
-        sys.stdout.write(module_log)
-        sys.stdout.flush()
+    if result.returncode != 0:
+        output = (result.stdout or "") + (result.stderr or "")
+        err = subprocess.CalledProcessError(result.returncode, command, output)
+        err.stderr = output
+        raise err
 
-    process.wait()
-    if process.returncode != 0:
-        raise subprocess.CalledProcessError(process.returncode, command)
-
-def show_progress(all_modules):
-    """显示进度条，直接从模块列表获取状态，确保统计准确"""
+def _format_progress_line(all_modules):
     total = len(all_modules)
-    last_update = time.time()
+    pending_count = sum(1 for m in all_modules if m.get('status') == 'pending')
+    processing_count = sum(1 for m in all_modules if m.get('status') == 'processing')
+    success_count = sum(1 for m in all_modules if m.get('status') == 'success')
+    failed_count = sum(1 for m in all_modules if m.get('status') == 'failed')
+    skipped_count = sum(1 for m in all_modules if m.get('status') == 'skipped')
+
+    completed = success_count + failed_count + skipped_count
+    percent = (completed / total) * 100 if total > 0 else 0
+
+    filled_length = int(PROGRESS_BAR_LENGTH * percent / 100)
+    bar = f"{colorama.Fore.GREEN}█{colorama.Style.RESET_ALL}" * filled_length + '-' * (PROGRESS_BAR_LENGTH - filled_length)
+
+    line = f"进度: [{bar}] {percent:.1f}% | "
+    line += f"{colorama.Fore.GREEN}成功: {success_count}{colorama.Style.RESET_ALL} | "
+    line += f"{colorama.Fore.RED}失败: {failed_count}{colorama.Style.RESET_ALL} | "
+    line += f"跳过: {skipped_count} | 处理中: {processing_count} | 待处理: {pending_count}"
+    return line, percent
+
+
+def show_progress(all_modules, bar):
+    """在终端底行刷新进度条"""
     last_status = ""
 
-    while True:
-        # 每1秒更新一次进度条
-        if time.time() - last_update < 1:
-            time.sleep(0.1)
-            continue
-        last_update = time.time()
-
-        # 直接从模块列表计算状态
-        pending_count = sum(1 for m in all_modules if m.get('status') == 'pending')
-        processing_count = sum(1 for m in all_modules if m.get('status') == 'processing')
-        success_count = sum(1 for m in all_modules if m.get('status') == 'success')
-        failed_count = sum(1 for m in all_modules if m.get('status') == 'failed')
-        skipped_count = sum(1 for m in all_modules if m.get('status') == 'skipped')
-
-        # 计算进度百分比
-        completed = success_count + failed_count + skipped_count
-        percent = (completed / total) * 100 if total > 0 else 0
-
-        # 构建进度条
-        filled_length = int(PROGRESS_BAR_LENGTH * percent / 100)
-        bar = f"{colorama.Fore.GREEN}█{colorama.Style.RESET_ALL}" * filled_length + '-' * (PROGRESS_BAR_LENGTH - filled_length)
-
-        # 显示状态行（覆盖当前行）
-        status_line = f"\r进度: [{bar}] {percent:.1f}% | "
-        status_line += f"{colorama.Fore.GREEN}成功: {success_count}{colorama.Style.RESET_ALL} | "
-        status_line += f"{colorama.Fore.RED}失败: {failed_count}{colorama.Style.RESET_ALL} | "
-        status_line += f"跳过: {skipped_count} | 处理中: {processing_count} | 待处理: {pending_count}"
-
-        # 仅在状态变化时更新
+    while not bar.should_stop():
+        status_line, percent = _format_progress_line(all_modules)
         if status_line != last_status or percent >= 100:
-            sys.stdout.write(status_line)
-            sys.stdout.flush()
+            bar.set_line(status_line)
             last_status = status_line
-
-        # 所有模块处理完成后退出
         if percent >= 100:
             break
-
-    # 确保进度条完整
-    sys.stdout.write("\n")
-    sys.stdout.flush()
+        bar.wait(1.0)
 
 if __name__ == "__main__":
     main()
