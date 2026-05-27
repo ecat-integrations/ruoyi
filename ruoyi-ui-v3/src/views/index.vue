@@ -392,7 +392,7 @@
                   <span class="cy_name">{{ item.name }}:</span
                   ><span class="cy_val"><span
                   class="cy_val_success_inner">{{ item.value }}</span></span
-                ><span class="cy_unit">号位</span>
+                ><span class="cy_unit">个</span>
                 </div>
               </div>
             </div>
@@ -588,84 +588,66 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-infrared_status",
-          "type": "alarm",
+          "id": "logicdevice_station.security_alarm-ir_alarm",
+          "type": "value",
           "valuestatus": -1
         }, {
           "name": "烟感1状态",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-smoke_detector1",
-          "type": "alarm",
+          "id": "logicdevice_station.security_alarm-smoke_1",
+          "type": "value",
           "valuestatus": -1
         }, {
           "name": "烟感2状态",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-smoke_detector2",
-          "type": "alarm",
+          "id": "logicdevice_station.security_alarm-smoke_2",
+          "type": "value",
           "valuestatus": -1
         }, {
           "name": "温感1状态",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-temp_detector1",
-          "type": "alarm",
+          "id": "logicdevice_station.security_alarm-temp_alarm_1",
+          "type": "value",
           "valuestatus": -1
         }, {
           "name": "温感2状态",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-temp_detector2",
-          "type": "alarm",
+          "id": "logicdevice_station.security_alarm-temp_alarm_2",
+          "type": "value",
           "valuestatus": -1
         }, {
           "name": "水浸状态",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-water_leak_detector",
-          "type": "alarm",
+          "id": "logicdevice_station.security_alarm-water_leak",
+          "type": "value",
           "valuestatus": -1
       }],//左侧第一列
       leftTwo: [
         {
-          "name": "PM10工况流量",
+          "name": "PM10流量",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-pm10_working_flow",
+          "id": "logicdevice.pm10-current_flow",
           "type": "value",
           "valuestatus": -1
         },
         {
-          "name": "PM2.5工况流量",
+          "name": "PM2.5流量",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-pm2_5_working_flow",
-          "type": "value",
-          "valuestatus": -1
-        },
-        {
-          "name": "PM10标况流量",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-pm10_std_flow",
-          "type": "value",
-          "valuestatus": -1
-        },
-        {
-          "name": "PM2.5标况流量",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-pm2_5_std_flow",
+          "id": "logicdevice.pm25-current_flow",
           "type": "value",
           "valuestatus": -1
         },
@@ -674,7 +656,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-so2-flow",
+          "id": "logicdevice.so2-sample_flow",
           "type": "value",
           "valuestatus": -1
         },{
@@ -682,7 +664,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-o3-flow",
+          "id": "logicdevice.o3-sample_flow",
           "type": "value",
           "valuestatus": -1
         },{
@@ -690,7 +672,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-no2-flow",
+          "id": "logicdevice.nox-sample_flow",
           "type": "value",
           "valuestatus": -1
         },{
@@ -698,7 +680,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-co-flow",
+          "id": "logicdevice.co-sample_flow",
           "type": "value",
           "valuestatus": -1
         }
@@ -709,7 +691,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-bench_temp",
+          "id": "logicdevice_station.th-temperature",
           "type": "value",
           "valuestatus": -1
         },{
@@ -717,55 +699,55 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-bench_humidity",
+          "id": "logicdevice_station.th-humidity",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "PM2.5浓度",
+          "name": "室内PM2.5浓度",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-pm2_5_concentration",
+          "id": "logicdevice_station.indoor_pollutant-pm25_indoor",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "PM10浓度",
+          "name": "室内PM10浓度",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-pm10_concentration",
+          "id": "logicdevice_station.indoor_pollutant-pm10_indoor",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "O3浓度",
+          "name": "室内O3浓度",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-o3_concentration_qc",
+          "id": "logicdevice_station.indoor_pollutant-o3_indoor",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "CO浓度",
+          "name": "室内CO浓度",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-co_concentration_qc",
+          "id": "logicdevice_station.indoor_pollutant-co_indoor",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "NO2浓度",
+          "name": "室内NO2浓度",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-no2_concentration_qc",
+          "id": "logicdevice_station.indoor_pollutant-no2_indoor",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "SO2浓度",
+          "name": "室内SO2浓度",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-so2_concentration_qc",
+          "id": "logicdevice_station.indoor_pollutant-so2_indoor",
           "type": "value",
           "valuestatus": -1
         }
@@ -776,7 +758,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-sample_tube_temp",
+          "id": "logicdevice_station.sampling_tube-temperature",
           "type": "value",
           "valuestatus": -1
         },{
@@ -784,7 +766,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-sample_tube_humidity",
+          "id": "logicdevice_station.sampling_tube-humidity",
           "type": "value",
           "valuestatus": -1
         },{
@@ -792,7 +774,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-sample_tube_flow",
+          "id": "logicdevice_station.sampling_tube-flow_velocity",
           "type": "value",
           "valuestatus": -1
         },{
@@ -800,7 +782,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-so2_gas_temp",
+          "id": "logicdevice_station.filter_changer.so2-branch_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -808,7 +790,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-co_gas_temp",
+          "id": "logicdevice_station.filter_changer.co-branch_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -816,7 +798,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-o3_gas_temp",
+          "id": "logicdevice_station.filter_changer.o3-branch_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -824,27 +806,19 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-nox_gas_temp",
-          "type": "value",
-          "valuestatus": -1
-        },{
-          "name": "采样管滞留时间",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-sampling_tube_residence_time",
-          "type": "value",
-          "valuestatus": -1
-        },
-        {
-          "name": "露点温度",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "flying-wis-01-dew_point_temp",
+          "id": "logicdevice_station.filter_changer.nox-branch_temp",
           "type": "value",
           "valuestatus": -1
         }
+        // ,{
+        //   "name": "采样管滞留时间",
+        //   "value": null,
+        //   "unit": null,
+        //   "status": -1,
+        //   "id": "logicdevice_station.sampling_tube-residence_time",
+        //   "type": "value",
+        //   "valuestatus": -1
+        // }
       ],//左侧第四列
       rightOne:[
         {
@@ -852,7 +826,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "flying-wis-01-wind_speed",
+          "id": "logicdevice.meteo-wind_speed",
           "type": "value",
           "valuestatus": -1
         },{
@@ -860,7 +834,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "flying-wis-01-wind_direction",
+          "id": "logicdevice.meteo-wind_direction",
           "type": "value",
           "valuestatus": -1
         },{
@@ -868,7 +842,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "flying-wis-01-temp",
+          "id": "logicdevice.meteo-temperature",
           "type": "value",
           "valuestatus": -1
         },{
@@ -876,7 +850,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "flying-wis-01-humidity",
+          "id": "logicdevice.meteo-humidity",
           "type": "value",
           "valuestatus": -1
         },{
@@ -884,23 +858,15 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "flying-wis-01-pressure",
+          "id": "logicdevice.meteo-atmospheric_pressure",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "24小时雨量",
+          "name": "露点温度",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "flying-wis-01-rainfall_24h",
-          "type": "value",
-          "valuestatus": -1
-        },{
-          "name": "太阳光总辐射",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "flying-wis-01-solar_radiation",
+          "id": "logicdevice.meteo-dew_point",
           "type": "value",
           "valuestatus": -1
         }
@@ -911,40 +877,40 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-light_control",
-          "type": "switch",
+          "id": "logicdevice_station.lighting-switch_status",
+          "type": "value",
           "valuestatus": -1
         }, {
           "name": "风机控制",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-fan_control",
-          "type": "switch",
+          "id": "logicdevice_station.exhaust_fan-speed",
+          "type": "value",
           "valuestatus": -1
         }, {
           "name": "空调1控制",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ac1_power",
-          "type": "reverseSwitch",
+          "id": "logicdevice_station.air_conditioner.ac1-running_mode",
+          "type": "value",
           "valuestatus": -1
         }, {
           "name": "空调2控制",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ac2_power",
-          "type": "reverseSwitch",
+          "id": "logicdevice_station.air_conditioner.ac2-running_mode",
+          "type": "value",
           "valuestatus": -1
         }, {
           "name": "零气继电器",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-zero_gas_relay",
-          "type": "switch",
+          "id": "logicdevice_station.zero_gas_relay-relay_status",
+          "type": "value",
           "valuestatus": -1
         },
         {
@@ -952,32 +918,32 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-relay_l1",
-          "type": "switch2",
+          "id": "logicdevice_station.voltage_regulator-relay_ch1",
+          "type": "value",
           "valuestatus": -1
         },{
           "name": "第二路开关状态",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-relay_l2",
-          "type": "switch2",
+          "id": "logicdevice_station.voltage_regulator-relay_ch2",
+          "type": "value",
           "valuestatus": -1
         },{
           "name": "第三路开关状态",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-relay_l3",
-          "type": "switch2",
+          "id": "logicdevice_station.voltage_regulator-relay_ch3",
+          "type": "value",
           "valuestatus": -1
         },{
           "name": "第四路开关状态",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-relay_l4",
-          "type": "switch2",
+          "id": "logicdevice_station.voltage_regulator-relay_ch1",
+          "type": "value",
           "valuestatus": -1
         }
       ],//右侧第二列
@@ -987,7 +953,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_ua",
+          "id": "logicdevice_station.power_meter-voltage_a",
           "type": "value",
           "valuestatus": -1
         },{
@@ -995,7 +961,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_ub",
+          "id": "logicdevice_station.power_meter-voltage_b",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1003,7 +969,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_uc",
+          "id": "logicdevice_station.power_meter-voltage_c",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1011,7 +977,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_ia",
+          "id": "logicdevice_station.power_meter-current_a",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1019,7 +985,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_ib",
+          "id": "logicdevice_station.power_meter-current_b",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1027,7 +993,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_ic",
+          "id": "logicdevice_station.power_meter-current_c",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1035,7 +1001,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_pa",
+          "id": "logicdevice_station.power_meter-power_active_a",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1043,7 +1009,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_pb",
+          "id": "logicdevice_station.power_meter-power_active_b",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1051,31 +1017,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_pc",
-          "type": "value",
-          "valuestatus": -1
-        },{
-          "name": "A相无功功率",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-station_qa",
-          "type": "value",
-          "valuestatus": -1
-        },{
-          "name": "B相无功功率",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-station_qb",
-          "type": "value",
-          "valuestatus": -1
-        },{
-          "name": "C相无功功率",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "sms-qc-station_qc",
+          "id": "logicdevice_station.power_meter-power_active_c",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1083,7 +1025,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_pf_a",
+          "id": "logicdevice_station.power_meter-power_factor_a",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1091,7 +1033,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_pf_b",
+          "id": "logicdevice_station.power_meter-power_factor_b",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1099,7 +1041,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-station_pf_c",
+          "id": "logicdevice_station.power_meter-power_factor_c",
           "type": "value",
           "valuestatus": -1
         }
@@ -1110,7 +1052,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "xianhe-pm10-PM",
+          "id": "logicdevice.pm10-pm_concentration",
           "type": "value",
           "affix":"10",
           "valuestatus": -1
@@ -1120,7 +1062,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "xianhe-pm2.5-PM",
+          "id": "logicdevice.pm25-pm_concentration",
           "type": "value",
           "affix":"2.5",
           "valuestatus": -1
@@ -1130,7 +1072,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-co-co",
+          "id": "logicdevice.co-co",
           "type": "value",
           "valuestatus": -1
         },
@@ -1139,7 +1081,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-so2-so2",
+          "id": "logicdevice.so2-so2",
           "type": "value",
           "affix":"2",
           "valuestatus": -1
@@ -1149,7 +1091,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-o3-o3",
+          "id": "logicdevice.o3-o3",
           "type": "value",
           "affix":"3",
           "valuestatus": -1
@@ -1159,7 +1101,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-no2-no",
+          "id": "logicdevice.nox-no",
           "type": "value",
           "valuestatus": -1
         },
@@ -1168,7 +1110,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-no2-no2",
+          "id": "logicdevice.nox-no2",
           "type": "value",
           "affix":"2",
           "valuestatus": -1
@@ -1178,7 +1120,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-no2-nox",
+          "id": "logicdevice.nox-nox",
           "type": "value",
           "affix":"x",
           "valuestatus": -1
@@ -1190,7 +1132,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-co-co",
+          "id": "logicdevice.co-co",
           "type": "value",
           "valuestatus": -1
         },
@@ -1199,7 +1141,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-o3-o3",
+          "id": "logicdevice.o3-o3",
           "type": "value",
           "valuestatus": -1
         },
@@ -1208,7 +1150,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-no2-no2",
+          "id": "logicdevice.nox-no2",
           "type": "value",
           "valuestatus": -1
         },
@@ -1217,7 +1159,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "esa-so2-so2",
+          "id": "logicdevice.so2-so2",
           "type": "value",
           "valuestatus": -1
         },
@@ -1226,7 +1168,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "xianhe-pm10-PM",
+          "id": "logicdevice.pm10-pm_concentration",
           "type": "value",
           "valuestatus": -1
         },
@@ -1235,7 +1177,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "xianhe-pm2.5-PM",
+          "id": "logicdevice.pm25-pm_concentration",
           "type": "value",
           "valuestatus": -1
         },
@@ -1244,7 +1186,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-calib-so2_std_gas_concentration",
+          "id": "logicdevice_station.calibrator-co_cylinder_concentration",
           "type": "value",
           "valuestatus": -1
         },
@@ -1253,7 +1195,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ac1_power",
+          "id": "logicdevice_station.air_conditioner.ac1-running_mode",
           "type": "value",
           "valuestatus": -1
         },
@@ -1262,7 +1204,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-sample_tube_temp",
+          "id": "logicdevice_station.sampling_tube-flow_velocity",
           "type": "value",
           "valuestatus": -1
         },
@@ -1271,7 +1213,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-temperature",
+          "id": "logicdevice_station.voltage_regulator-current_ch1",
           "type": "value",
           "valuestatus": -1
         }
@@ -1282,7 +1224,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_input_voltage",
+          "id": "logicdevice_station.ups-input_voltage",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1290,7 +1232,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_output_voltage",
+          "id": "logicdevice_station.ups-output_voltage",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1298,7 +1240,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_load_percent",
+          "id": "logicdevice_station.ups-load_percent",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1306,7 +1248,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_input_freq",
+          "id": "logicdevice_station.ups-input_freq",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1314,7 +1256,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_battery_voltage",
+          "id": "logicdevice_station.ups-battery_voltage",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1322,7 +1264,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_battery_temp",
+          "id": "logicdevice_station.ups-battery_temp",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1330,7 +1272,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-ups_status",
+          "id": "logicdevice_station.ups-ups_status",
           "type": "value",
           "valuestatus": -1
         },
@@ -1339,7 +1281,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-voltage_l1",
+          "id": "logicdevice_station.voltage_regulator-voltage_ch1",
           "type": "value",
           "valuestatus": -1
         },
@@ -1348,7 +1290,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-voltage_l2",
+          "id": "logicdevice_station.voltage_regulator-voltage_ch2",
           "type": "value",
           "valuestatus": -1
         },
@@ -1357,7 +1299,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-voltage_l3",
+          "id": "logicdevice_station.voltage_regulator-voltage_ch3",
           "type": "value",
           "valuestatus": -1
         },
@@ -1366,7 +1308,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-voltage_l4",
+          "id": "logicdevice_station.voltage_regulator-voltage_ch4",
           "type": "value",
           "valuestatus": -1
         },
@@ -1375,7 +1317,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-current_l1",
+          "id": "logicdevice_station.voltage_regulator-current_ch1",
           "type": "value",
           "valuestatus": -1
         },
@@ -1384,7 +1326,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-current_l2",
+          "id": "logicdevice_station.voltage_regulator-current_ch2",
           "type": "value",
           "valuestatus": -1
         },
@@ -1393,7 +1335,7 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-current_l3",
+          "id": "logicdevice_station.voltage_regulator-current_ch3",
           "type": "value",
           "valuestatus": -1
         },
@@ -1402,42 +1344,42 @@ export default {
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-power-current_l4",
+          "id": "logicdevice_station.voltage_regulator-current_ch4",
           "type": "value",
           "valuestatus": -1
         }
       ],//中间底部左侧
       middleRightOne:[
         {
-          "name": "SO2换膜仪器位置",
+          "name": "SO2换膜仪剩余量",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-so2_film_changer_status",
+          "id": "logicdevice_station.filter_changer.so2-filter_remaining",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "NOx换膜仪器位置",
+          "name": "NOx换膜仪剩余量",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-nox_film_changer_status",
+          "id": "logicdevice_station.filter_changer.nox-filter_remaining",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "CO换膜仪器位置",
+          "name": "CO换膜仪剩余量",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-co_film_changer_status",
+          "id": "logicdevice_station.filter_changer.co-filter_remaining",
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "O3换膜仪器位置",
+          "name": "O3换膜仪剩余量",
           "value": null,
           "unit": null,
           "status": -1,
-          "id": "sms-qc-o3_film_changer_status",
+          "id": "logicdevice_station.filter_changer.o3-filter_remaining",
           "type": "value",
           "valuestatus": -1
         }
@@ -1448,7 +1390,7 @@ export default {
           "value": null,
           "unit": "%",
           "status": -1,
-          "id": "sms-qc-gas_cylinder1_pressure",
+          "id": "logicdevice_station.standard_gas.so2-gas_pressure_remaining",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1456,7 +1398,7 @@ export default {
           "value": null,
           "unit": "%",
           "status": -1,
-          "id": "sms-qc-gas_cylinder2_pressure",
+          "id": "logicdevice_station.standard_gas.nox-gas_pressure_remaining",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1464,7 +1406,7 @@ export default {
           "value": null,
           "unit": "%",
           "status": -1,
-          "id": "sms-qc-gas_cylinder3_pressure",
+          "id": "logicdevice_station.standard_gas.co-gas_pressure_remaining",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1472,7 +1414,7 @@ export default {
           "value": null,
           "unit": "%",
           "status": -1,
-          "id": "sms-qc-gas_cylinder3_pressure",
+          "id": "logicdevice_station.paper_tape.pm10-remaining_spots",
           "type": "value",
           "valuestatus": -1
         },{
@@ -1480,7 +1422,7 @@ export default {
           "value": null,
           "unit": "%",
           "status": -1,
-          "id": "sms-qc-gas_cylinder3_pressure",
+          "id": "logicdevice_station.paper_tape.pm25-remaining_spots",
           "type": "value",
           "valuestatus": -1
         }
@@ -1732,7 +1674,7 @@ export default {
       //   "value": null,
       //   "unit": null,
       //   "status": -1,
-      //   "id": "sms-qc-INFRARED_STATUS",
+      //   "id": "ce770a61-a794-42b0-bd74-7eec49f5bf3f-INFRARED_STATUS",
       //   "type": "alarm"
       // }
 
