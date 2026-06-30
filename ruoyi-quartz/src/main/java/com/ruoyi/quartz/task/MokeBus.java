@@ -1,6 +1,9 @@
 package com.ruoyi.quartz.task;
 
 import com.ecat.core.Bus.BusTopic;
+import com.ecat.core.Bus.event.BusEvent;
+import com.ecat.core.Bus.event.DeviceDataChangedEvent;
+import com.ecat.core.Bus.event.EventContext;
 import com.ecat.core.Device.DeviceRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -29,7 +32,15 @@ public class MokeBus {
         // 进行字符串解析
         LocalDateTime dateTime = LocalDateTime.parse(datatime, formatter);
 //        device.getDeviceByID(deviceid).getAttrs().get(paramid).setUpdateTime(dateTime);
-        core.getBusRegistry().publish(BusTopic.DEVICE_DATA_UPDATE.getTopicName(),device.getDeviceByID(deviceid).getAttrs().get(paramid));
+        // 新 Bus API：device.data.update 载荷为 DeviceDataChangedEvent（内嵌不可变 AttrState），
+        // 不再直接发 AttributeBase（其已非 BusPayload）。MokeBus 是后台定时任务驱动发布，
+        // 来源标记为 SYSTEM、无关联用户；newState 取属性当前 AttrState。
+        // EventContext.root 创建根事件上下文便于下游溯源。
+        core.getBusRegistry().publish(BusEvent.of(
+                BusTopic.DEVICE_DATA_UPDATE.getTopicName(),
+                new DeviceDataChangedEvent(deviceid, paramid, null,
+                        device.getDeviceByID(deviceid).getAttrs().get(paramid).getState()),
+                EventContext.root(EventContext.Source.SYSTEM, null)));
     }
 
 
