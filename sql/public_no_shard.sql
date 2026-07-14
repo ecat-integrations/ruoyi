@@ -1320,7 +1320,7 @@ SELECT create_hypertable(
 ALTER TABLE his_data  SET (timescaledb.compress = true,
                            timescaledb.compress_orderby = 'pick_time DESC',
                            timescaledb.compress_segmentby = 'station_id, model_id');
--- 创建自动压缩 大于1天的直接压缩
+-- 创建自动压缩 大于7天的直接压缩
 SELECT add_compression_policy('his_data',compress_after => INTERVAL '7 day',if_not_exists => true);
 
 
@@ -2477,7 +2477,7 @@ INSERT INTO "public"."sys_job" (
 (12, '历史表分表', 'CreatePartitionTablesTask', 'CreatePartitionTablesTask.run(''his_data'',-2,2)', '0 0 0 * * ?', 1, 1, 1, 'admin', '2025/9/18 10:30', NULL, '2025/9/18 10:31', NULL),
 (13, '维护换膜', 'Maintenance', 'maintenanceTask.run(''no2_filter'')', '0 0 9 ? * 3', 1, 1, 1, 'admin', '2025/9/18 10:19', NULL, '2025/9/18 10:26', NULL),
 (14, '每日子站巡检', 'Patrol', 'patrolTask.run(''substation_patrol'')', '0 10 0 * * ?', 1, 1, 0, 'admin', '2025/9/18 10:17', NULL, '2025/9/18 10:31', NULL),
-(15, '质控报告定时自动生成', 'DEFAULT', 'qualityControlGenReportTask.run('''','''')', '0 0 1 * * ?', 1, 1, 0, 'admin', '2025/9/18 10:17', NULL, '2025/9/18 10:31', NULL),
+(15, '质控报告定时自动生成', 'DEFAULT', 'qualityControlGenReportTask.run('''','''')', '0 5 0 * * ?', 1, 1, 0, 'admin', '2025/9/18 10:17', NULL, '2025/9/18 10:31', NULL),
 (16, '一分钟数据聚合', 'aggregationDataTask', 'aggregationDataTask.run(''1minute'', '''', '''', false, 1, ''*'', ''*'')', '2 0/1 * * * ?', '3', '1', '0', 'admin', '2025-10-20 15:00:00', 'admin', '2025-10-25 15:00:00', NULL),
 (17, '五分钟数据聚合', 'aggregationDataTask', 'aggregationDataTask.run(''minute'', '''', '''', false, 5, ''*'', ''*'')', '5 0/5 * * * ?', '3', '1', '0', 'admin', '2025-09-18 15:00:00', 'admin', '2025-10-25 15:00:54', NULL),
 (18, '小时数据聚合', 'aggregationDataTask', 'aggregationDataTask.run(''hour'', '''', '''', false, 60, ''*'', ''*'')', '10 0 * * * ?', '3', '1', '0', 'admin', '2025-10-17 15:00:00', 'admin', '2025-10-25 15:00:00', NULL),
