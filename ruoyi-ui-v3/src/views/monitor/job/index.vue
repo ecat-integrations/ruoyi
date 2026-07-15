@@ -292,7 +292,7 @@
                         </template>
                       </el-input>
                     </template>
-                    <template v-else-if="['ExecuteSiChuanHj212RuleTask','ExecuteComHj212RuleTask','ExecuteCnemcHj212RuleTask'].includes(form.jobGroup)">
+                    <template v-else-if="['ExecuteSiChuanHj212RuleTask','ExecuteTianjinHj212RuleTask','ExecuteComHj212RuleTask','ExecuteCnemcHj212RuleTask'].includes(form.jobGroup)">
                       <el-input
                         v-model="form.invokeTarget"
                         placeholder="数据推送设置"
@@ -876,6 +876,10 @@
                value="sichuan"
              />
              <el-option
+               label="天津HJ212推送协议"
+               value="tianjin"
+             />
+             <el-option
                label="通用HJ212推送协议"
                value="common"
              />
@@ -1418,6 +1422,7 @@ const JOB_GROUP_MAPPING = {
   'CreatePartitionTables': '创建分表',
   'AggregationData': '数据聚合',
   'ExecuteSiChuanHj212RuleTask': '四川省HJ212数据推送',
+  'ExecuteTianjinHj212RuleTask': '天津市HJ212数据推送(前时标)',
   'ExecuteComHj212RuleTask': '通用HJ212数据推送',
   'ExecuteCnemcHj212RuleTask': '总站HJ212数据推送'
 };
@@ -1433,6 +1438,7 @@ const METHOD_MAPPING = {
   'mokeBus.send': '执行仪器发数',
   'CreatePartitionTablesTask.run': "创建分表",
   'ExecuteSiChuanHj212RuleTask.run': "执行四川省HJ212数据推送任务",
+  'ExecuteTianjinHj212RuleTask.run': "执行天津市HJ212数据推送任务",
   'ExecuteComHj212RuleTask.run': "执行通用HJ212数据推送任务",
   'ExecuteCnemcHj212RuleTask.run': "执行总站HJ212数据推送任务"
 };
@@ -1521,6 +1527,10 @@ const PARAM_ORDER_MAPPING = {
   ],
   // 执行SiChuanHj212Rule任务参数
   'ExecuteSiChuanHj212RuleTask.run': [
+    'executeComHj212Host', 'executeComHj212Port', 'executeComHj212RuleId', 'executeComHj212StartTime', 'executeComHj212EndTime', 'executeComHj212IsTime'
+  ],
+  // 执行TianjinHj212Rule任务参数（前时标）
+  'ExecuteTianjinHj212RuleTask.run': [
     'executeComHj212Host', 'executeComHj212Port', 'executeComHj212RuleId', 'executeComHj212StartTime', 'executeComHj212EndTime', 'executeComHj212IsTime'
   ],
   // 执行ComHj212Rule任务参数
@@ -1663,6 +1673,7 @@ const parseInvokeTarget = (target) => {
       }
     } else if (
       methodName === 'ExecuteSiChuanHj212RuleTask.run' ||
+      methodName === 'ExecuteTianjinHj212RuleTask.run' ||
       methodName === 'ExecuteComHj212RuleTask.run' ||
       methodName === 'ExecuteCnemcHj212RuleTask.run'
     ) {
@@ -1914,8 +1925,17 @@ const executeComHj212Rules = ref({
   ],
   executeComHj212IsTime: [{ required: false, message: '是否启用自定义时间', trigger: 'change' }],
 });
-// 所有推送规则列表
-const allRuleList = ref([
+// 四川/天津站房规则（与 ComHj212*Integration.yml rules.rule_id 对齐）
+const stationRuleList = ref([
+  { value: '10001', label: '1分钟推送组' },
+  { value: '10002', label: '5分钟推送组' },
+  { value: '10003', label: '1小时推送组' },
+  { value: '10004', label: '1天推送组' },
+  { value: '10005', label: '不固定频率推送组' },
+  { value: '10006', label: '质控组' },
+]);
+// 总站规则（含设备状态组）
+const cnemcRuleList = ref([
   { value: '10001', label: '1分钟推送组' },
   { value: '10002', label: '5分钟推送组' },
   { value: '10003', label: '1小时推送组' },
@@ -1933,11 +1953,15 @@ const commonRuleList = ref([
 ]);
 // 根据选择的协议动态过滤规则列表
 const filteredRuleList = computed(() => {
-  if (executeComHj212Form.value.executeComHj212Protocol === 'common') {
+  const protocol = executeComHj212Form.value.executeComHj212Protocol;
+  if (protocol === 'common') {
     return commonRuleList.value;
-  } else {
-    return allRuleList.value;
   }
+  if (protocol === 'cnemc') {
+    return cnemcRuleList.value;
+  }
+  // sichuan / tianjin：站房规则 10001~10006
+  return stationRuleList.value;
 });
 
 
@@ -1961,6 +1985,8 @@ const jobTypeDict = {
     // 根据协议类型选择不同的任务方法
     if (executeComHj212Protocol === 'sichuan') {
       return `ExecuteSiChuanHj212RuleTask.run('${executeComHj212Host}', '${executeComHj212Port}', '${executeComHj212RuleId}', '${executeComHj212StartTime}', '${executeComHj212EndTime}', ${executeComHj212IsTime})`;
+    } else if (executeComHj212Protocol === 'tianjin') {
+      return `ExecuteTianjinHj212RuleTask.run('${executeComHj212Host}', '${executeComHj212Port}', '${executeComHj212RuleId}', '${executeComHj212StartTime}', '${executeComHj212EndTime}', ${executeComHj212IsTime})`;
     } else if (executeComHj212Protocol === 'cnemc') {
       return `ExecuteCnemcHj212RuleTask.run('${executeComHj212Host}', '${executeComHj212Port}', '${executeComHj212RuleId}', '${executeComHj212StartTime}', '${executeComHj212EndTime}', ${executeComHj212IsTime})`;
     } else {
@@ -2385,14 +2411,15 @@ function parseAggregationDataParams(invokeTarget) {
 // 解析HJ212推送任务参数
 function parseExecuteHj212RuleTaskParams(invokeTarget) {
   if(invokeTarget != null){
-    // 解析 ExecuteSiChuanHj212RuleTask.run / ExecuteComHj212RuleTask.run / ExecuteCnemcHj212RuleTask.run
-    let params = invokeTarget.match(/(?:ExecuteSiChuanHj212RuleTask|ExecuteComHj212RuleTask|ExecuteCnemcHj212RuleTask)\.run\('([^']+)', '([^']+)', '([^']+)', '([^']+)', '([^']+)', (\w+)\)/);
+    // 解析 ExecuteSiChuanHj212RuleTask.run / ExecuteTianjinHj212RuleTask.run / ExecuteComHj212RuleTask.run / ExecuteCnemcHj212RuleTask.run
+    let params = invokeTarget.match(/(?:ExecuteSiChuanHj212RuleTask|ExecuteTianjinHj212RuleTask|ExecuteComHj212RuleTask|ExecuteCnemcHj212RuleTask)\.run\('([^']+)', '([^']+)', '([^']+)', '([^']+)', '([^']+)', (\w+)\)/);
     if (params) {
       // 判断是哪种协议
       const isSiChuan = invokeTarget.includes('ExecuteSiChuanHj212RuleTask');
+      const isTianjin = invokeTarget.includes('ExecuteTianjinHj212RuleTask');
       const isCnemc = invokeTarget.includes('ExecuteCnemcHj212RuleTask');
       return {
-        executeComHj212Protocol: isSiChuan ? 'sichuan' : (isCnemc ? 'cnemc' : 'common'),
+        executeComHj212Protocol: isSiChuan ? 'sichuan' : (isTianjin ? 'tianjin' : (isCnemc ? 'cnemc' : 'common')),
         executeComHj212Host: params[1],
         executeComHj212Port: params[2],
         executeComHj212RuleId: params[3],
@@ -2658,6 +2685,14 @@ function handleExecuteComHj212Submit(params) {
   console.log('执行HJ212推送任务参数提交:', cmd);
 
   form.value.invokeTarget = cmd;
+  // 四川/天津共用字典分组「数据推送」(ExecuteSiChuanHj212RuleTask)，协议差异只体现在 invokeTarget
+  if (executeComHj212Protocol === 'tianjin' || executeComHj212Protocol === 'sichuan') {
+    form.value.jobGroup = 'ExecuteSiChuanHj212RuleTask';
+  } else if (executeComHj212Protocol === 'cnemc') {
+    form.value.jobGroup = 'ExecuteCnemcHj212RuleTask';
+  } else {
+    form.value.jobGroup = 'ExecuteComHj212RuleTask';
+  }
 }
 
 function handleAggregateSubmit(params){
