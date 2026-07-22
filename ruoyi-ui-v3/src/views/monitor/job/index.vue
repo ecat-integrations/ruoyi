@@ -1721,9 +1721,9 @@ const QC_TYPE_MAPPING = {
   'zero_check': '零点核查',
   'span_check': '跨度核查',
   'multi_check': '线性核查',
-  'particle_quality_control': '颗粒物自动质控',
+  // 'particle_quality_control': '颗粒物自动质控',
   'conversion_check': '转换效率核查',
-  'calibration': '校准',
+  // 'calibration': '校准',
   'precision_check': '精密度审核',
   'accuracy_check': '准确度审核'
 };
@@ -1894,9 +1894,9 @@ const qualityControlTypes = ref([
   { value: 'zero_check', label: '零点核查' },
   { value: 'span_check', label: '跨度核查' },
   { value: 'multi_check', label: '线性核查' },
-  { value: 'particle_quality_control', label: '颗粒物监测设备的自动质控' },
+  // { value: 'particle_quality_control', label: '颗粒物监测设备的自动质控' },
   { value: 'conversion_check', label: '转换效率核查' },
-  { value: 'calibration', label: '校准' },
+  // { value: 'calibration', label: '校准' },
   { value: 'precision_check', label: '精密度审核' },
   { value: 'accuracy_check', label: '准确度审核' },
 ]);
