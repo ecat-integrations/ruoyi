@@ -11,7 +11,7 @@
         <el-button
           v-if="showManualTagButton"
           type="primary"
-          link
+          plain
           size="small"
           class="manual-tag-btn"
           @click.stop="handleManualTagClick"
@@ -316,7 +316,10 @@ const deviceTypeText = computed(() => {
 .manual-tag-btn {
   flex-shrink: 0;
   font-size: 12px;
-  padding: 0 4px;
+  padding: 4px 10px;
+  height: 24px;
+  line-height: 1;
+  border-radius: 4px;
   white-space: nowrap;
 }
 

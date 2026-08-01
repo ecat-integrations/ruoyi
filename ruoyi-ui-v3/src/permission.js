@@ -3,6 +3,7 @@ import { ElMessage } from 'element-plus'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 import { getToken } from '@/utils/auth'
+import { resolveHomePath } from '@/utils/dashboardSwitch'
 import { isHttp, isPathMatch } from '@/utils/validate'
 import { isRelogin } from '@/utils/request'
 import useUserStore from '@/store/modules/user'
@@ -23,7 +24,7 @@ router.beforeEach((to, from, next) => {
     to.meta.title && useSettingsStore().setTitle(to.meta.title)
     /* has token*/
     if (to.path === '/login') {
-      next({ path: '/' })
+      next({ path: resolveHomePath() })
       NProgress.done()
     } else if (isWhiteList(to.path)) {
       next()
