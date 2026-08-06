@@ -75,6 +75,18 @@ export const constantRoutes = [
         component: () => import('@/views/index'),
         name: 'Index',
         meta: { title: '首页', icon: 'dashboard', affix: true }
+      },
+      {
+        path: '/station',
+        component: () => import('@/views/station-dashboard/index'),
+        name: 'Station',
+        hidden: true,
+        meta: { title: '站房大屏', icon: 'dashboard' }
+      },
+      {
+        path: '/index_fixed',
+        redirect: '/index',
+        hidden: true
       }
     ]
   },

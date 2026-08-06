@@ -73,6 +73,14 @@ export function getNowData() {
     method: 'get'
   })
 }
+
+/** 固定逻辑设备大屏专用（含 uniqueId / bindKey，不影响 /nowdata/list） */
+export function getDashboardList() {
+  return request({
+    url: '/nowdata/dashboard-list',
+    method: 'get'
+  })
+}
 // devicedebug
 export function deviceDebug(data){
   return request({

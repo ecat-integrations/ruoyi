@@ -77,8 +77,8 @@ spring:
     database: ${REDIS_DB}
     # 密码
     password: ${REDIS_PASSWORD}
-    # 连接超时时间
-    timeout: 10s
+    # 连接超时时间（命令超时；命中 half-open 死连接时快速失败→Lettuce 重连，而非长挂）
+    timeout: 3s
     lettuce:
       pool:
         # 连接池中的最小空闲连接
@@ -87,8 +87,8 @@ spring:
         max-idle: 8
         # 连接池的最大数据库连接数
         max-active: 8
-        # #连接池最大阻塞等待时间（使用负值表示没有限制）
-        max-wait: -1ms
+        # 连接池最大阻塞等待时间：有限值（原 -1ms 池耗尽无限阻塞→API 挂死），RedisConfig 强制 3s 快速失败
+        max-wait: 3s
 
 # token配置
 token:
