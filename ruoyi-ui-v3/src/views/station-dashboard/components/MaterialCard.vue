@@ -66,11 +66,12 @@ export default {
 
 .material-card--compact {
   width: auto;
-  max-width: 108px;
-  padding: 2px 4px;
+  max-width: 72px;
+  padding: 2px 3px 3px;
   border-radius: 6px;
   background: rgba(8, 24, 48, 0.55);
   border-color: rgba(56, 189, 248, 0.12);
+  gap: 2px;
 }
 
 .material-card__row {
@@ -78,6 +79,12 @@ export default {
   flex-direction: row;
   align-items: center;
   gap: 4px;
+}
+
+.material-card--compact .material-card__row {
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
 }
 
 .material-card--dimmed {
@@ -126,6 +133,11 @@ export default {
   min-width: 0;
 }
 
+.material-card--compact .material-card__compact {
+  text-align: center;
+  line-height: 1.15;
+}
+
 .material-card__label {
   font-size: 11px;
   line-height: 1.2;
@@ -137,7 +149,7 @@ export default {
 
 .material-card--compact .material-card__label {
   font-size: 9px;
-  max-width: 62px;
+  max-width: 66px;
   white-space: normal;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -151,7 +163,9 @@ export default {
 }
 
 .material-card--compact .material-card__percent {
-  font-size: 11px;
+  font-size: 10px;
+  line-height: 1.1;
+  margin-top: 0;
 }
 
 .material-card__panel {

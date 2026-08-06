@@ -412,27 +412,30 @@
             </div>
             <div class="s_content">
               <div>
-                <div class="cy_text successstatus" v-for="(item, index) of middleRightTwoMaterial" :key="index">
-                  <span class="cy_name">{{ item.materialName }}</span>
-                    <div class="progress-container">
+                <template v-if="materialAvailable === false">
+                  <div class="cy_text">
+                    <span class="cy_name">{{ materialDisabledTip }}</span>
+                  </div>
+                </template>
+                <template v-else>
+                  <div
+                    class="cy_text successstatus"
+                    v-for="(item, index) of middleRightTwoMaterial"
+                    :key="index"
+                  >
+                    <span class="cy_name">{{ item.materialName }}</span>
+                      <div class="progress-container">
 
-                      <el-progress
-                        :percentage="getPercentage(item)"
-                        :status="getStatus(item)"
-                        stroke-width="18"
-                        :show-text="false"
-                      />
-                    </div>
-                  <span class="cy_unit">{{ calculatePercentage(item) }}%/{{ item.materialRemainCapacity }}{{item.materialCapacityUnit}}</span>
-<!--                  <span class="cy_name">{{ item.name }}:</span-->
-<!--                  ><span class="cy_val"><span-->
-<!--                  :class="{-->
-<!--                     'cy_val_no_inner': item.datastatus === -1,-->
-<!--                     'cy_val_success_inner': item.datastatus === 1,-->
-<!--                     'cy_val_error_inner': item.datastatus === 2-->
-<!--                   }">{{ item.value }}</span></span-->
-<!--                ><span class="cy_unit">{{ item.unit }}</span>-->
-                </div>
+                        <el-progress
+                          :percentage="getPercentage(item)"
+                          :status="getStatus(item)"
+                          stroke-width="18"
+                          :show-text="false"
+                        />
+                      </div>
+                    <span class="cy_unit">{{ calculatePercentage(item) }}%/{{ item.materialRemainCapacity }}{{item.materialCapacityUnit}}</span>
+                  </div>
+                </template>
               </div>
             </div>
           </div>
@@ -540,7 +543,7 @@
 <script>
 import axios from "axios";
 import * as echarts from "echarts";
-import {getNowData, listindexAlarms, listMaterialManager} from "@/api/login";
+import {getNowData, listindexAlarms} from "@/api/login";
 // import App from '@/App.vue'
 import date from "@/utils/date";
 import { ElMessage } from 'element-plus';
@@ -548,6 +551,13 @@ import { recordPageVisit, getHomepageDisplayMode, saveHomepageDisplayMode } from
 import DeviceListComponent from './index_list.vue';
 import StationPreviewComponent from './station_preview.vue';
 import { initStatusMapper } from '@/views/index/list/utils/statusMapper'
+import {
+  MATERIAL_DISABLED_TIP,
+  ensureMaterialAvailable,
+  fetchMaterialList,
+  markMaterialUnavailable,
+  notifyMaterialDisabledOnce
+} from '@/views/index/utils/materialAvailability'
 // 预加载状态字典
 initStatusMapper().catch(err => {
   console.warn('状态字典加载失败:', err)
@@ -1456,11 +1466,22 @@ export default {
       timeIntervalId1: null,
       timeIntervalId2: null,
       timeIntervalId3: null,
-      middleRightTwoMaterial: null,
       // 大屏页面返回按钮相关
       isBackButtonVisible: true,
-      activityTimerId: null
+      activityTimerId: null,
+      materialPollTimer: null,
+      /** keep-alive 下页面是否处于激活态 */
+      pageActive: true,
+      /** null=未探测，true/false=耗材集成是否可用 */
+      materialAvailable: null,
+      materialDisabledTip: MATERIAL_DISABLED_TIP,
+      middleRightTwoMaterial: []
     };
+  },
+  watch: {
+    displayMode() {
+      this.syncDashboardPolling();
+    }
   },
   mounted() {
     // 记录页面访问
@@ -1497,23 +1518,9 @@ export default {
     this.timeIntervalId1 = setInterval(() => {
       this.nowTime = date.currDate();
     }, 1000);
-    // 获取实时数据
-    this.timeIntervalId2 = setInterval(() => {
-      getNowData().then(res => {
-        // console.log(res);
-        this.dataList = res.data;
-        this.handleData3(res.data)
-      });
-      let  materialQuery = {
-        pageNum: 1,
-        pageSize: 100,
-        materialStatus: 1
-      };
-      listMaterialManager(materialQuery).then(response => {
-        this.middleRightTwoMaterial = response.rows;
-      });
 
-    }, 5000);
+    // 大屏实时数据 / 耗材：仅大屏模式且页面激活时轮询
+    this.syncDashboardPolling();
 
     this.timeIntervalId3 = setInterval(() => {
       if(this.alarmOpen){
@@ -1574,14 +1581,22 @@ export default {
 
     }, 5000);
   },
+  activated() {
+    this.pageActive = true;
+    this.syncDashboardPolling();
+  },
+  deactivated() {
+    this.pageActive = false;
+    this.stopDashboardDataPoll();
+    this.stopMaterialPoll();
+  },
   beforeUnmount() {
   // 清除所有定时器
   if (this.timeIntervalId1) {
     clearInterval(this.timeIntervalId1);
   }
-  if (this.timeIntervalId2) {
-    clearInterval(this.timeIntervalId2);
-  }
+  this.stopDashboardDataPoll();
+  this.stopMaterialPoll();
   if (this.timeIntervalId3) {
     clearInterval(this.timeIntervalId3);
   }
@@ -1676,6 +1691,85 @@ export default {
       }
     },
     
+    /** 经典大屏且页面激活时才轮询 */
+    shouldPollDashboard() {
+      return this.pageActive && this.displayMode === 'dashboard';
+    },
+    syncDashboardPolling() {
+      if (this.shouldPollDashboard()) {
+        this.startDashboardDataPoll();
+        this.startMaterialPoll();
+      } else {
+        this.stopDashboardDataPoll();
+        this.stopMaterialPoll();
+      }
+    },
+    startDashboardDataPoll() {
+      if (this.timeIntervalId2) {
+        return;
+      }
+      this.refreshDashboardData();
+      this.timeIntervalId2 = setInterval(() => {
+        this.refreshDashboardData();
+      }, 5000);
+    },
+    stopDashboardDataPoll() {
+      if (this.timeIntervalId2) {
+        clearInterval(this.timeIntervalId2);
+        this.timeIntervalId2 = null;
+      }
+    },
+    refreshDashboardData() {
+      getNowData().then(res => {
+        this.dataList = res.data;
+        this.handleData3(res.data);
+      }).catch(err => {
+        console.warn('大屏实时数据刷新失败:', err);
+      });
+    },
+    async startMaterialPoll() {
+      if (this.materialPollTimer || this._materialPollStarting) {
+        return;
+      }
+      this._materialPollStarting = true;
+      try {
+        const available = await ensureMaterialAvailable();
+        this.materialAvailable = available;
+        if (!this.shouldPollDashboard()) {
+          return;
+        }
+        if (!available) {
+          this.middleRightTwoMaterial = [];
+          notifyMaterialDisabledOnce(ElMessage);
+          return;
+        }
+        this.refreshMaterialData();
+        this.materialPollTimer = setInterval(() => {
+          this.refreshMaterialData();
+        }, 5000);
+      } finally {
+        this._materialPollStarting = false;
+      }
+    },
+    stopMaterialPoll() {
+      if (this.materialPollTimer) {
+        clearInterval(this.materialPollTimer);
+        this.materialPollTimer = null;
+      }
+    },
+    refreshMaterialData() {
+      fetchMaterialList().then(response => {
+        this.middleRightTwoMaterial = response.rows || [];
+      }).catch(err => {
+        console.warn('耗材数据刷新失败:', err);
+        // 运行中接口突然不可用：停止轮询，避免持续 404 toast
+        markMaterialUnavailable();
+        this.materialAvailable = false;
+        this.middleRightTwoMaterial = [];
+        this.stopMaterialPoll();
+        notifyMaterialDisabledOnce(ElMessage);
+      });
+    },
     handleData3(datas){
       let data_dict = {};
       // 允许的 coordinate 列表

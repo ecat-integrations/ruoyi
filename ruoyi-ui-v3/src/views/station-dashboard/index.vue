@@ -1,21 +1,15 @@
 <template>
   <div class="station-dashboard" ref="root">
-    <aside class="station-dashboard__dock">
-      <div class="station-dashboard__logo" title="智慧站房监控中心" />
-      <div class="station-dashboard__title-v">智慧站房监控中心</div>
-      <div class="station-dashboard__subtitle-v">监测·质控·动环</div>
-      <StatusSummaryBar :summary="summary" layout="dock" />
-      <div class="station-dashboard__dock-spacer" />
-      <div class="station-dashboard__meta-v">
-        <span class="station-dashboard__version">V2.1</span>
-        <span class="station-dashboard__time">{{ nowTimeShort }}</span>
-      </div>
-    </aside>
-
     <div class="station-dashboard__body">
       <main class="station-dashboard__main">
         <div v-if="focusHint" class="station-dashboard__overlay">
           <span class="station-dashboard__hint">{{ focusHint }}</span>
+        </div>
+        <div
+          v-if="materialAvailable === false"
+          class="station-dashboard__material-tip"
+        >
+          {{ materialDisabledTip }}
         </div>
         <StationUnifiedView
           :device-states="deviceStates"
@@ -28,15 +22,32 @@
         />
       </main>
     </div>
+
+    <aside class="station-dashboard__dock">
+      <div class="station-dashboard__logo" title="智慧站房监控中心" />
+      <div class="station-dashboard__title-v">智慧站房监控中心</div>
+      <div class="station-dashboard__subtitle-v">监测·质控·动环</div>
+      <StatusSummaryBar :summary="summary" layout="dock" />
+      <div class="station-dashboard__dock-spacer" />
+      <div class="station-dashboard__meta-v">
+        <span class="station-dashboard__version">V2.1</span>
+        <span class="station-dashboard__time">{{ nowTimeShort }}</span>
+      </div>
+    </aside>
   </div>
 </template>
 
 <script>
 import date from '@/utils/date'
+import { ElMessage } from 'element-plus'
 import { recordPageVisit } from '@/utils/pageState'
 import StatusSummaryBar from './components/StatusSummaryBar.vue'
 import StationUnifiedView from './tabs/StationUnifiedView.vue'
 import { fetchStationDashboardData, findDeviceState } from './utils/stationDataService'
+import {
+  MATERIAL_DISABLED_TIP,
+  notifyMaterialDisabledOnce
+} from '@/views/index/utils/materialAvailability'
 import './styles/station-dashboard.scss'
 
 export default {
@@ -50,6 +61,8 @@ export default {
       nowTime: '',
       deviceStates: [],
       materialCards: [],
+      materialAvailable: null,
+      materialDisabledTip: MATERIAL_DISABLED_TIP,
       summary: { normal: 0, warning: 0, alarm: 0, offline: 0 },
       selectedDeviceId: '',
       selectedMaterialId: '',
@@ -93,7 +106,11 @@ export default {
         const payload = await fetchStationDashboardData()
         this.deviceStates = payload.deviceStates
         this.materialCards = payload.materialCards
+        this.materialAvailable = payload.materialAvailable
         this.summary = payload.summary
+        if (payload.materialAvailable === false) {
+          notifyMaterialDisabledOnce(ElMessage)
+        }
       } catch (error) {
         console.warn('站房大屏数据刷新失败:', error)
       }

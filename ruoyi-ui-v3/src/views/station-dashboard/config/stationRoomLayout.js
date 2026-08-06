@@ -58,15 +58,17 @@ const FILTER_SLOTS = [
   { x: 175, y: 657.5 }
 ]
 
+/** 标气 · 右侧独立区（机柜与右侧墙面之间，避免与滤膜重叠） */
 export const MATERIAL_GAS_SLOTS = [
-  toPercent(282, 468),
-  toPercent(282, 548),
-  toPercent(282, 628)
+  toPercent(990, 468),
+  toPercent(990, 548),
+  toPercent(990, 628)
 ]
 
+/** 滤膜 · 左侧靠近颗粒物监测机柜 */
 export const MATERIAL_FILTER_SLOTS = [
-  toPercent(357, 518),
-  toPercent(357, 608)
+  toPercent(290, 518),
+  toPercent(290, 608)
 ]
 
 export const UNIFIED_ROOM_LAYOUT = {

@@ -126,16 +126,18 @@ export default {
       <rect x="50" y="630" width="70" height="50" rx="3" fill="#1e293b" opacity="0.5" stroke="#334155" />
       <rect x="140" y="630" width="70" height="55" rx="3" fill="#1e293b" opacity="0.5" stroke="#334155" />
 
-      <!-- 标气 / 滤膜 分区货架 -->
-      <rect x="250" y="430" width="140" height="270" rx="4" fill="#2a3544" opacity="0.7" stroke="#475569" stroke-width="1.2" />
-      <line x1="318" y1="438" x2="318" y2="692" stroke="#334155" stroke-width="1" />
-      <text x="282" y="444" text-anchor="middle" fill="#94a3b8" font-size="10">标气</text>
-      <text x="357" y="444" text-anchor="middle" fill="#94a3b8" font-size="10">滤膜</text>
-      <rect x="255" y="450" width="54" height="36" rx="2" fill="#1a2433" opacity="0.45" stroke="#334155" />
-      <rect x="255" y="530" width="54" height="36" rx="2" fill="#1a2433" opacity="0.45" stroke="#334155" />
-      <rect x="255" y="610" width="54" height="36" rx="2" fill="#1a2433" opacity="0.45" stroke="#334155" />
-      <rect x="330" y="500" width="54" height="36" rx="2" fill="#1a2433" opacity="0.45" stroke="#334155" />
-      <rect x="330" y="590" width="54" height="36" rx="2" fill="#1a2433" opacity="0.45" stroke="#334155" />
+      <!-- 滤膜区 · 左侧（靠近颗粒物监测机柜） -->
+      <rect x="250" y="480" width="80" height="210" rx="4" fill="#2a3544" opacity="0.7" stroke="#475569" stroke-width="1.2" />
+      <text x="290" y="494" text-anchor="middle" fill="#94a3b8" font-size="10">滤膜</text>
+      <rect x="263" y="500" width="54" height="36" rx="2" fill="#1a2433" opacity="0.45" stroke="#334155" />
+      <rect x="263" y="590" width="54" height="36" rx="2" fill="#1a2433" opacity="0.45" stroke="#334155" />
+
+      <!-- 标气区 · 右侧（机柜与墙面设备之间，独立放置避免重叠） -->
+      <rect x="950" y="430" width="80" height="270" rx="4" fill="#2a3544" opacity="0.7" stroke="#475569" stroke-width="1.2" />
+      <text x="990" y="444" text-anchor="middle" fill="#94a3b8" font-size="10">标气</text>
+      <rect x="963" y="450" width="54" height="36" rx="2" fill="#1a2433" opacity="0.45" stroke="#334155" />
+      <rect x="963" y="530" width="54" height="36" rx="2" fill="#1a2433" opacity="0.45" stroke="#334155" />
+      <rect x="963" y="610" width="54" height="36" rx="2" fill="#1a2433" opacity="0.45" stroke="#334155" />
 
       <rect x="395" y="355" width="530" height="16" rx="2" fill="#64748b" />
       <rect x="385" y="371" width="550" height="130" rx="6" fill="url(#rackGrad)" stroke="#64748b" stroke-width="1.5" />

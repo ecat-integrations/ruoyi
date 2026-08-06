@@ -99,10 +99,12 @@ export function listindexAlarms(query) {
   })
 }
 // 查询物资管理列表
-export function listMaterialManager(query) {
+// config.silent === true 时不弹全局错误提示（用于集成可用性探测）
+export function listMaterialManager(query, config = {}) {
   return request({
     url: '/material/manager/list',
     method: 'get',
-    params: query
+    params: query,
+    ...config
   })
 }
