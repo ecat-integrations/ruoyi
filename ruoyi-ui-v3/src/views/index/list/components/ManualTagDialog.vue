@@ -46,7 +46,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getModelTagOptions, executeModelTagAction } from '../utils/manualTagConfig'
+import { getDeviceTagOptions, executeDeviceTagAction } from '../utils/manualTagConfig'
 
 const props = defineProps({
   modelValue: {
@@ -105,17 +105,16 @@ watch(
  * 加载标识选项(支持异步)
  */
 async function loadTagOptions() {
-  if (!props.device || !props.device.deviceModel) {
-    console.warn('设备或设备型号不存在')
+  if (!props.device) {
+    console.warn('设备不存在')
     return
   }
-  
+
   loadingOptions.value = true
-  
+
   try {
-    const options = await getModelTagOptions(props.device.deviceModel, props.device)
-    tagOptions.value = options
-    
+    tagOptions.value = await getDeviceTagOptions(props.device)
+
     // 重置表单
     formData.value.tagValue = ''
     if (formRef.value) {
@@ -134,27 +133,21 @@ async function loadTagOptions() {
  */
 async function handleConfirm() {
   if (!formRef.value) return
-  
+
   try {
     // 验证表单
     await formRef.value.validate()
-    
-    confirming.value = true
-    
-    // 执行型号的确认操作
-    await executeModelTagAction(
-      props.device.deviceModel,
-      props.device,
-      formData.value.tagValue
-    )
 
-    
+    confirming.value = true
+
+    await executeDeviceTagAction(props.device, formData.value.tagValue)
+
     // 触发成功事件
     emit('success', {
       device: props.device,
       tagValue: formData.value.tagValue
     })
-    
+
     // 关闭对话框
     handleClose()
   } catch (error) {

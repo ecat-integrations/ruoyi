@@ -358,7 +358,7 @@ const handleReturnToDashboard = () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  padding: 8px 0;
+  padding: 2px 0;
   border-bottom: 1px solid var(--el-border-color-light, #ebeef5);
   transition: border-color 0.3s ease;
 }

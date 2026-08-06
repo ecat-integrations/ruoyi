@@ -79,7 +79,7 @@ import AttributeItem from './AttributeItem.vue'
 import DeviceAttributeModal from './DeviceAttributeModal.vue'
 import { useDeviceStatus } from '../composables/useDeviceStatus'
 import { useAttributeDragSort } from '../composables/useAttributeDragSort'
-import { isModelSupported } from '../utils/manualTagConfig'
+import { isDeviceSupported } from '../utils/manualTagConfig'
 import { ElMessage } from 'element-plus'
 
 const emit = defineEmits(['dblclick', 'contextmenu', 'open-manual-tag'])
@@ -233,9 +233,9 @@ const handleMoreClick = () => {
   isAttributeModalShow.value = true
 }
 
-// 是否显示手动标识按钮
+// 是否显示手动标识按钮（物理白名单 / airdevice 逻辑能力探测）
 const showManualTagButton = computed(() => {
-  return isModelSupported(props.device?.deviceModel)
+  return isDeviceSupported(props.device)
 })
 
 // 处理手动标识按钮点击 - 触发事件到父组件
