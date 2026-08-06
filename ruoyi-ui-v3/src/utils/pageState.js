@@ -116,7 +116,7 @@ export function updateUserPreferences(preferences) {
 
 /**
  * 保存首页显示模式
- * @param {string} mode - 'dashboard' | 'device-list'
+ * @param {string} mode - 'dashboard' | 'device-list' | 'station-preview'
  */
 export function saveHomepageDisplayMode(mode) {
   const currentState = getPageState();
@@ -130,7 +130,7 @@ export function saveHomepageDisplayMode(mode) {
 
 /**
  * 获取首页显示模式
- * @returns {string} 'dashboard' | 'device-list'
+ * @returns {string} 'dashboard' | 'device-list' | 'station-preview'
  */
 export function getHomepageDisplayMode() {
   const state = getPageState();

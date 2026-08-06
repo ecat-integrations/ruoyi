@@ -2,7 +2,24 @@
   <div class="device-panel">
     <div class="panel-header">
       <div class="panel-title">
-        <h2 class="hidden-title" @click="handleTripleClick"> </h2>
+        <div class="mode-switch-buttons">
+          <el-button 
+            type="primary" 
+            @click="$emit('return-to-dashboard')"
+            class="mode-switch-btn"
+          >
+            <el-icon><Monitor /></el-icon>
+            切换到大屏
+          </el-button>
+          <el-button 
+            type="warning" 
+            @click="$emit('switch-to-station-preview')"
+            class="mode-switch-btn"
+          >
+            <el-icon><Connection /></el-icon>
+            切换到全域控制视图
+          </el-button>
+        </div>
       </div>
       <div class="panel-controls">
         <!-- 设备类型筛选 -->
@@ -82,7 +99,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['open-orchestration', 'return-to-dashboard'])
+const emit = defineEmits(['open-orchestration', 'return-to-dashboard', 'switch-to-station-preview'])
 
 // 使用设备卡片拖拽排序
 const { applyCachedOrder, handleDragEnd: saveDragEnd, moveDeviceToFirst } = useDeviceCardDragSort()
@@ -279,7 +296,7 @@ const handleContextMenu = (event, index) => {
   }
 }
 
-// 三次点击计数器（用于返回大屏）
+// 三次点击计数器（用于返回大屏，保留兼容性）
 let returnClickCount = 0
 let returnLastClickTime = 0
 
@@ -305,7 +322,7 @@ function handleManualTagSuccess(data) {
 }
 
 /**
- * 处理三次点击返回大屏
+ * 处理三次点击返回大屏（保留兼容性）
  */
 function handleTripleClick() {
   const now = Date.now()
@@ -318,8 +335,6 @@ function handleTripleClick() {
   returnLastClickTime = now
 
   if (returnClickCount === 3) {
-    handleReturnToDashboard();
-    // 触发返回事件
     emit('return-to-dashboard')
     returnClickCount = 0
   } else {
@@ -331,19 +346,6 @@ function handleTripleClick() {
     }, 300)
   }
 }
-
-// 处理返回大屏页面的三次点击
-const handleReturnToDashboard = () => {
-  // 记录页面访问状态
-  recordPageVisit('/index', {
-    timestamp: Date.now(),
-    action: 'return_to_dashboard_mode',
-    userAgent: navigator.userAgent
-  });
-
-  // 通过 emit 通知父组件切换回大屏模式
-  emit('return-to-dashboard');
-};
 </script>
 
 <style scoped>
@@ -391,6 +393,16 @@ const handleReturnToDashboard = () => {
   background: transparent;
   border: none;
   outline: none;
+}
+
+.mode-switch-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.mode-switch-btn {
+  flex-shrink: 0;
 }
 
 .panel-controls {
