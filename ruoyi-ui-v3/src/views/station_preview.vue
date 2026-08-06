@@ -49,7 +49,7 @@
       ></iframe>
       <div v-else class="preview-placeholder">
         <p>未设置视图 ID</p>
-        <p class="hint">点击右上角「设置视图ID」输入视图 ID，将嵌入全域控制视图页面（control 控制模式）进行展示</p>
+        <p class="hint">视图加载依赖「全域智控视图」集成功能：请到「全域智控视图管理」中创建对应视图并复制视图 ID，再点击右上角「设置视图ID」填入，本页面即自动加载该视图进行展示；留空则保持当前提示状态。</p>
       </div>
     </div>
 
@@ -63,21 +63,37 @@
       退出全屏
     </el-button>
 
-    <el-dialog v-model="idDialogVisible" title="设置视图ID" width="420px" :close-on-click-modal="false">
+    <el-dialog v-model="idDialogVisible" title="设置视图ID" width="460px" :close-on-click-modal="false">
+      <el-alert type="info" :closable="false" show-icon class="id-dialog-alert">
+        视图加载依赖「全域智控视图」集成功能：请到「全域智控视图管理」中创建对应视图，复制视图 ID 后填入，本页面即自动加载该视图进行展示；清空视图 ID 并确定，则关闭本页面的视图加载功能。
+      </el-alert>
       <el-form label-width="90px" @submit.prevent>
-        <el-form-item label="视图ID" required>
-          <el-input
+        <el-form-item label="视图ID">
+          <el-select
             v-model="inputId"
-            placeholder="请输入视图 ID（如 AK05Y1）"
-            maxlength="10"
+            filterable
+            allow-create
+            default-first-option
             clearable
-            @keyup.enter="confirmId"
-          />
+            placeholder="可下拉选择已有视图，或直接输入视图 ID（如 AK05Y1）"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in diagramOptions"
+              :key="item.id"
+              :value="item.id"
+              :label="item.description ? `${item.id}（${item.description}）` : item.id"
+            >
+              <span class="opt-id">{{ item.id }}</span>
+              <span class="opt-desc">{{ item.description || '无描述' }}</span>
+            </el-option>
+          </el-select>
+          <div class="form-item-hint">留空并点击确定，即关闭本页面的视图加载功能</div>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="idDialogVisible = false">取 消</el-button>
-        <el-button type="primary" :disabled="!inputId.trim()" @click="confirmId">确 定</el-button>
+        <el-button type="primary" @click="confirmId">确 定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -85,15 +101,20 @@
 
 <script setup>
 import { Back, Setting, FullScreen, Close, WarningFilled } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import router from '@/router'
 
 const emit = defineEmits(['return-to-list'])
 
 /** 视图 ID：设置后通过 iframe 嵌入 diagram_view 全域控制视图页（control 控制模式） */
 const STORAGE_KEY = 'station-preview-diagram-id'
+/** 全域视图管理记录缓存 key（与 env-diagram diagramStore.js 共用，宿主与 iframe 同源可直接读取） */
+const DIAGRAM_RECORDS_KEY = 'ecat-diagram-records'
 const diagramId = ref(localStorage.getItem(STORAGE_KEY) || '')
 const idDialogVisible = ref(false)
 const inputId = ref('')
+/** 全域视图管理中的已有视图列表（下拉选项：{ id, description }） */
+const diagramOptions = ref([])
 /** iframe 刷新用 key：设置 ID 后自增，强制重建 iframe 重新加载 */
 const iframeKey = ref(0)
 /** 全屏状态：iframe 以 fixed 覆盖整个视口，支持原生 Fullscreen API 增强 */
@@ -117,13 +138,41 @@ const iframeSrc = computed(() => {
 })
 
 function openIdDialog() {
+  loadDiagramOptions()
   inputId.value = diagramId.value
   idDialogVisible.value = true
 }
 
+/**
+ * 读取全域视图管理中的已有视图列表（与 env-diagram diagramStore.js 共用 localStorage）
+ * 每次打开弹窗时重新读取，保证能拿到最新创建的视图
+ */
+function loadDiagramOptions() {
+  try {
+    const list = JSON.parse(localStorage.getItem(DIAGRAM_RECORDS_KEY) || '[]')
+    diagramOptions.value = Array.isArray(list) ? list : []
+  } catch (e) {
+    console.warn('[station-preview] 读取视图列表失败:', e)
+    diagramOptions.value = []
+  }
+}
+
 function confirmId() {
   const id = inputId.value.trim()
-  if (!id) return
+  // 视图 ID 留空：视为关闭视图加载功能，清空本地缓存并退出视图加载（iframe 随 v-else-if 自动移除）
+  if (!id) {
+    localStorage.removeItem(STORAGE_KEY)
+    diagramId.value = ''
+    integrationUnavailable.value = false
+    iframeKey.value++
+    idDialogVisible.value = false
+    return
+  }
+  // 校验视图 ID 是否存在于全域视图管理中：不存在则提示并阻止提交
+  if (!diagramOptions.value.some((item) => item.id === id)) {
+    ElMessage.error(`视图 ID「${id}」不存在，请先在「全域智控视图管理」中创建对应视图`)
+    return
+  }
   diagramId.value = id
   // 保存到前端缓存，下次打开自动带出，重新设置即覆盖
   localStorage.setItem(STORAGE_KEY, id)
@@ -141,6 +190,8 @@ function confirmId() {
 function enterFullscreen() {
   if (!diagramId.value || integrationUnavailable.value) return
   isFullscreen.value = true
+  // 通知 iframe 内部页面：全屏布局变化后延迟重新适配画布
+  notifyIframeFitScreen()
   try {
     const el = document.documentElement
     if (el.requestFullscreen) {
@@ -156,6 +207,8 @@ function enterFullscreen() {
 /** 退出全屏 */
 function exitFullscreen() {
   isFullscreen.value = false
+  // 通知 iframe 内部页面：退出全屏后布局变化，延迟重新适配画布
+  notifyIframeFitScreen()
   try {
     if (document.fullscreenElement) {
       document.exitFullscreen()
@@ -164,6 +217,23 @@ function exitFullscreen() {
     }
   } catch (e) {
     // 忽略
+  }
+}
+
+/**
+ * 通知 iframe 内部页面重新适配画布（diagramView.vue 收到后延迟 2 秒执行 handle.fitScreen）
+ * 宿主与 iframe 同源（同一 origin 的 hash 路由），直接 postMessage 即可
+ */
+function notifyIframeFitScreen() {
+  const iframeWin = iframeRef.value && iframeRef.value.contentWindow
+  if (!iframeWin) return
+  try {
+    iframeWin.postMessage(
+      { type: 'diagram-view-fit-screen', source: 'station-preview' },
+      window.location.origin
+    )
+  } catch (e) {
+    // 跨域等异常时忽略，对方页面自身初始化时也会执行一次 fitScreen
   }
 }
 
@@ -362,6 +432,33 @@ const handleReturnToList = () => {
 .preview-placeholder .hint {
   font-size: 14px;
   color: var(--el-text-color-secondary, #909399);
+  max-width: 620px;
+  text-align: center;
+  line-height: 1.8;
+  margin: 8px 16px;
+}
+
+.id-dialog-alert {
+  margin-bottom: 16px;
+  line-height: 1.8;
+}
+
+.form-item-hint {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary, #909399);
+  margin-top: 4px;
+}
+
+/* 下拉选项：左侧视图 ID 加粗，右侧描述灰色小字 */
+.opt-id {
+  font-weight: 600;
+  margin-right: 10px;
+}
+
+.opt-desc {
+  color: var(--el-text-color-secondary, #909399);
+  font-size: 12px;
 }
 
 .integration-error-icon {
