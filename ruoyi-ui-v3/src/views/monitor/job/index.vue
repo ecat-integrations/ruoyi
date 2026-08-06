@@ -324,6 +324,22 @@
                         </template>
                       </el-input>
                     </template>
+                    <template v-else-if="form.jobGroup === 'DeviceAttributeControl'">
+                      <el-input
+                        v-model="form.invokeTarget"
+                        placeholder="设备控制任务参数设置"
+                        readonly
+                        disabled
+                      >
+                        <template #append>
+                          <el-button
+                            type="primary"
+                            icon="Cpu"
+                            @click="handleDeviceControlOpen"
+                          ></el-button>
+                        </template>
+                      </el-input>
+                    </template>
                     <template v-else>
                       <el-input
                         v-model="form.invokeTarget"
@@ -896,6 +912,101 @@
          <el-button type="primary" @click="handlePartitionConfirm">确认</el-button>
        </template>
      </el-dialog>
+     <!-- 新增设备控制任务参数设置对话框 -->
+     <el-dialog
+       title="设备控制任务参数设置"
+       v-model="deviceControlOpen"
+       width="520px"
+       append-to-body
+       @close="handleDeviceControlClose"
+     >
+       <el-form
+         ref="deviceControlFormRef"
+         :model="deviceControlForm"
+         :rules="deviceControlRules"
+         label-width="110px"
+       >
+         <!-- 选择设备 -->
+         <el-form-item label="选择设备" prop="deviceId">
+           <el-select
+             v-model="deviceControlForm.deviceId"
+             placeholder="请选择设备"
+             clearable
+             filterable
+             style="width: 100%"
+             @change="handleDeviceControlDeviceChange"
+           >
+             <el-option
+               v-for="device in deviceList"
+               :key="device.deviceId"
+               :label="device.deviceName"
+               :value="device.deviceId"
+             />
+           </el-select>
+         </el-form-item>
+     
+         <!-- 选择属性 -->
+         <el-form-item label="选择属性" prop="attributeId">
+           <el-select
+             v-model="deviceControlForm.attributeId"
+             placeholder="请选择属性"
+             clearable
+             filterable
+             style="width: 100%"
+             :disabled="!deviceControlForm.deviceId"
+             @change="handleDeviceControlAttributeChange"
+           >
+             <el-option
+               v-for="attr in deviceControlAttributes"
+               :key="attr.attributeID"
+               :label="attr.displayName"
+               :value="attr.attributeID"
+             />
+           </el-select>
+         </el-form-item>
+     
+         <!-- 输入新值（根据属性 scheme 动态渲染控件） -->
+         <el-form-item label="输入新值" prop="targetValue">
+           <el-skeleton v-if="deviceControlLoadingScheme" :rows="1" animated style="width: 100%" />
+           <el-select
+             v-else-if="deviceControlScheme?.type === 'select'"
+             v-model="deviceControlForm.targetValue"
+             placeholder="请选择值"
+             clearable
+             filterable
+             style="width: 100%"
+             :disabled="!deviceControlForm.attributeId"
+           >
+             <el-option
+               v-for="option in deviceControlScheme?.options || []"
+               :key="option.value"
+               :label="option.label"
+               :value="option.value"
+             />
+           </el-select>
+           <div v-else-if="deviceControlScheme?.type === 'command'" class="device-control-command-buttons">
+             <el-button
+               v-for="cmd in deviceControlScheme?.commands || []"
+               :key="cmd.value"
+               :type="deviceControlForm.targetValue === cmd.value ? 'primary' : 'default'"
+               @click="deviceControlForm.targetValue = cmd.value"
+             >
+               {{ cmd.label }}
+             </el-button>
+           </div>
+           <el-input
+             v-else
+             v-model="deviceControlForm.targetValue"
+             placeholder="请输入目标值"
+             :disabled="!deviceControlForm.attributeId"
+           />
+         </el-form-item>
+       </el-form>
+       <template #footer>
+         <el-button @click="deviceControlOpen = false">取消</el-button>
+         <el-button type="primary" @click="handleDeviceControlConfirm">确认</el-button>
+       </template>
+     </el-dialog>
      <!-- HJ212推送 -->
      <el-dialog
        title="HJ212推送协议"
@@ -1023,6 +1134,7 @@
 import cronstrue from 'cronstrue/i18n';
 import { listJob, getJob, delJob, addJob, updateJob, runJob, changeJobStatus } from "@/api/monitor/job";
 import { getNowData } from "@/api/login";
+import { getAttributeScheme } from "@/api/deviceAttribute";
 import Crontab from '@/components/Crontab'
 const { proxy } = getCurrentInstance();
 const { sys_job_group, sys_job_status } = proxy.useDict("sys_job_group", "sys_job_status");
@@ -1050,6 +1162,8 @@ onMounted(() => {
     getList() ;
   }
   getList() ;
+  // 预加载设备列表，用于任务详情的设备/属性中文名展示
+  fetchDeviceList();
 
 });
 
@@ -1595,7 +1709,8 @@ const JOB_GROUP_MAPPING = {
   'ExecuteSiChuanHj212RuleTask': '四川省HJ212数据推送',
   'ExecuteTianjinHj212RuleTask': '天津市HJ212数据推送(前时标)',
   'ExecuteComHj212RuleTask': '通用HJ212数据推送',
-  'ExecuteCnemcHj212RuleTask': '总站HJ212数据推送'
+  'ExecuteCnemcHj212RuleTask': '总站HJ212数据推送',
+  'DeviceAttributeControl': '设备控制'
 };
 
 // 方法名映射
@@ -1611,7 +1726,8 @@ const METHOD_MAPPING = {
   'ExecuteSiChuanHj212RuleTask.run': "执行四川省HJ212数据推送任务",
   'ExecuteTianjinHj212RuleTask.run': "执行天津市HJ212数据推送任务",
   'ExecuteComHj212RuleTask.run': "执行通用HJ212数据推送任务",
-  'ExecuteCnemcHj212RuleTask.run': "执行总站HJ212数据推送任务"
+  'ExecuteCnemcHj212RuleTask.run': "执行总站HJ212数据推送任务",
+  'DeviceAttributeControlTask.run': "执行设备控制任务"
 };
 
 // 参数类型映射
@@ -1665,7 +1781,9 @@ const PARAM_MAPPING = {
   'customType':"检查类型",
   'table':"表名",
   'startWeek':"距离本周的开始周",
-  'endWeek':"距离本周的结束周"
+  'endWeek':"距离本周的结束周",
+  // 设备控制任务参数
+  'targetValue': '目标值'
 };
 
 // 参数位置映射表（按任务类型和参数索引绑定名称）
@@ -1713,6 +1831,10 @@ const PARAM_ORDER_MAPPING = {
   // 执行CnemcHj212Rule任务参数
   'ExecuteCnemcHj212RuleTask.run': [
     'executeComHj212Host', 'executeComHj212Port', 'executeComHj212RuleId', 'executeComHj212StartTime', 'executeComHj212EndTime', 'executeComHj212IsTime'
+  ],
+  // 设备控制任务：DeviceAttributeControlTask.run(deviceId, attributeId, targetValue)
+  'DeviceAttributeControlTask.run': [
+    'deviceId', 'attributeId', 'targetValue'
   ],
 };
 
@@ -1820,6 +1942,21 @@ const parseInvokeTarget = (target) => {
     if (s.targetFlowLpm != null && s.targetFlowLpm !== '') {
       lines.push(`${PARAM_MAPPING.targetFlowLpm}：${s.targetFlowLpm} L/min`);
     }
+    return `${mappedMethod}→(\n${lines.join('，\n')}\n)`;
+  }
+
+  if (methodName === 'DeviceAttributeControlTask.run') {
+    const [deviceId, attributeId, targetValue] = paramValues;
+    // 通过设备列表映射设备中文名与属性中文名（列表未加载时回退显示原始ID）
+    const device = deviceList.value.find(d => d.deviceId === deviceId);
+    const attr = device?.deviceAttrs?.find(a => a.attributeID === attributeId);
+    // 通过属性输入方案（scheme）将目标值翻译为可读 label，数字/文本等无选项时直接显示原值
+    const scheme = deviceControlSchemeCache.value[`${deviceId}::${attributeId}`];
+    const lines = [
+      `设备：${device?.deviceName || deviceId}`,
+      `属性：${attr?.displayName || attributeId}`,
+      `${PARAM_MAPPING.targetValue}：${translateDeviceControlTargetValue(scheme, targetValue)}`
+    ];
     return `${mappedMethod}→(\n${lines.join('，\n')}\n)`;
   }
 
@@ -2208,6 +2345,8 @@ const jobTypeDict = {
       `aggregationDataTask.run('${aggregateType}', '${aggregateStartTime}', '${aggregateEndTime}', ${aggregateIsTime}, ${minutes}, '${deviceId}', '${attributeId}')`,
   "CreatePartitionTablesTask": (table,startWeek, endWeek) =>
       `CreatePartitionTablesTask.run('${table}',${startWeek},${endWeek})`,
+  "DeviceAttributeControl": (deviceId, attributeId, targetValue) =>
+      `DeviceAttributeControlTask.run('${deviceId}','${attributeId}','${targetValue}')`,
   "ExecuteHj212RuleTask": (executeComHj212Protocol, executeComHj212Host, executeComHj212Port, executeComHj212RuleId, executeComHj212StartTime, executeComHj212EndTime, executeComHj212IsTime) => {
     // 根据协议类型选择不同的任务方法
     if (executeComHj212Protocol === 'sichuan') {
@@ -2232,6 +2371,8 @@ function getList() {
     jobList.value = response.rows;
     total.value = response.total;
     loading.value = false;
+    // 预取设备控制任务的属性输入方案，用于调用方法解释中目标值的 label 翻译
+    prefetchDeviceControlSchemes(jobList.value);
   });
 }
 
@@ -2485,6 +2626,11 @@ function setupJobNameWatch() {
     () => executeComHj212Form.value.executeComHj212StartTime,
     () => executeComHj212Form.value.executeComHj212EndTime,
     () => executeComHj212Form.value.executeComHj212IsTime,
+    // 设备控制任务参数监听
+    () => deviceControlForm.value,
+    () => deviceControlForm.value.deviceId,
+    () => deviceControlForm.value.attributeId,
+    () => deviceControlForm.value.targetValue,
   ], () => {
     generateJobName();
   }, { deep: true });
@@ -2857,6 +3003,177 @@ function handlePartitionClose(){
     endWeek: null,
   };
 }
+
+// ==================== 设备控制任务参数设置 ====================
+// 控制对话框显示
+const deviceControlOpen = ref(false);
+// 表单数据对象
+const deviceControlForm = ref({
+  deviceId: '',
+  attributeId: '',
+  targetValue: ''
+});
+// 表单校验规则
+const deviceControlRules = ref({
+  deviceId: [{ required: true, message: '请选择设备', trigger: 'change' }],
+  attributeId: [{ required: true, message: '请选择属性', trigger: 'change' }],
+  targetValue: [{ required: true, message: '请输入新值', trigger: 'blur' }]
+});
+// 属性输入方案（决定输入控件类型：select / command / input），参考首页设备操作
+const deviceControlLoadingScheme = ref(false);
+const deviceControlScheme = ref(null);
+// 可写属性列表（参考首页设备操作，仅展示 valueChangeable === true 的属性）
+const deviceControlAttributes = computed(() => {
+  if (!deviceControlForm.value.deviceId) return [];
+  const device = deviceList.value.find(d => d.deviceId === deviceControlForm.value.deviceId);
+  return device?.deviceAttrs?.filter(attr => attr.valueChangeable === true) || [];
+});
+
+// 解析设备控制任务参数
+function parseDeviceAttributeControlParams(invokeTarget) {
+  if (!invokeTarget) return null;
+  const match = invokeTarget.match(/DeviceAttributeControlTask\.run\('([^']*)',\s*'([^']*)',\s*'([^']*)'\)/);
+  if (!match || match.length < 4) return null;
+  return {
+    deviceId: match[1],
+    attributeId: match[2],
+    targetValue: match[3]
+  };
+}
+
+// 属性输入方案缓存（key: deviceId::attributeId），用于调用方法解释中目标值的 label 翻译
+const deviceControlSchemeCache = ref({});
+
+// 根据属性输入方案把目标值翻译为可读文本：select/binary 查 options、command 查 commands，
+// 其余类型（数字/文本等）或未命中时直接显示原值
+function translateDeviceControlTargetValue(scheme, value) {
+  if (!scheme || value === null || value === undefined || value === '') return value;
+  let candidates = [];
+  if (scheme.type === 'select' || scheme.type === 'binary') {
+    candidates = scheme.options || [];
+  } else if (scheme.type === 'command') {
+    candidates = scheme.commands || [];
+  }
+  const matched = candidates.find(opt => String(opt.value) === String(value));
+  if (matched && matched.label !== null && matched.label !== undefined && matched.label !== '') {
+    return matched.label;
+  }
+  return value;
+}
+
+// 预取任务列表中设备控制任务的属性输入方案，用于列表页调用方法解释的目标值翻译
+async function prefetchDeviceControlSchemes(jobRows) {
+  if (!jobRows || !jobRows.length) return;
+  const pairs = [];
+  const seen = new Set();
+  jobRows.forEach(job => {
+    const params = parseDeviceAttributeControlParams(job.invokeTarget);
+    if (params && params.deviceId && params.attributeId) {
+      const key = `${params.deviceId}::${params.attributeId}`;
+      if (!seen.has(key) && !deviceControlSchemeCache.value[key]) {
+        seen.add(key);
+        pairs.push({ deviceId: params.deviceId, attributeId: params.attributeId, key });
+      }
+    }
+  });
+  await Promise.all(pairs.map(async ({ deviceId, attributeId, key }) => {
+    try {
+      const res = await getAttributeScheme(deviceId, attributeId);
+      if (res.code === 200 && res.data?.scheme) {
+        deviceControlSchemeCache.value[key] = res.data.scheme;
+      }
+    } catch (error) {
+      console.error('预取属性输入方案失败:', error);
+    }
+  }));
+}
+
+// 加载属性输入方案（决定输入控件类型）
+async function loadDeviceControlScheme() {
+  const { deviceId, attributeId } = deviceControlForm.value;
+  if (!deviceId || !attributeId) {
+    deviceControlScheme.value = null;
+    return;
+  }
+  deviceControlLoadingScheme.value = true;
+  try {
+    const res = await getAttributeScheme(deviceId, attributeId);
+    if (res.code === 200) {
+      const scheme = res.data?.scheme || null;
+      deviceControlScheme.value = scheme;
+      // 写入缓存，供调用方法解释中的目标值 label 翻译使用
+      if (scheme) {
+        deviceControlSchemeCache.value[`${deviceId}::${attributeId}`] = scheme;
+      }
+    } else {
+      deviceControlScheme.value = null;
+    }
+  } catch (error) {
+    console.error('获取属性输入方案失败:', error);
+    deviceControlScheme.value = null;
+  } finally {
+    deviceControlLoadingScheme.value = false;
+  }
+}
+
+// 打开设备控制设置对话框
+async function handleDeviceControlOpen() {
+  // 尝试从现有的 invokeTarget 中解析参数（修改场景回填）
+  const existingParams = parseDeviceAttributeControlParams(form.value.invokeTarget);
+  // 获取设备列表
+  await fetchDeviceList();
+  deviceControlForm.value = existingParams || {
+    deviceId: '',
+    attributeId: '',
+    targetValue: ''
+  };
+  deviceControlOpen.value = true;
+  // 修改场景：加载已有设备属性的输入方案
+  if (existingParams && existingParams.deviceId && existingParams.attributeId) {
+    loadDeviceControlScheme();
+  }
+}
+
+// 设备变化：清空属性与新值
+function handleDeviceControlDeviceChange() {
+  deviceControlForm.value.attributeId = '';
+  deviceControlForm.value.targetValue = '';
+  deviceControlScheme.value = null;
+}
+
+// 属性变化：清空新值并加载输入方案
+function handleDeviceControlAttributeChange() {
+  deviceControlForm.value.targetValue = '';
+  loadDeviceControlScheme();
+}
+
+// 关闭对话框时重置表单
+function handleDeviceControlClose() {
+  deviceControlForm.value = {
+    deviceId: '',
+    attributeId: '',
+    targetValue: ''
+  };
+  deviceControlScheme.value = null;
+}
+
+// 确认按钮方法
+function handleDeviceControlConfirm() {
+  proxy.$refs.deviceControlFormRef.validate(valid => {
+    if (valid) {
+      deviceControlOpen.value = false;
+      handleDeviceControlSubmit(deviceControlForm.value);
+    }
+  });
+}
+
+// 提交：拼接 invokeTarget
+function handleDeviceControlSubmit(params) {
+  console.log('设备控制参数提交:', params);
+  const cmd = jobTypeDict["DeviceAttributeControl"](params.deviceId, params.attributeId, params.targetValue);
+  console.log('设备控制参数提交:', cmd);
+  form.value.invokeTarget = cmd;
+}
 // 新增创建分表对话框确认按钮方法
 function handlePartitionConfirm() {
   // 表单验证
@@ -3108,5 +3425,11 @@ function handleSortChange({ column, prop, order }) {
   font-size: 13px;
   white-space: nowrap;
   line-height: 1;
+}
+.device-control-command-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
 }
 </style>

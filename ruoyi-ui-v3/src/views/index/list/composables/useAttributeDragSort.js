@@ -55,11 +55,17 @@ export function useAttributeDragSort(device) {
 
     const cachedOrder = loadOrderFromCache()
     
-    // 如果没有缓存顺序，返回原始顺序（首次加载）
+    // 如果没有缓存顺序，按照displayName排序（首次加载）
     if (!cachedOrder || cachedOrder.length === 0) {
-      // 首次加载时，保存默认顺序
-      saveOrderToCache(originalAttrs)
-      return originalAttrs
+      // 按照属性名称排序
+      const sortedAttrs = [...originalAttrs].sort((a, b) => {
+        const nameA = (a.displayName || '').toLowerCase()
+        const nameB = (b.displayName || '').toLowerCase()
+        return nameA.localeCompare(nameB, 'zh-CN')
+      })
+      // 首次加载时，保存排序后的顺序
+      saveOrderToCache(sortedAttrs)
+      return sortedAttrs
     }
 
     // 创建属性 ID 到属性对象的映射

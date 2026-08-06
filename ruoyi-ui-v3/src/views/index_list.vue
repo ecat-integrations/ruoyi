@@ -4,6 +4,7 @@
       :device-data="deviceData"
       @open-orchestration="isOrchestrationModalShow = true"
       @return-to-dashboard="handleReturnToDashboard"
+      @switch-to-station-preview="handleSwitchToStationPreview"
     />
 
     <OrchestrationModal
@@ -29,14 +30,14 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-  isDeviceListMode: {
-    type: Boolean,
-    default: false
+  displayMode: {
+    type: String,
+    default: 'device-list'
   }
 })
 
 // 定义emits
-const emit = defineEmits(['return-to-dashboard', 'update-device-data'])
+const emit = defineEmits(['return-to-dashboard', 'switch-to-station-preview', 'update-device-data'])
 
 const { proxy } = getCurrentInstance()
 
@@ -60,8 +61,20 @@ const handleReturnToDashboard = () => {
     action: 'return_to_dashboard_mode',
     userAgent: navigator.userAgent
   })
-// 通过emit通知父组件切换回大屏模式
+  // 通过emit通知父组件切换回大屏模式
   emit('return-to-dashboard')
+}
+
+// 处理切换到全域控制视图模式
+const handleSwitchToStationPreview = () => {
+  // 记录页面访问状态
+  recordPageVisit('/index', {
+    timestamp: Date.now(),
+    action: 'switch_to_station_preview',
+    userAgent: navigator.userAgent
+  })
+  // 通过emit通知父组件切换到全域控制视图模式
+  emit('switch-to-station-preview')
 }
 
 // 生命周期

@@ -1,7 +1,17 @@
 <template>
-  <div class="container" ref="container" id="container">
+  <div :class="['container', { 'station-preview-mode': displayMode === 'station-preview' }]" ref="container" id="container">
     <!-- 大屏首页内容 -->
-    <div v-if="!isDeviceListMode" class="dashboard-content">
+    <div v-if="displayMode === 'dashboard'" class="dashboard-content">
+      <!-- 返回列表页按钮 - 始终存在于DOM，通过透明度控制显示 -->
+      <div 
+        class="back-to-list-btn" 
+        :class="{ 'btn-visible': isBackButtonVisible }"
+        @click="handleReturnToList"
+      >
+        <span class="back-icon">←</span>
+        <span class="back-text">返回列表页</span>
+      </div>
+      
       <div class="head">
         <div style="position: relative">
           <div class="logo" v-triple-click="handleLogoTripleClick"></div>
@@ -508,12 +518,20 @@
     </div>
     
     <!-- 设备管理模式内容 -->
-    <div v-else class="device-list-content">
+    <div v-else-if="displayMode === 'device-list'" class="device-list-content">
       <DeviceListComponent 
         @return-to-dashboard="handleReturnToDashboard"
+        @switch-to-station-preview="handleSwitchToStationPreview"
         @update-device-data="handleDeviceDataUpdate"
         :device-data="deviceData"
-        :is-device-list-mode="isDeviceListMode"
+        :display-mode="displayMode"
+      />
+    </div>
+    
+    <!-- 全域控制视图页面内容 -->
+    <div v-else-if="displayMode === 'station-preview'" class="station-preview-content">
+      <StationPreviewComponent 
+        @return-to-list="handleReturnToList"
       />
     </div>
   </div>
@@ -528,6 +546,7 @@ import date from "@/utils/date";
 import { ElMessage } from 'element-plus';
 import { recordPageVisit, getHomepageDisplayMode, saveHomepageDisplayMode } from '@/utils/pageState';
 import DeviceListComponent from './index_list.vue';
+import StationPreviewComponent from './station_preview.vue';
 import { initStatusMapper } from '@/views/index/list/utils/statusMapper'
 // 预加载状态字典
 initStatusMapper().catch(err => {
@@ -537,12 +556,13 @@ initStatusMapper().catch(err => {
 export default {
   name: "viewSet",
   components: {
-    DeviceListComponent
+    DeviceListComponent,
+    StationPreviewComponent
   },
   data() {
     return {
-      // 首页显示模式：false=大屏模式，true=设备管理模式
-      isDeviceListMode: true,
+      // 首页显示模式：'device-list'=设备列表模式，'dashboard'=大屏模式，'station-preview'=全域控制视图模式
+      displayMode: 'device-list',
       // 设备数据 - 用于设备管理模式
       deviceData: [],
       nowTime: "",
@@ -1436,7 +1456,10 @@ export default {
       timeIntervalId1: null,
       timeIntervalId2: null,
       timeIntervalId3: null,
-      middleRightTwoMaterial: null
+      middleRightTwoMaterial: null,
+      // 大屏页面返回按钮相关
+      isBackButtonVisible: true,
+      activityTimerId: null
     };
   },
   mounted() {
@@ -1447,14 +1470,17 @@ export default {
       userAgent: navigator.userAgent
     });
     
+    // 设置大屏页面活动检测
+    this.setupActivityDetection();
+    
     // 恢复上次的首页显示模式
     const savedMode = getHomepageDisplayMode();
-    if (savedMode === 'device-list') {
-      this.isDeviceListMode = true;
-      console.log('恢复设备列表模式');
+    if (savedMode === 'dashboard' || savedMode === 'station-preview') {
+      this.displayMode = savedMode;
+      console.log('恢复' + (savedMode === 'dashboard' ? '大屏' : '全域控制视图') + '模式');
     } else {
-      this.isDeviceListMode = false;
-      console.log('恢复大屏模式');
+      this.displayMode = 'device-list';
+      console.log('恢复设备列表模式');
     }
     
     // 监听主题变化
@@ -1559,6 +1585,8 @@ export default {
   if (this.timeIntervalId3) {
     clearInterval(this.timeIntervalId3);
   }
+  // 清理活动检测
+  this.cleanupActivityDetection();
   // 清理主题观察器
   if (this.themeObserver) {
     this.themeObserver.disconnect();
@@ -1601,16 +1629,68 @@ export default {
     }
   },
   methods: {
+    // 大屏页面活动检测相关方法
+    setupActivityDetection() {
+      // 绑定事件处理器
+      this._activityHandler = this.resetActivityTimer.bind(this);
+      
+      // 监听鼠标移动、点击、滚动、触摸等事件
+      const events = ['mousemove', 'mousedown', 'click', 'scroll', 'touchstart', 'touchmove', 'keydown'];
+      events.forEach(event => {
+        document.addEventListener(event, this._activityHandler, { passive: true });
+      });
+      
+      // 启动定时器
+      this.resetActivityTimer();
+    },
+    
+    resetActivityTimer() {
+      // 显示按钮
+      this.isBackButtonVisible = true;
+      
+      // 清除之前的定时器
+      if (this.activityTimerId) {
+        clearTimeout(this.activityTimerId);
+      }
+      
+      // 设置新的定时器，10秒后隐藏按钮
+      this.activityTimerId = setTimeout(() => {
+        this.isBackButtonVisible = false;
+      }, 10000);
+    },
+    
+    cleanupActivityDetection() {
+      // 清除定时器
+      if (this.activityTimerId) {
+        clearTimeout(this.activityTimerId);
+        this.activityTimerId = null;
+      }
+      
+      // 移除事件监听
+      if (this._activityHandler) {
+        const events = ['mousemove', 'mousedown', 'click', 'scroll', 'touchstart', 'touchmove', 'keydown'];
+        events.forEach(event => {
+          document.removeEventListener(event, this._activityHandler);
+        });
+        this._activityHandler = null;
+      }
+    },
+    
     handleData3(datas){
       let data_dict = {};
-      // 组织数据
-      datas.forEach(data => {
-        data_dict[data.deviceId] = {
+      // 允许的 coordinate 列表
+      const allowedCoordinates = [
+        'com.ecat:integration-logicdevice-airstation',
+        'com.ecat:integration-logicdevice-airdevice'
+      ];
+      // 组织数据 - 只筛选符合 coordinate 条件的设备
+      datas.filter(data => allowedCoordinates.includes(data.coordinate)).forEach(data => {
+        data_dict[data.uniqueId] = {
           "name": data.deviceName,
           "value": null,
           "unit":data.deviceModel,
           "status": data.deviceStatus,
-          "id":data.deviceId,
+          "id":data.uniqueId,
           "type": "value"
         };
         data.deviceAttrs.forEach(attr => {
@@ -1621,7 +1701,7 @@ export default {
           }else{
             status = 0;
           }
-          data_dict[data.deviceId + "-" + attr.attributeID] = {
+          data_dict[data.uniqueId + "-" + attr.attributeID] = {
             "name": attr.displayName,
             "value": attr.displayValue,
             "unit":attr.displayUnit,
@@ -1787,12 +1867,32 @@ export default {
       });
       this.alarmOpen = !this.alarmOpen;
     },
-    // 处理logo三次点击切换到设备管理模式
+    // 处理logo三次点击切换到设备管理模式（保留兼容性）
     handleLogoTripleClick() {
+      this.switchToMode('device-list', '设备管理模式');
+    },
+    
+    // 处理从设备管理模式返回大屏模式
+    handleReturnToDashboard() {
+      this.switchToMode('dashboard', '大屏模式');
+    },
+    
+    // 处理从全域控制视图返回列表页
+    handleReturnToList() {
+      this.switchToMode('device-list', '设备列表模式');
+    },
+    
+    // 处理切换到全域控制视图模式
+    handleSwitchToStationPreview() {
+      this.switchToMode('station-preview', '全域控制视图模式');
+    },
+    
+    // 通用模式切换方法
+    switchToMode(mode, modeName) {
       // 记录页面访问状态
       recordPageVisit('/index', {
         timestamp: Date.now(),
-        action: 'switch_to_device_list_mode',
+        action: 'switch_to_' + mode,
         userAgent: navigator.userAgent
       });
       
@@ -1802,48 +1902,16 @@ export default {
       this.$el.style.opacity = '0.8';
       
       ElMessage({
-        message: '正在切换到设备管理模式...',
+        message: '正在切换到' + modeName + '...',
         type: 'info',
         duration: 1000
       });
       
       // 延迟切换模式，让动画效果更自然
       setTimeout(() => {
-        this.isDeviceListMode = true;
+        this.displayMode = mode;
         // 保存当前显示模式
-        saveHomepageDisplayMode('device-list');
-        // 重置动画效果
-        this.$el.style.transition = 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
-        this.$el.style.transform = 'translateX(0)';
-        this.$el.style.opacity = '1';
-      }, 400);
-    },
-    
-    // 处理从设备管理模式返回大屏模式
-    handleReturnToDashboard() {
-      // 记录页面访问状态
-      recordPageVisit('/index', {
-        timestamp: Date.now(),
-        action: 'return_to_dashboard_mode',
-        userAgent: navigator.userAgent
-      });
-      
-      // 添加页面切换动画效果
-      this.$el.style.transition = 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
-      this.$el.style.transform = 'translateX(100%)';
-      this.$el.style.opacity = '0.8';
-      
-      ElMessage({
-        message: '正在返回大屏模式...',
-        type: 'info',
-        duration: 1000
-      });
-      
-      // 延迟切换模式，让动画效果更自然
-      setTimeout(() => {
-        this.isDeviceListMode = false;
-        // 保存当前显示模式
-        saveHomepageDisplayMode('dashboard');
+        saveHomepageDisplayMode(mode);
         // 重置动画效果
         this.$el.style.transition = 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
         this.$el.style.transform = 'translateX(0)';
@@ -1892,6 +1960,67 @@ export default {
   width: 99%;
   min-height: 960px;
   background: #000; /* 将背景设为黑色 */
+}
+
+.container.station-preview-mode {
+  width: 100%;
+  /* 84px = 顶部导航栏(50px) + 标签页(34px)，减去后恰好填满 app-main 内容区，避免父级页面出现滚动条 */
+  height: calc(100vh - 84px);
+  min-height: 0;
+  background: var(--el-bg-color-page, #f5f7fa);
+  overflow: hidden;
+}
+
+/* 全域控制视图模式 - 占满全屏 */
+.station-preview-content {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--el-bg-color-page, #f5f7fa);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 返回列表页按钮样式 */
+.back-to-list-btn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0; /* 默认透明 */
+  transition: opacity 0.3s ease;
+  user-select: none;
+  pointer-events: auto; /* 始终可点击 */
+}
+
+.back-to-list-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.back-to-list-btn.btn-visible {
+  opacity: 1; /* 显示状态 */
+}
+
+.back-icon {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.back-text {
+  font-size: 14px;
+  font-weight: 500;
 }
 .progress-container {
   display: flex;

@@ -2359,6 +2359,7 @@ INSERT INTO "public"."sys_dict_data" VALUES (244, 9999, '其他状态', '9999', 
 INSERT INTO "public"."sys_dict_data" VALUES (245, 3, '日数据', 'day', 'data_type', NULL, 'default', NULL, '0', 'admin', '2025-12-24 12:00:00.194211', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (246, 5, '中止中', '4', 'quality_control_execution_status', NULL, 'warning', NULL, '0', 'admin', '2025-12-31 14:47:14.123191', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (249, 230, '洁净度报警', '23', 'alarm_type', NULL, 'default', NULL, '0', 'Admin7s9k2G5', '2026-06-05 14:36:06.9299', NULL, NULL, NULL);
+INSERT INTO "public"."sys_dict_data" VALUES (250, 9, '设备控制', 'DeviceAttributeControl', 'sys_job_group', NULL, 'danger', NULL, '0', 'Admin7s9k2G5', '2026-08-05 15:39:54.321697', 'Admin7s9k2G5', '2026-08-05 15:43:55.22284', NULL);
 
 -- ----------------------------
 -- Table structure for sys_dict_type
