@@ -83,4 +83,21 @@ WHERE "job_id" IN (15)
    OR ("job_name" IN ('质控报告定时自动生成')
     AND "job_group" = 'DEFAULT');
 
+-- =============================================
+-- 3. env_material_manager：更新滤纸带错别字
+-- =============================================
+UPDATE "public"."env_material_manager"
+SET "material_name" = 'PM2.5滤纸带',
+    "update_time" = CURRENT_TIMESTAMP
+WHERE "id" IN (4)
+   OR ("material_name" IN ('PM2.5滤纸袋')
+    AND "material_type" = '5');
+
+UPDATE "public"."env_material_manager"
+SET "material_name" = 'PM10滤纸带',
+    "update_time" = CURRENT_TIMESTAMP
+WHERE "id" IN (5, 6)
+   OR ("material_name" IN ('PM10滤纸袋')
+    AND "material_type" = '4');
+
 COMMIT;
