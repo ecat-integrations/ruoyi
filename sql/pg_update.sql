@@ -68,6 +68,7 @@ SELECT setval(pg_get_serial_sequence('public.env_device_settings', 'id'), COALES
 -- 3. sys_job：同步实时表/历史表分表任务 status
 --    init 后,新pg需要关闭这两条分表任务 status 可能为 0 启用，统一更新为 1 关闭
 --    init 后,质控报告生成时间调整到每日 00:05:00
+--    init 后,调整四气态的每个零或跨默认 间隔30分钟
 -- =============================================
 UPDATE "public"."sys_job"
 SET "status" = '1',
@@ -83,8 +84,27 @@ WHERE "job_id" IN (15)
    OR ("job_name" IN ('质控报告定时自动生成')
     AND "job_group" = 'DEFAULT');
 
+
+UPDATE "public"."sys_job" SET "cron_expression" = '0 0 3 * * ?', "update_time" = CURRENT_TIMESTAMP
+WHERE "job_id" = 21 OR ("job_name" = '零点检查-SO2' AND "job_group" = 'QualityControl');
+UPDATE "public"."sys_job" SET "cron_expression" = '0 30 3 * * ?', "update_time" = CURRENT_TIMESTAMP
+WHERE "job_id" = 27 OR ("job_name" = '跨度检查-SO2' AND "job_group" = 'QualityControl');
+UPDATE "public"."sys_job" SET "cron_expression" = '0 0 4 * * ?', "update_time" = CURRENT_TIMESTAMP
+WHERE "job_id" = 23 OR ("job_name" = '零点检查-O3' AND "job_group" = 'QualityControl');
+UPDATE "public"."sys_job" SET "cron_expression" = '0 30 4 * * ?', "update_time" = CURRENT_TIMESTAMP
+WHERE "job_id" = 28 OR ("job_name" = '跨度检查-O3' AND "job_group" = 'QualityControl');
+UPDATE "public"."sys_job" SET "cron_expression" = '0 0 5 * * ?', "update_time" = CURRENT_TIMESTAMP
+WHERE "job_id" = 24 OR ("job_name" = '零点检查-CO' AND "job_group" = 'QualityControl');
+UPDATE "public"."sys_job" SET "cron_expression" = '0 30 5 * * ?', "update_time" = CURRENT_TIMESTAMP
+WHERE "job_id" = 26 OR ("job_name" = '跨度检查-CO' AND "job_group" = 'QualityControl');
+UPDATE "public"."sys_job" SET "cron_expression" = '0 0 6 * * ?', "update_time" = CURRENT_TIMESTAMP
+WHERE "job_id" = 22 OR ("job_name" = '零点检查-NO2' AND "job_group" = 'QualityControl');
+UPDATE "public"."sys_job" SET "cron_expression" = '0 30 6 * * ?', "update_time" = CURRENT_TIMESTAMP
+WHERE "job_id" = 25 OR ("job_name" = '跨度检查-NO2' AND "job_group" = 'QualityControl');
+
+
 -- =============================================
--- 3. env_material_manager：更新滤纸带错别字
+-- 4. env_material_manager：更新滤纸带错别字
 -- =============================================
 UPDATE "public"."env_material_manager"
 SET "material_name" = 'PM2.5滤纸带',

@@ -652,7 +652,7 @@ INSERT INTO "public"."env_material_manager" VALUES (1, 'CO-102NSDIU2', 'CO气罐
 INSERT INTO "public"."env_material_manager" VALUES (2, 'SO2-SUI2SIX', 'SO2气罐', '2', 'ASDASD50MP', 'XX公司', '2025-06-01', '2025-07-01', '2025-06-09 17:52:31', 50.000, 'MPa', 50.000, 1, '设备旁边', NULL, 'admin', 'admin', '2025-06-09 17:53:07', '2025-08-06 15:42:38', '{"concentration":20}');
 INSERT INTO "public"."env_material_manager" VALUES (3, 'NO--SD92NX', 'NOx气罐', '3', '1313SADA', 'XX公司', '2025-06-01', '2025-07-01', '2025-06-09 17:53:10', 50.000, 'MPa', 8.000, 1, '设备旁边', NULL, 'admin', 'admin', '2025-06-09 17:53:46', '2025-08-06 15:42:40', '{"concentration":20}');
 INSERT INTO "public"."env_material_manager" VALUES (4, 'PM25-23SDASDM', 'PM2.5滤纸带', '5', 'ER23', '赛默森', '2025-06-01', '2025-07-01', '2025-06-09 17:54:25', 100.000, '个', 44.000, 1, 'PM2.5设备', NULL, 'admin', 'admin', '2025-06-09 17:54:58', '2025-08-06 15:42:42', '');
-INSERT INTO "public"."env_material_manager" VALUES (5, '测试PM10', 'PM10纸袋', '4', '撒旦撒', '赛默森', '2025-06-01', '2025-07-01', '2025-06-09 17:55:14', 50.000, '个', 8.000, 2, 'PM10设备', NULL, 'admin', 'admin', '2025-06-09 17:55:40', '2025-09-10 09:06:27', '{}');
+INSERT INTO "public"."env_material_manager" VALUES (5, '测试PM10', 'PM10滤纸带', '4', '撒旦撒', '赛默森', '2025-06-01', '2025-07-01', '2025-06-09 17:55:14', 50.000, '个', 8.000, 2, 'PM10设备', NULL, 'admin', 'admin', '2025-06-09 17:55:40', '2025-09-10 09:06:27', '{}');
 INSERT INTO "public"."env_material_manager" VALUES (6, 'PM10-ZD-2193SNDN', 'PM10滤纸带', '4', 'SDWQE', '赛默森', '2025-06-01', '2025-07-01', '2025-06-09 17:53:48', 100.000, '个', 100.000, 1, 'PM10设备', NULL, 'admin', 'admin', '2025-06-09 17:54:24', '2025-09-10 09:06:29', '');
 -- ----------------------------
 -- Auto increment value for env_material_manager

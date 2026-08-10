@@ -1410,7 +1410,7 @@ export default {
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "PM10纸袋剩余量",
+          "name": "PM10纸带剩余量",
           "value": null,
           "unit": "%",
           "status": -1,
@@ -1418,7 +1418,7 @@ export default {
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "PM2.5纸袋剩余量",
+          "name": "PM2.5纸带剩余量",
           "value": null,
           "unit": "%",
           "status": -1,
