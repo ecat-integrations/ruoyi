@@ -40,6 +40,6 @@ function handleSetSize(size) {
 .size-icon--style {
   font-size: 18px;
   line-height: 50px;
-  padding-right: 7px;
+  padding-right: 0px;
 }
 </style>

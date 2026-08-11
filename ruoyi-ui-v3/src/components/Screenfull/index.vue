@@ -1,13 +1,15 @@
 <template>
   <div>
-    <svg-icon :icon-class="isFullscreen ? 'exit-fullscreen' : 'fullscreen'" @click="toggle" />
+    <el-tooltip :content="isFullscreen ? '退出全屏' : '全屏'" effect="dark" placement="bottom">
+      <svg-icon :icon-class="isFullscreen ? 'exit-fullscreen' : 'fullscreen'" @click="toggle" />
+    </el-tooltip>
   </div>
 </template>
 
 <script setup>
 import { useFullscreen } from '@vueuse/core'
 
-const { isFullscreen, enter, exit, toggle } = useFullscreen();
+const { isFullscreen, toggle } = useFullscreen();
 </script>
 
 <style lang='scss' scoped>
