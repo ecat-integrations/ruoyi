@@ -71,37 +71,65 @@ export function useDeviceCardDragSort() {
     return orderedDevices
   }
 
-  // 处理拖拽结束
-  const handleDragEnd = (devices, fromIndex, toIndex) => {
-    if (fromIndex === null || fromIndex === toIndex) {
-      return devices
+  /**
+   * 在「可见列表」内重排后，合并回全量列表。
+   * 保留未展示设备的槽位，只替换可见设备在这些槽位中的顺序。
+   * 解决：按物理/逻辑筛选后，v-for 索引与全量 orderedDevices 索引不一致导致排序无效。
+   */
+  const mergeFilteredOrder = (allDevices, visibleDevices) => {
+    if (!allDevices?.length || !visibleDevices?.length) {
+      return allDevices || []
+    }
+    const visibleIds = new Set(visibleDevices.map(d => d.deviceId))
+    let cursor = 0
+    return allDevices.map(device => {
+      if (visibleIds.has(device.deviceId)) {
+        return visibleDevices[cursor++]
+      }
+      return device
+    })
+  }
+
+  // 处理拖拽结束（indices 针对当前可见列表）
+  const handleDragEnd = (allDevices, visibleDevices, fromIndex, toIndex) => {
+    if (!visibleDevices || fromIndex === null || fromIndex === toIndex) {
+      return allDevices
+    }
+    if (
+      fromIndex < 0 ||
+      toIndex < 0 ||
+      fromIndex >= visibleDevices.length ||
+      toIndex >= visibleDevices.length
+    ) {
+      return allDevices
     }
 
-    // 创建新的排序数组
-    const newDevices = [...devices]
-    const [removed] = newDevices.splice(fromIndex, 1)
-    newDevices.splice(toIndex, 0, removed)
+    const nextVisible = [...visibleDevices]
+    const [removed] = nextVisible.splice(fromIndex, 1)
+    nextVisible.splice(toIndex, 0, removed)
 
-    // 保存到缓存
+    const newDevices = mergeFilteredOrder(allDevices, nextVisible)
     saveOrderToCache(newDevices)
-
     return newDevices
   }
 
-  // 将设备移动到第一位（置顶）
-  const moveDeviceToFirst = (devices, deviceIndex) => {
-    if (!devices || deviceIndex <= 0 || deviceIndex >= devices.length) {
-      return devices
+  // 将可见列表中的设备置顶到可见列表首位（再合并回全量）
+  const moveDeviceToFirst = (allDevices, visibleDevices, visibleIndex) => {
+    if (
+      !allDevices ||
+      !visibleDevices ||
+      visibleIndex <= 0 ||
+      visibleIndex >= visibleDevices.length
+    ) {
+      return allDevices
     }
 
-    // 创建新的排序数组，将指定设备移到第一位
-    const newDevices = [...devices]
-    const [removed] = newDevices.splice(deviceIndex, 1)
-    newDevices.unshift(removed)
+    const nextVisible = [...visibleDevices]
+    const [removed] = nextVisible.splice(visibleIndex, 1)
+    nextVisible.unshift(removed)
 
-    // 保存到缓存
+    const newDevices = mergeFilteredOrder(allDevices, nextVisible)
     saveOrderToCache(newDevices)
-
     return newDevices
   }
 
@@ -118,6 +146,7 @@ export function useDeviceCardDragSort() {
     loadOrderFromCache,
     saveOrderToCache,
     applyCachedOrder,
+    mergeFilteredOrder,
     handleDragEnd,
     moveDeviceToFirst,
     clearAllCache

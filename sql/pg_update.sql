@@ -7,12 +7,13 @@
    psql -h <host> -p <port> -U <user> -d <dbname> -f pg_update.sql
    或在 pgAdmin Query Tool 中打开本文件后执行
  脚本做了什么:
-   1. 清空 env_alarm_settings / env_device_settings 表数据
-   2. 重新插入 两个表中的最新基础数据
-   3. 重置两表 id 序列到当前最大 id
-   4. 将 sys_job 中「实时表分表」「历史表分表」任务的 status 更新为 1
+   1. 清空 env_alarm_settings 报警管理表数据，重新插入最新基础数据
+   2. 清空 env_device_settings 设备管理表数据， 重新插入最新基础数据
+   3. 将 sys_job 中「实时表分表」「历史表分表」任务的 status 更新为 1 关闭 ， 调整质控报告及零跨质控任务默认执行时间
+   4. 纠正 env_material_manager 耗材管理表中滤纸带错别字
+   5. 更新 sys_menu 系统菜单表，隐藏系统监控和系统工具,调整日志管理菜单
 
- Date: 27/07/2026
+ Date: 08/08/2026
 */
 
 BEGIN;
@@ -119,5 +120,33 @@ SET "material_name" = 'PM10滤纸带',
 WHERE "id" IN (5, 6)
    OR ("material_name" IN ('PM10滤纸袋')
     AND "material_type" = '4');
+
+
+-- =============================================
+-- 5. sys_menu：隐藏系统监控和系统工具,调整日志管理菜单
+-- =============================================
+UPDATE "public"."sys_menu"
+SET "visible" = '1',
+    "update_time" = CURRENT_TIMESTAMP
+WHERE "menu_id" IN (2, 3, 2073)
+   OR ("menu_name" IN ('系统监控', '系统工具', '日志管理')
+    AND "menu_type" = 'M'
+    AND "parent_id" = '0');
+
+UPDATE "public"."sys_menu"
+SET "visible" = '1',
+    "update_time" = CURRENT_TIMESTAMP
+WHERE "menu_id" IN (105, 106)
+   OR ("menu_name" IN ('字典管理', '参数设置')
+    AND "menu_type" = 'C'
+    AND "parent_id" = '1');
+
+UPDATE "public"."sys_menu"
+SET "parent_id" = 108,
+    "update_time" = CURRENT_TIMESTAMP
+WHERE "menu_id" IN (500)
+   OR ("menu_name" IN ('操作日志')
+    AND "menu_type" = 'C'
+    AND "parent_id" = '2073');
 
 COMMIT;

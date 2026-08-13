@@ -2,10 +2,9 @@
   <div
     class="device-card"
     :class="deviceStatusClass"
-    @dblclick="$emit('dblclick', $event)"
     @contextmenu="$emit('contextmenu', $event)"
   >
-    <div class="device-header">
+    <div class="device-header" @dblclick.stop="$emit('dblclick', $event)">
       <div class="device-name-wrapper">
         <div class="device-name">{{ device.deviceName }}</div>
         <el-button
@@ -49,6 +48,7 @@
         @drop="handleDrop($event, index)"
         @dragend="handleDragEnd($event)"
         @click="handleClick($event, index)"
+        @dblclick.stop
         @contextmenu="handleContextMenu($event, index)"
       />
     </div>
@@ -303,6 +303,7 @@ const deviceTypeText = computed(() => {
   align-items: center;
   transition: border-color 0.3s ease;
   gap: 12px;
+  cursor: pointer;
 }
 
 .device-name-wrapper {

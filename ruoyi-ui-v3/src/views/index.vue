@@ -1,7 +1,11 @@
 <template>
   <div :class="['container', { 'station-preview-mode': displayMode === 'station-preview' }]" ref="container" id="container">
     <!-- 大屏首页内容 -->
-    <div v-if="displayMode === 'dashboard'" class="dashboard-content">
+    <div
+      v-if="displayMode === 'dashboard'"
+      class="dashboard-content"
+      :style="{ '--sec-deg': secHandDeg + 'deg' }"
+    >
       <!-- 返回列表页按钮 - 始终存在于DOM，通过透明度控制显示 -->
       <div 
         class="back-to-list-btn" 
@@ -47,7 +51,7 @@
         <div class="s_box cyg">
           <div style="display: flex">
             <div class="s_title">【报警状态监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
+            <div class="s_time"><span class="mini-sec-clock" aria-hidden="true"><span class="mini-sec-clock__hand"></span></span>{{ nowTime }}</div>
           </div>
 
           <div class="s_content">
@@ -72,7 +76,7 @@
         <div class="s_box abc_elec">
           <div style="display: flex">
             <div class="s_title">【流量监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
+            <div class="s_time"><span class="mini-sec-clock" aria-hidden="true"><span class="mini-sec-clock__hand"></span></span>{{ nowTime }}</div>
           </div>
           <div class="s_content">
             <div>
@@ -95,7 +99,7 @@
         <div class="s_box hw">
           <div style="display: flex">
             <div class="s_title">【站房环境监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
+            <div class="s_time"><span class="mini-sec-clock" aria-hidden="true"><span class="mini-sec-clock__hand"></span></span>{{ nowTime }}</div>
           </div>
           <div class="s_content">
             <div>
@@ -122,7 +126,7 @@
         <div class="s_box ups">
           <div style="display: flex">
             <div class="s_title">【采样管设备监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
+            <div class="s_time"><span class="mini-sec-clock" aria-hidden="true"><span class="mini-sec-clock__hand"></span></span>{{ nowTime }}</div>
           </div>
           <div class="s_content">
             <div class="cy_text" :class="{
@@ -147,7 +151,7 @@
             <div class="s_title" style="height: 1.8rem; line-height: 1.8rem">
               【大气环境监测】
             </div>
-            <div class="s_time">{{ nowTime }}</div>
+            <div class="s_time"><span class="mini-sec-clock" aria-hidden="true"><span class="mini-sec-clock__hand"></span></span>{{ nowTime }}</div>
           </div>
 
           <div style="display: flex; margin-top: 0.8rem">
@@ -367,7 +371,7 @@
           <div class="s_box pm25">
             <div style="display: flex">
               <div class="s_title">【UPS设备】</div>
-              <div class="s_time">{{ nowTime }}</div>
+              <div class="s_time"><span class="mini-sec-clock" aria-hidden="true"><span class="mini-sec-clock__hand"></span></span>{{ nowTime }}</div>
             </div>
 
             <div class="s_content">
@@ -391,7 +395,7 @@
           <div class="s_box pm10 h_space">
             <div style="display: flex">
               <div class="s_title">【换膜器状态】</div>
-              <div class="s_time">{{ nowTime }}</div>
+              <div class="s_time"><span class="mini-sec-clock" aria-hidden="true"><span class="mini-sec-clock__hand"></span></span>{{ nowTime }}</div>
             </div>
             <div class="s_content">
               <div>
@@ -408,14 +412,28 @@
             </div>
             <div style="display: flex">
               <div class="s_title">【标准物质剩余量】</div>
-              <div class="s_time">{{ nowTime }}</div>
+              <div class="s_time"><span class="mini-sec-clock" aria-hidden="true"><span class="mini-sec-clock__hand"></span></span>{{ nowTime }}</div>
             </div>
             <div class="s_content">
               <div>
                 <template v-if="materialAvailable === false">
-                  <div class="cy_text">
-                    <span class="cy_name">{{ materialDisabledTip }}</span>
+                  <div
+                    class="cy_text nostatus material-placeholder-row"
+                    v-for="(item, index) of materialPlaceholders"
+                    :key="'material-ph-' + index"
+                  >
+                    <span class="cy_name">{{ item.materialName }}</span>
+                    <div class="progress-container material-placeholder-bar">
+                      <el-progress
+                        :percentage="0"
+                        stroke-width="18"
+                        :show-text="false"
+                        color="#555555"
+                      />
+                    </div>
+                    <span class="cy_unit material-placeholder-unit">--/--</span>
                   </div>
+                  <div class="material-placeholder-tip">{{ materialDisabledTip }}</div>
                 </template>
                 <template v-else>
                   <div
@@ -445,7 +463,7 @@
         <div class="s_box hm">
           <div style="display: flex">
             <div class="s_title">【气象监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
+            <div class="s_time"><span class="mini-sec-clock" aria-hidden="true"><span class="mini-sec-clock__hand"></span></span>{{ nowTime }}</div>
           </div>
           <div class="s_content">
             <div>
@@ -468,7 +486,7 @@
         <div class="s_box fjzm">
           <div style="display: flex">
             <div class="s_title">【控制监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
+            <div class="s_time"><span class="mini-sec-clock" aria-hidden="true"><span class="mini-sec-clock__hand"></span></span>{{ nowTime }}</div>
           </div>
           <div class="s_content">
             <div>
@@ -491,7 +509,7 @@
         <div class="s_box qx" style="height: 25rem">
           <div style="display: flex">
             <div class="s_title">【电力监测】</div>
-            <div class="s_time">{{ nowTime }}</div>
+            <div class="s_time"><span class="mini-sec-clock" aria-hidden="true"><span class="mini-sec-clock__hand"></span></span>{{ nowTime }}</div>
           </div>
           <div class="s_content">
             <div>
@@ -542,7 +560,6 @@
 
 <script>
 import axios from "axios";
-import * as echarts from "echarts";
 import {getNowData, listindexAlarms} from "@/api/login";
 // import App from '@/App.vue'
 import date from "@/utils/date";
@@ -576,6 +593,8 @@ export default {
       // 设备数据 - 用于设备管理模式
       deviceData: [],
       nowTime: "",
+      /** 秒针角度 */
+      secHandDeg: 0,
       queryAlarmParams:{
         pageNum: 1,
         pageSize: 3
@@ -1475,12 +1494,22 @@ export default {
       /** null=未探测，true/false=耗材集成是否可用 */
       materialAvailable: null,
       materialDisabledTip: MATERIAL_DISABLED_TIP,
-      middleRightTwoMaterial: []
+      middleRightTwoMaterial: [],
+      /** 耗材集成未启用时的示意条 */
+      materialPlaceholders: [
+        { materialName: 'SO2钢瓶气' },
+        { materialName: 'NOX钢瓶气' },
+        { materialName: 'CO钢瓶气' },
+        { materialName: 'PM10纸带' },
+        { materialName: 'PM2.5纸带' }
+      ]
     };
   },
   watch: {
     displayMode() {
       this.syncDashboardPolling();
+      this.syncDashboardClock();
+      this.syncActivityDetection();
     }
   },
   mounted() {
@@ -1491,9 +1520,6 @@ export default {
       userAgent: navigator.userAgent
     });
     
-    // 设置大屏页面活动检测
-    this.setupActivityDetection();
-    
     // 恢复上次的首页显示模式
     const savedMode = getHomepageDisplayMode();
     if (savedMode === 'dashboard' || savedMode === 'station-preview') {
@@ -1503,6 +1529,10 @@ export default {
       this.displayMode = 'device-list';
       console.log('恢复设备列表模式');
     }
+
+    // 大屏活动检测 / 时钟：仅大屏模式启用
+    this.syncActivityDetection();
+    this.syncDashboardClock();
     
     // 监听主题变化
     this.updateThemeClass();
@@ -1513,11 +1543,6 @@ export default {
       attributes: true,
       attributeFilter: ['class']
     });
-    
-    //获取当前时间
-    this.timeIntervalId1 = setInterval(() => {
-      this.nowTime = date.currDate();
-    }, 1000);
 
     // 大屏实时数据 / 耗材：仅大屏模式且页面激活时轮询
     this.syncDashboardPolling();
@@ -1584,17 +1609,18 @@ export default {
   activated() {
     this.pageActive = true;
     this.syncDashboardPolling();
+    this.syncDashboardClock();
+    this.syncActivityDetection();
   },
   deactivated() {
     this.pageActive = false;
     this.stopDashboardDataPoll();
     this.stopMaterialPoll();
+    this.stopDashboardClock();
+    this.cleanupActivityDetection();
   },
   beforeUnmount() {
-  // 清除所有定时器
-  if (this.timeIntervalId1) {
-    clearInterval(this.timeIntervalId1);
-  }
+  this.stopDashboardClock();
   this.stopDashboardDataPoll();
   this.stopMaterialPoll();
   if (this.timeIntervalId3) {
@@ -1645,7 +1671,18 @@ export default {
   },
   methods: {
     // 大屏页面活动检测相关方法
+    syncActivityDetection() {
+      if (this.pageActive && this.displayMode === 'dashboard') {
+        this.setupActivityDetection();
+      } else {
+        this.cleanupActivityDetection();
+      }
+    },
     setupActivityDetection() {
+      if (this._activityHandler) {
+        this.resetActivityTimer();
+        return;
+      }
       // 绑定事件处理器
       this._activityHandler = this.resetActivityTimer.bind(this);
       
@@ -1660,8 +1697,10 @@ export default {
     },
     
     resetActivityTimer() {
-      // 显示按钮
-      this.isBackButtonVisible = true;
+      // 避免 mousemove 高频写入同一响应式值
+      if (!this.isBackButtonVisible) {
+        this.isBackButtonVisible = true;
+      }
       
       // 清除之前的定时器
       if (this.activityTimerId) {
@@ -1689,6 +1728,46 @@ export default {
         });
         this._activityHandler = null;
       }
+    },
+
+    /** 仅大屏可见时执行时钟 */
+    syncDashboardClock() {
+      if (this.pageActive && this.displayMode === 'dashboard') {
+        this.startDashboardClock();
+      } else {
+        this.stopDashboardClock();
+      }
+    },
+    startDashboardClock() {
+      if (this.timeIntervalId1) {
+        return;
+      }
+      this.tickClock();
+      this.timeIntervalId1 = setInterval(() => {
+        this.tickClock();
+      }, 1000);
+    },
+    tickClock() {
+      const now = new Date();
+      this.nowTime = date.currDate();
+      const sec = now.getSeconds();
+      if (this._lastClockSecond == null) {
+        this.secHandDeg = sec * 6;
+      } else {
+        let delta = sec - this._lastClockSecond;
+        if (delta < 0) delta += 60;
+        if (delta > 0) {
+          this.secHandDeg += delta * 6;
+        }
+      }
+      this._lastClockSecond = sec;
+    },
+    stopDashboardClock() {
+      if (this.timeIntervalId1) {
+        clearInterval(this.timeIntervalId1);
+        this.timeIntervalId1 = null;
+      }
+      this._lastClockSecond = null;
     },
     
     /** 经典大屏且页面激活时才轮询 */
@@ -2001,7 +2080,7 @@ export default {
         duration: 1000
       });
       
-      // 延迟切换模式，让动画效果更自然
+      // 延迟切换模式，动效自然
       setTimeout(() => {
         this.displayMode = mode;
         // 保存当前显示模式
@@ -2056,9 +2135,159 @@ export default {
   background: #000; /* 将背景设为黑色 */
 }
 
+/* —— 低开销动效：只动 opacity/transform，且无限动画控制在少量节点 —— */
+.dashboard-content {
+  position: relative;
+}
+
+.dashboard-content .head {
+  position: relative;
+}
+
+/* 顶栏底部氛围线（单元素） */
+.dashboard-content .head::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 229, 255, 0.15),
+    rgba(0, 229, 255, 0.75),
+    rgba(0, 224, 102, 0.55),
+    rgba(0, 229, 255, 0.15),
+    transparent
+  );
+  transform-origin: center;
+  animation: head-line-breathe 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes head-line-breathe {
+  0%, 100% { opacity: 0.35; transform: scaleX(0.92); }
+  50% { opacity: 0.95; transform: scaleX(1); }
+}
+
+/* 面板入场：一次性，不持续占 CPU */
+.dashboard-content .s_box,
+.dashboard-content .dh_data_panel {
+  animation: panel-enter 0.5s ease-out backwards;
+}
+
+.dashboard-content .left .s_box:nth-child(1) { animation-delay: 0.04s; }
+.dashboard-content .left .s_box:nth-child(2) { animation-delay: 0.1s; }
+.dashboard-content .left .s_box:nth-child(3) { animation-delay: 0.16s; }
+.dashboard-content .left .s_box:nth-child(4) { animation-delay: 0.22s; }
+.dashboard-content .middle > .s_box:nth-child(1) { animation-delay: 0.08s; }
+.dashboard-content .right .s_box:nth-child(1) { animation-delay: 0.12s; }
+.dashboard-content .right .s_box:nth-child(2) { animation-delay: 0.18s; }
+.dashboard-content .right .s_box:nth-child(3) { animation-delay: 0.24s; }
+.dashboard-content .dh_data_panel:nth-child(1) { animation-delay: 0.14s; }
+.dashboard-content .dh_data_panel:nth-child(2) { animation-delay: 0.18s; }
+.dashboard-content .dh_data_panel:nth-child(3) { animation-delay: 0.22s; }
+.dashboard-content .dh_data_panel:nth-child(4) { animation-delay: 0.26s; }
+.dashboard-content .dh_data_panel:nth-child(5) { animation-delay: 0.3s; }
+.dashboard-content .dh_data_panel:nth-child(6) { animation-delay: 0.34s; }
+
+@keyframes panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 区块标题扫光 */
+.s_title {
+  position: relative;
+  overflow: hidden;
+}
+
+.s_title::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.18),
+    transparent
+  );
+  transform: translateX(0);
+  animation: title-scan 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.left .s_box:nth-child(1) .s_title::after { animation-delay: 0s; }
+.left .s_box:nth-child(2) .s_title::after { animation-delay: 0.7s; }
+.left .s_box:nth-child(3) .s_title::after { animation-delay: 1.4s; }
+.left .s_box:nth-child(4) .s_title::after { animation-delay: 2.1s; }
+.middle .s_title::after { animation-delay: 0.35s; }
+.right .s_box:nth-child(1) .s_title::after { animation-delay: 1s; }
+.right .s_box:nth-child(2) .s_title::after { animation-delay: 1.7s; }
+.right .s_box:nth-child(3) .s_title::after { animation-delay: 2.4s; }
+
+@keyframes title-scan {
+  0%, 12% { transform: translateX(0); opacity: 0; }
+  18% { opacity: 1; }
+  45% { transform: translateX(320%); opacity: 1; }
+  52%, 100% { transform: translateX(320%); opacity: 0; }
+}
+
+/* 大气环境监测卡片：悬停轻抬起（仅交互时合成） */
+.dh_data_panel {
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.dh_data_panel:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 229, 255, 0.65);
+}
+
+.version-number {
+  animation: version-soft-pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes version-soft-pulse {
+  0%, 100% { opacity: 0.78; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-content .head::after,
+  .s_title::after,
+  .version-number,
+  .dashboard-content .s_box,
+  .dashboard-content .dh_data_panel,
+  .cy_val_error_inner,
+  .successstatus::after,
+  .errorstatus::after,
+  .nostatus::after,
+  .title {
+    animation: none !important;
+  }
+
+  .mini-sec-clock__hand {
+    transition: none !important;
+  }
+
+  .dh_data_panel:hover {
+    transform: none;
+  }
+}
+
 .container.station-preview-mode {
   width: 100%;
-  /* 84px = 顶部导航栏(50px) + 标签页(34px)，减去后恰好填满 app-main 内容区，避免父级页面出现滚动条 */
+  /* 填满 app-main 内容区，避免父级页面出现滚动条 */
   height: calc(100vh - 84px);
   min-height: 0;
   background: var(--el-bg-color-page, #f5f7fa);
@@ -2122,6 +2351,35 @@ export default {
   gap: 10px; /* 进度条和文本之间的间距 */
   width: 20%; /* 确保容器有宽度 */
   background-color: rgba(128, 128, 128, 0.3);
+}
+
+/* 耗材未启用 */
+.material-placeholder-row {
+  opacity: 0.5;
+}
+
+.material-placeholder-bar {
+  border: 1px dashed rgba(160, 160, 160, 0.55);
+  background-color: rgba(70, 70, 70, 0.28) !important;
+  border-radius: 2px;
+}
+
+.material-placeholder-bar :deep(.el-progress-bar__outer) {
+  background-color: rgba(90, 90, 90, 0.45) !important;
+}
+
+.material-placeholder-unit {
+  color: #8a8a8a !important;
+  letter-spacing: 0.02em;
+}
+
+.material-placeholder-tip {
+  margin-top: 0.35rem;
+  padding-left: 1.2rem;
+  font-size: 12px;
+  color: rgba(150, 150, 150, 0.9);
+  text-align: left;
+  line-height: 1.4;
 }
 
 
@@ -2195,19 +2453,7 @@ export default {
   display: inline-block;
   position: relative;
   color: #00ff0c;
-  text-shadow: 0 0 3px rgba(0, 255, 12, 0.7);
-  animation: value-breathing 2s infinite ease-in-out;
-}
-
-.cy_val_success_inner::after {
-  content: "";
-  position: absolute;
-  inset: -0.5px;
-  border-radius: 3px;
-  background: rgba(0, 255, 12, 0.2);
-  opacity: 0.5;
-  z-index: -1;
-  animation: glow-breathing 2s infinite ease-in-out;
+  text-shadow: 0 0 4px rgba(0, 255, 12, 0.75);
 }
 
 /* 无状态 - 灰色数值 */
@@ -2215,108 +2461,21 @@ export default {
   display: inline-block;
   position: relative;
   color: rgba(189, 189, 192, 0.99);
-  text-shadow: 0 0 2px rgba(100, 100, 101, 0.99);
-  animation: value-breathing-no 2s infinite ease-in-out;
+  text-shadow: 0 0 2px rgba(100, 100, 101, 0.6);
 }
 
-.cy_val_no_inner::after {
-  content: "";
-  position: absolute;
-  inset: -0.5px;
-  border-radius: 3px;
-  background: rgba(153, 153, 153, 0.1);
-  opacity: 0.3;
-  z-index: -1;
-  animation: glow-breathing-no 2s infinite ease-in-out;
-}
-
-/* 错误状态 - 红色数值 */
+/* 错误状态 - 红色数值（仅告警保留轻量 opacity 动画） */
 .cy_val_error_inner {
   display: inline-block;
   position: relative;
   color: #ff3333;
-  text-shadow: 0 0 3px rgba(255, 51, 51, 0.7);
-  animation: value-breathing-error 2s infinite ease-in-out;
+  text-shadow: 0 0 4px rgba(255, 51, 51, 0.75);
+  animation: value-alert-pulse 2s infinite ease-in-out;
 }
 
-.cy_val_error_inner::after {
-  content: "";
-  position: absolute;
-  inset: -0.5px;
-  border-radius: 3px;
-  background: rgba(255, 51, 51, 0.2);
-  opacity: 0.5;
-  z-index: -1;
-  animation: glow-breathing-error 2s infinite ease-in-out;
-}
-
-/* 共用呼吸动画 - 绿色 */
-@keyframes value-breathing {
-  0%, 100% {
-    transform: scale(1);
-    text-shadow: 0 0 3px rgba(0, 255, 12, 0.7);
-  }
-  50% {
-    transform: scale(1);
-    text-shadow: 0 0 8px rgba(0, 255, 12, 0.9);
-  }
-}
-
-@keyframes glow-breathing {
-  0%, 100% {
-    opacity: 0.2;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-}
-
-/* 灰色呼吸动画 */
-@keyframes value-breathing-no {
-  0%, 100% {
-    transform: scale(1);
-    text-shadow: 0 0 2px rgba(153, 153, 153, 0.5);
-  }
-  50% {
-    transform: scale(1);
-    text-shadow: 0 0 5px rgba(153, 153, 153, 0.7);
-  }
-}
-
-@keyframes glow-breathing-no {
-  0%, 100% {
-    opacity: 0.2;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-}
-
-/* 红色呼吸动画 */
-@keyframes value-breathing-error {
-  0%, 100% {
-    transform: scale(1);
-    text-shadow: 0 0 3px rgba(255, 51, 51, 0.7);
-  }
-  50% {
-    transform: scale(1);
-    text-shadow: 0 0 8px rgba(255, 51, 51, 0.9);
-  }
-}
-
-@keyframes glow-breathing-error {
-  0%, 100% {
-    opacity: 0.2;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
+@keyframes value-alert-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.72; }
 }
 .cy_unit {
   width: 30%;
@@ -2349,10 +2508,8 @@ export default {
   color: transparent;
   -webkit-background-clip: text;
   background-clip: text;
-  animation:
-    gradientShift 12s ease infinite, /* 加速动画周期，提升活跃度 */
-    glowEffect 3s ease-in-out infinite; /* 延长发光动画周期，减少闪烁感 */
-  text-shadow: 0 0 18px rgba(255, 255, 255, 0.4); /* 增强文字光晕，提升边缘清晰度 */
+  /* 仅保留渐变位移；去掉多层 text-shadow 动画（每帧重绘代价高） */
+  animation: gradientShift 18s linear infinite;
 }
 .version-number {
   color: #ffd700; /* 金色文字 */
@@ -2363,13 +2520,6 @@ export default {
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
   100% { background-position: 100% 50%; } /* 改为单向循环，避免颜色折返模糊 */
-}
-
-@keyframes glowEffect {
-  0%, 100% { text-shadow: 0 0 12px rgba(255, 255, 255, 0.3); }
-  50% { text-shadow: 0 0 25px rgba(255, 255, 255, 0.7),
-  0 0 35px rgba(0, 229, 255, 0.5),
-  0 0 45px rgba(153, 102, 255, 0.4); }
 }
 
 /* 增强在黑色背景下的可读性 */
@@ -2427,16 +2577,52 @@ body {
   margin-left: 2rem;
   line-height: 2.4rem;
   color: #fff;
+  position: relative;
+  white-space: nowrap;
+}
+
+/* 迷你秒针表 */
+.mini-sec-clock {
+  position: absolute;
+  left: -1.05rem;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  margin-top: -5.5px;
+  border: 1px solid rgba(170, 190, 200, 0.38);
+  border-radius: 50%;
+  box-sizing: border-box;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.mini-sec-clock::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 2px;
+  margin: -1px 0 0 -1px;
+  border-radius: 50%;
+  background: rgba(190, 210, 220, 0.75);
+}
+
+.mini-sec-clock__hand {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 1px;
+  height: 4px;
+  margin-left: -0.5px;
+  border-radius: 1px;
+  background: rgba(0, 229, 255, 0.72);
+  transform-origin: bottom center;
+  transform: rotate(var(--sec-deg, 0deg));
+  transition: transform 0.18s linear;
 }
 .s_title::before {
-  content: "";
-  //display: inline-block;
-  //width: 0.7rem;
-  //height: 0.7rem;
-  //line-height: 2.4rem;
-  //margin-right: 0.6rem;
-  //background: rgb(208, 208, 208);
-  //border-radius: 50%;
+  content: none;
 }
 .abc_elec {
   height: 13rem;
@@ -2525,39 +2711,49 @@ body {
   z-index: 1;
 }
 
-/* 居中对齐的外层光晕 */
+/*
+ * 状态点外圈
+ * 仅告警态保留 opacity/transform 呼吸。
+ */
 .successstatus::after,
 .errorstatus::after,
 .nostatus::after {
   content: "";
   position: absolute;
-  left: 0; /* 从0开始计算确保居中 */
+  left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 0.8rem; /* 略微减小尺寸以确保完美居中 */
+  width: 0.8rem;
   height: 0.8rem;
   border-radius: 50%;
-  opacity: 0.4;
+  opacity: 0.55;
   z-index: 0;
-  animation: glow-pulse 2s infinite ease-in-out;
-  filter: blur(1.5px);
-  -webkit-filter: blur(1.5px);
 }
 
 .successstatus::before { background: #00ff0c; }
-.successstatus::after { background: #00ff0c; }
+.successstatus::after {
+  background: rgba(0, 255, 12, 0.35);
+  box-shadow: 0 0 6px 2px rgba(0, 255, 12, 0.45);
+}
 
 .errorstatus::before { background: #f30000; }
-.errorstatus::after { background: #f30000; }
+.errorstatus::after {
+  background: rgba(243, 0, 0, 0.35);
+  box-shadow: 0 0 6px 2px rgba(243, 0, 0, 0.45);
+  animation: glow-pulse 1.2s infinite ease-in-out;
+}
 
 .nostatus::before { background: #646465; }
-.nostatus::after { background: #646465; }
+.nostatus::after {
+  background: rgba(100, 100, 101, 0.35);
+  box-shadow: 0 0 4px 1px rgba(100, 100, 101, 0.35);
+}
 
-/* 光晕呼吸动画 */
+/* 光晕呼吸动画（仅 opacity/transform，可合成层加速） */
 @keyframes glow-pulse {
   0%, 100% {
-    transform: translateY(-50%) scale(0.8);
-    opacity: 0.3;
+    transform: translateY(-50%) scale(0.85);
+    opacity: 0.35;
   }
   50% {
     transform: translateY(-50%) scale(1);
