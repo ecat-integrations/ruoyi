@@ -451,7 +451,7 @@
                           :show-text="false"
                         />
                       </div>
-                    <span class="cy_unit">{{ calculatePercentage(item) }}%/{{ item.materialRemainCapacity }}{{item.materialCapacityUnit}}</span>
+                    <span class="cy_unit">{{ calculatePercentage(item) }}%/{{ formatMaterialRemain(item) }}</span>
                   </div>
                 </template>
               </div>
@@ -1285,7 +1285,7 @@ export default {
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "UPS输出负载百分比",
+          "name": "UPS输出负载",
           "value": null,
           "unit": null,
           "status": -1,
@@ -1301,7 +1301,7 @@ export default {
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "UPS电池单元电压",
+          "name": "UPS电池电压",
           "value": null,
           "unit": null,
           "status": -1,
@@ -1400,7 +1400,7 @@ export default {
       ],//中间底部左侧
       middleRightOne:[
         {
-          "name": "SO2换膜仪剩余量",
+          "name": "SO2滤膜剩余量",
           "value": null,
           "unit": null,
           "status": -1,
@@ -1408,7 +1408,7 @@ export default {
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "NOx换膜仪剩余量",
+          "name": "NOx滤膜剩余量",
           "value": null,
           "unit": null,
           "status": -1,
@@ -1416,7 +1416,7 @@ export default {
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "CO换膜仪剩余量",
+          "name": "CO滤膜剩余量",
           "value": null,
           "unit": null,
           "status": -1,
@@ -1424,7 +1424,7 @@ export default {
           "type": "value",
           "valuestatus": -1
         },{
-          "name": "O3换膜仪剩余量",
+          "name": "O3滤膜剩余量",
           "value": null,
           "unit": null,
           "status": -1,
@@ -1489,6 +1489,8 @@ export default {
       isBackButtonVisible: true,
       activityTimerId: null,
       materialPollTimer: null,
+      /** 未启用时的低频静默重探（不弹 404） */
+      materialProbeTimer: null,
       /** keep-alive 下页面是否处于激活态 */
       pageActive: true,
       /** null=未探测，true/false=耗材集成是否可用 */
@@ -1807,46 +1809,90 @@ export default {
       });
     },
     async startMaterialPoll() {
-      if (this.materialPollTimer || this._materialPollStarting) {
+      if (this.materialPollTimer || this.materialProbeTimer || this._materialPollStarting) {
         return;
       }
       this._materialPollStarting = true;
       try {
-        const available = await ensureMaterialAvailable();
+        const available = await ensureMaterialAvailable({ force: true });
         this.materialAvailable = available;
         if (!this.shouldPollDashboard()) {
           return;
         }
-        if (!available) {
-          this.middleRightTwoMaterial = [];
-          notifyMaterialDisabledOnce(ElMessage);
-          return;
+        if (available) {
+          this.startMaterialDataPoll();
+        } else {
+          this.startMaterialProbe();
         }
-        this.refreshMaterialData();
-        this.materialPollTimer = setInterval(() => {
-          this.refreshMaterialData();
-        }, 5000);
       } finally {
         this._materialPollStarting = false;
       }
     },
-    stopMaterialPoll() {
+    startMaterialDataPoll() {
+      this.stopMaterialProbe();
+      if (this.materialPollTimer) {
+        return;
+      }
+      this.refreshMaterialData();
+      this.materialPollTimer = setInterval(() => {
+        this.refreshMaterialData();
+      }, 5000);
+    },
+    /** 未启用：每 60s 静默重探，不走 fetchMaterialList，避免 404 toast */
+    startMaterialProbe() {
+      this.stopMaterialDataPoll();
+      this.middleRightTwoMaterial = [];
+      notifyMaterialDisabledOnce(ElMessage);
+      if (this.materialProbeTimer) {
+        return;
+      }
+      this.materialProbeTimer = setInterval(() => {
+        this.reprobeMaterialAvailability();
+      }, 60000);
+    },
+    async reprobeMaterialAvailability() {
+      if (!this.shouldPollDashboard() || this._materialReprobing) {
+        return;
+      }
+      this._materialReprobing = true;
+      try {
+        const available = await ensureMaterialAvailable({ force: true });
+        if (!this.shouldPollDashboard()) {
+          return;
+        }
+        if (available) {
+          this.materialAvailable = true;
+          this.startMaterialDataPoll();
+        }
+      } finally {
+        this._materialReprobing = false;
+      }
+    },
+    stopMaterialDataPoll() {
       if (this.materialPollTimer) {
         clearInterval(this.materialPollTimer);
         this.materialPollTimer = null;
       }
     },
+    stopMaterialProbe() {
+      if (this.materialProbeTimer) {
+        clearInterval(this.materialProbeTimer);
+        this.materialProbeTimer = null;
+      }
+    },
+    stopMaterialPoll() {
+      this.stopMaterialDataPoll();
+      this.stopMaterialProbe();
+    },
     refreshMaterialData() {
       fetchMaterialList().then(response => {
-        this.middleRightTwoMaterial = response.rows || [];
+        const rows = response.rows || [];
+        this.middleRightTwoMaterial = rows.map(row => this.normalizeMaterialRow(row));
       }).catch(err => {
         console.warn('耗材数据刷新失败:', err);
-        // 运行中接口突然不可用：停止轮询，避免持续 404 toast
         markMaterialUnavailable();
         this.materialAvailable = false;
-        this.middleRightTwoMaterial = [];
-        this.stopMaterialPoll();
-        notifyMaterialDisabledOnce(ElMessage);
+        this.startMaterialProbe();
       });
     },
     handleData3(datas){
@@ -2109,17 +2155,90 @@ export default {
       this.deviceData = newDeviceData;
     },
     
-    calculatePercentage(row){
-      return (row.materialRemainCapacity / row.materialCapacity * 100).toFixed(1);
+    /** 钢瓶气物资类型：1=CO 2=SO2 3=NOx */
+    isGasCylinder(row) {
+      return ['1', '2', '3'].includes(String(row && row.materialType));
     },
-    getPercentage(row){
-      return row.materialRemainCapacity / row.materialCapacity * 100;
+    /**
+     * 解析 materialContent。
+     * HTTP JSON 解码后该字段已是普通字符串（引号已去转义），再 JSON.parse 一次得到对象。
+     * 兼容：已是对象、双重 stringify、解析失败。
+     */
+    parseMaterialContentRaw(raw) {
+      if (raw == null || raw === '') {
+        return {};
+      }
+      if (typeof raw === 'object' && !Array.isArray(raw)) {
+        return raw;
+      }
+      if (typeof raw !== 'string') {
+        return {};
+      }
+      let text = raw.trim();
+      if (!text) {
+        return {};
+      }
+      try {
+        let parsed = JSON.parse(text);
+        if (typeof parsed === 'string') {
+          parsed = JSON.parse(parsed);
+        }
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (e) {
+        return {};
+      }
     },
-    getStatus(row){
-      const ratio = row.materialRemainCapacity / row.materialCapacity;
+    normalizeMaterialRow(row) {
+      return {
+        ...row,
+        parsedContent: this.parseMaterialContentRaw(row && row.materialContent)
+      };
+    },
+    getMaterialRatio(row) {
+      if (this.isGasCylinder(row)) {
+        const content = (row && row.parsedContent) || this.parseMaterialContentRaw(row && row.materialContent);
+        const remain = Number(content.pressureRemain);
+        const total = Number(content.total_pressure);
+        if (!Number.isFinite(remain) || !Number.isFinite(total) || total <= 0) {
+          return 0;
+        }
+        return remain / total;
+      }
+      const remain = Number(row && row.materialRemainCapacity);
+      const total = Number(row && row.materialCapacity);
+      if (!Number.isFinite(remain) || !Number.isFinite(total) || total <= 0) {
+        return 0;
+      }
+      return remain / total;
+    },
+    calculatePercentage(row) {
+      return (this.getMaterialRatio(row) * 100).toFixed(1);
+    },
+    getPercentage(row) {
+      const pct = this.getMaterialRatio(row) * 100;
+      if (pct < 0) return 0;
+      if (pct > 100) return 100;
+      return pct;
+    },
+    getStatus(row) {
+      const ratio = this.getMaterialRatio(row);
       if (ratio < 0.2) return 'exception';
       if (ratio < 0.5) return 'warning';
       return 'success';
+    },
+    /** 钢瓶气：kPa → MPa 保留两位；纸带：剩余个数+单位 */
+    formatMaterialRemain(row) {
+      if (this.isGasCylinder(row)) {
+        const content = (row && row.parsedContent) || this.parseMaterialContentRaw(row && row.materialContent);
+        const kpa = Number(content.pressureRemain);
+        if (!Number.isFinite(kpa)) {
+          return '--MPa';
+        }
+        return (kpa / 1000).toFixed(2) + 'MPa';
+      }
+      const remain = row && row.materialRemainCapacity;
+      const unit = (row && row.materialCapacityUnit) || '';
+      return (remain != null ? remain : '--') + unit;
     }
   },
 };
@@ -2138,6 +2257,7 @@ export default {
 /* —— 低开销动效：只动 opacity/transform，且无限动画控制在少量节点 —— */
 .dashboard-content {
   position: relative;
+  --sec-deg: 0deg;
 }
 
 .dashboard-content .head {
