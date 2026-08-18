@@ -1284,7 +1284,7 @@ CREATE TABLE "public"."his_data" (
   "model_id" varchar(40) COLLATE "pg_catalog"."default" NOT NULL,
   "classify" varchar(12) COLLATE "pg_catalog"."default",
   "status" int8 DEFAULT 0,
-  "field" varchar(40) COLLATE "pg_catalog"."default" NOT NULL,
+  "field" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "value" numeric,
   "values" text COLLATE "pg_catalog"."default",
   "total" int8,
