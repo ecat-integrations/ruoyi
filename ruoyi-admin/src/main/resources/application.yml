@@ -23,18 +23,20 @@ server:
   tomcat:
     # tomcat的URI编码
     uri-encoding: UTF-8
-    # 连接数满后的排队数，默认为100
-    accept-count: 1000
+    # 连接数满后的排队数，默认为100；原超配1000。目标部署为 Win2003 32位/2C/2.5GB 单机，
+    # 单操作员UI+少量API，50工作线程全忙概率趋近于零，排队10足够
+    accept-count: 10
     threads:
-      # tomcat最大线程数，默认为200
-      max: 800
-      # Tomcat启动初始化的线程数，默认值10
-      min-spare: 100
+      # tomcat最大线程数，默认为200；原超配800。按单操作员场景压到50，省~90条预启线程
+      #（32位JVM约45-90MB栈地址空间）
+      max: 50
+      # Tomcat启动初始化的线程数，默认值10；原超配100，回到默认10
+      min-spare: 10
 
-# 日志配置
+# 日志配置（v3.1.0 五通道治理：全 ruoyi debug 与 core 侧 root=INFO 策略对齐，压日志体积）
 logging:
   level:
-    com.ruoyi: debug
+    com.ruoyi: info
     org.springframework: warn
 
 # 用户配置
@@ -55,6 +57,16 @@ spring:
     basename: i18n/messages
   profiles:
     active: druid
+  # quartz 调度线程池：ruoyi-quartz 的 ScheduleConfig 已整文件注释，实际走 Boot
+  # QuartzAutoConfiguration 默认 RAMJobStore + SimpleThreadPool threadCount=10。
+  # 目标部署（2C 32位单机）定时任务均为分钟级 tick（env-data-handle 聚合等），
+  # 2 条 worker 富余，省 8 条常驻空闲线程。勿用 spring.quartz.thread-count（Boot 2.5 无此属性）
+  quartz:
+    properties:
+      org:
+        quartz:
+          threadPool:
+            threadCount: 2
   # 文件上传
   servlet:
     multipart:
@@ -117,10 +129,17 @@ pagehelper:
 
 # Swagger配置
 swagger:
-  # 是否开启swagger
-  enabled: true
+  # 是否开启swagger；生产（32位低配单机）不需要API文档页，关闭 /swagger-ui 端点展示
+  enabled: false
   # 请求前缀
   pathMapping: /dev-api
+
+# springfox 启动期文档构建开关：上面的 swagger.enabled=false 只关 Docket 展示端点，
+# 不省启动扫描全部 mapping 建模型的堆开销（springfox 3.0 实测 30-60MB 堆 + 数秒启动）；
+# 此处 false 使 DocumentationPluginsBootstrapper 跳过启动扫描，两者配合才是完整关闭
+springfox:
+  documentation:
+    auto-startup: false
 
 # 防止XSS攻击
 xss:

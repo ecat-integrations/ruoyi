@@ -16,12 +16,12 @@ spring:
         url:
         username:
         password:
-      # 初始连接数
-      initialSize: 5
-      # 最小连接池数量
-      minIdle: 10
-      # 最大连接池数量
-      maxActive: 20
+      # 初始连接数；原超配5。目标部署（Win2003 32位单机+本机PG）启动即建 2 条够用
+      initialSize: 2
+      # 最小连接池数量；原超配10条常驻连接。稳态借方为 ADM 聚合4+consumer2+sweep1+HTTP查询，2 条覆盖
+      minIdle: 2
+      # 最大连接池数量；峰值借方≈8（17号文档§1.4实测口径），收缩到 8 不再为服务器规模超配
+      maxActive: 8
       # 配置获取连接等待超时的时间
       maxWait: 60000
       # 配置连接超时时间
@@ -40,9 +40,13 @@ spring:
       testOnBorrow: false
       testOnReturn: false
       webStatFilter:
-        enabled: true
+        # druid 监控台的 web URI-JDBC 关联采集过滤器，数据仅供监控台页面消费；
+        # 监控台已关（下方 statViewServlet），一并关闭省每请求采样开销
+        enabled: false
       statViewServlet:
-        enabled: true
+        # druid 监控台（/druid/*）：单机部署无运维排查价值，关闭省 1 个 servlet；
+        # 现场排查需要时可临时改回 true（下方账号配置保留未删）
+        enabled: false
         # 设置白名单，不填则允许所有访问
         allow:
         url-pattern: /druid/*
@@ -51,8 +55,10 @@ spring:
         login-password: 123456
       filter:
         stat:
-          enabled: true
-          # 慢SQL记录
+          # SQL 统计采样：每条 SQL 的 stat 采样有 CPU/堆累积开销，且监控台已关无处消费；
+          # wall 等其他 filter 不动
+          enabled: false
+          # 慢SQL记录（stat filter 关闭后暂不生效，保留配置供临时重启采样）
           log-slow-sql: true
           slow-sql-millis: 1000
           merge-sql: false
