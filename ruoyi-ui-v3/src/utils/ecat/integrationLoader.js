@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { alignKeepAliveName } from '@/utils/ecat/alignKeepAliveName'
 
 /**
  * IntegrationLoader is a singleton class that loads integration modules dynamically for ecat integrations.
@@ -179,6 +180,7 @@ class IntegrationLoader {
         //     component: () => import("./MockUserLogsList.vue"),
         //   }]
         // }
+        alignKeepAliveName(moduleInfo.routes)
 
         // 默认entryComponentRoute为第一个路由
         let entryComponentRoute;

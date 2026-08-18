@@ -149,6 +149,7 @@ WHERE "menu_id" IN (500)
 
 COMMIT;
 
+
 -- ADM 鉴权权限行（决策 C，2026-08-08；AC14 全对齐 2026-08-08 bug-record-20260808-231014）：
 -- env-air-device-manager 全部 controller 逐方法 @PreAuthorize 的权限 key（含 AirDeviceController /air_device/* 11 端点）。
 -- 落 ruoyi sys_menu（perm 管理用；菜单显示由动态 jar module-config.json 负责，故本处仅建隐藏父目录 + F 按钮 perms，不重复侧边栏）。
@@ -408,15 +409,17 @@ COMMENT ON COLUMN adm_backfill_job.last_completed_batch_end IS '当前粒度内�
 -- 写偏读正中 bug。表 + AdmDisplayUnitPref entity + AdmDisplayUnitPrefMapper 已删，偏好读写统一在 adm_config_unit（DDL 见 §6.7）。
 
 
--- ADM 监控数据表（TimescaleDB：实时明细 hypertable + 分钟/5分/时/日普通超表[app 自管物化] + 全局/每参数/审计配置表 + 压缩 + retention）。
+-- ADM 监控数据表（TimescaleDB：实时明细 hypertable + 分钟/5分/时/日 PG 声明式月度分区父表[app 自管物化 + app 自管分区 ensure] + 全局/每参数/审计配置表 + 压缩 + retention）。
 -- 库：ruoyi 主库（PostgreSQL）public schema + TimescaleDB 扩展。app 不自动跑（无 flyway）；运维执行。
 -- 前置：CREATE EXTENSION IF NOT EXISTS timescaledb;（本文件首行已含，幂等）
 -- 业务键：logic_device_unique_id + attr_id（非运行时 deviceId；AdmLogicDeviceIds 常量 + AttrIdDevice 常量，重启稳定）。
--- 设计要点（2026-08-11 可配置聚合引擎重构）：四级 stat **普通超表 + app 自管物化**（minute←raw, 5min←minute, hour←minute,
+-- 设计要点（2026-08-11 可配置聚合引擎重构；2026-08-14 stat 月度分区化）：四级 stat **PG 声明式月度分区父表 +
+--   app 自管物化 + app 自管分区 ensure**（AdmStatPartitionManager 写路径三时机收口；minute←raw, 5min←minute, hour←minute,
 --   day←hour），支撑 §3.7 统计有效条数门控——每级物化 avg_value/avg_value_valid/valid_count/total_count，有效性按「有效子桶数」向上传播；
 --   物化由 app 调度器/回补/reconfig 触发（INSERT…SELECT + ON CONFLICT upsert，非数据库自动 refresh policy）；区间模式 interval_mode 进 PK
 --   支持多 mode 并存（BACK (L,R] / FRONT [S,E)，HJ663 国标用 BACK）；多标记用 statuses_text 冗余列 + string_agg(DISTINCT) 聚合；
---   压缩 7 天回补窗口（raw）+ 2 年 retention（raw）；stat 表长期保留供历史查询与上报。
+--   raw 压缩 7 天回补窗口 + 2 年 retention（Timescale）；stat 表月度裸分区长期保留供历史查询与上报
+--   （2026-08-14 去压缩改分区：月表直接 UPDATE，回补免 decompress→modify→recompress 三步舞）。
 -- 旧 4 级连续聚合视图（adm_data_stat_minute/_5min/_hour/_day，原 TimescaleDB CAGG）已 DROP（HJ663 (L,R] 与固定 [S,E) time_bucket 模型级互斥，已实证）。
 
 CREATE EXTENSION IF NOT EXISTS timescaledb;
@@ -470,111 +473,111 @@ DROP MATERIALIZED VIEW IF EXISTS adm_data_stat_hour  CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS adm_data_stat_5min  CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS adm_data_stat_minute CASCADE;
 
--- ===== 重建 4 stat 普通超表（同名 + 物化列含双态门控 valid_count/total_count + PK[含 interval_mode] + 复合索引）=====
--- 普通超表替代旧连续聚合视图：物化由 app 调度器/回补/reconfig 触发（INSERT…SELECT + ON CONFLICT upsert），非数据库自动 refresh policy。
+-- ===== 重建 4 stat 分区父表（同名 + 物化列含双态门控 valid_count/total_count + PK[含 interval_mode] + 复合索引）=====
+-- 分区父表替代旧连续聚合视图：物化由 app 调度器/回补/reconfig 触发（INSERT…SELECT + ON CONFLICT upsert），非数据库自动 refresh policy。
 -- 物化列与旧连续聚合视图逐字一致（avg_value/avg_value_valid/min/max/sample_count/valid_count/total_count/statuses_summary/unit），
 -- 双态门控查询层零改动。两处新增：① PRIMARY KEY（连续聚合视图无 PK，plain 表 upsert 必需）；② interval_mode smallint（进 PK 支持多 mode 并存）。
 -- PK(data_time, series, interval_mode)：多 mode 并存下同桶 BACK/FRONT 各自独立一行；ON CONFLICT 按 4 列定冲突（回补/重算幂等）；
--- Timescale 要求 PK/唯一索引含分区键 data_time（满足）。复合索引(series, mode, data_time DESC) 支撑历史查询主力（查询恒带 mode 等值过滤）。
+-- PG 声明式分区要求 PK 含分区键 data_time（满足，父表 PK/索引自动级联各月分区）。复合索引(series, mode, data_time DESC) 支撑历史查询主力（查询恒带 mode 等值过滤）。
+-- 月度分区（2026-08-14 去压缩改分区）：PARTITION BY RANGE (data_time) 按 UTC 月一表（如 adm_data_stat_minute_202608，
+--   data_time 是 UTC 网格存储故月边界按 UTC 对齐）；分区由 app 层 AdmStatPartitionManager.ensureStatPartitions 幂等
+--   ensure（写路径三时机收口：引擎每粒度写前 / 启动当月+下月 / 回补提交前），不引 pg_partman（零部署依赖、时机可控）。
+-- 不建 DEFAULT 分区（严格模式，有意为之）：缺分区时 INSERT 显式报错，暴露 ensure 收口漏洞——静默兜底会把漏调
+--   掩盖成数据黑洞；SELECT 天然安全（PG 对缺分区只裁剪不报错），故只有写路径需要 ensure。
+-- 本 DDL 只建父表不建任何分区：stat 是派生数据（raw 是真相源），部署后 reinit prime / recompute 全量重算时
+--   分区由写路径 ensure 自动建（无生产环境，迁移走 drop+重建+recompute，不搬旧数据）。
 
 -- 分钟统计（层级基础层 ← raw；物化时 FROM adm_data_sample）
-CREATE TABLE adm_data_stat_minute (
-                                      data_time             timestamptz NOT NULL,   -- 桶标注（BACK=右沿 (L,R] 桶标=R / FRONT=左沿 [S,E) 桶标=S，由 engine 物化时按 interval_mode 定）
-                                      logic_device_unique_id varchar(64) NOT NULL,
-                                      attr_id               varchar(64) NOT NULL,
-                                      interval_mode         smallint    NOT NULL,   -- 区间模式(FRONT=1 前标[S,E) / BACK=2 后标(L,R],§7.1 AdmIntervalMode.code 作 DB↔enum 转换);进 PK 多 mode 并存
-                                      avg_value        double precision,            -- 全量均值（未达阈值分支取）
-                                      avg_value_valid  double precision,            -- §3.7 仅有效样本均值（达阈值分支取）
-                                      min_value        double precision,
-                                      max_value        double precision,
-                                      sample_count     bigint,
-                                      valid_count      bigint,                       -- §3.7 有效样本数（阈值分子）
-                                      total_count      bigint,                       -- §3.7 非空值计数（minute 阈值分母）
-                                      statuses_summary text,                         -- 规范化组合去重（app 物化 SQL string_agg(DISTINCT statuses_text, ',')）
-                                      unit             varchar(64),                  -- STORAGE 业务标准单位（UnitInfo.getFullUnitString key 形式，物化时从 adm_config_unit STORAGE 行取；denormalize 便审计/降级展示）
-                                      is_valid         boolean,                       -- 判定层（2026-08-11 S3 新增）：桶是否达本粒度有效阈值（minute marker-based / 5min≥0.75 / hour≥45 / day≥20）；级联父桶 mean-of-valid 只计 is_valid=true 子桶；前端不读此列（展示走 statuses_summary 标记层）
-                                      CONSTRAINT pk_stat_minute PRIMARY KEY (data_time, logic_device_unique_id, attr_id, interval_mode)
-);
-SELECT create_hypertable('adm_data_stat_minute', 'data_time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+CREATE TABLE IF NOT EXISTS adm_data_stat_minute (
+                                                    data_time             timestamptz NOT NULL,   -- 桶标注（BACK=右沿 (L,R] 桶标=R / FRONT=左沿 [S,E) 桶标=S，由 engine 物化时按 interval_mode 定）
+                                                    logic_device_unique_id varchar(64) NOT NULL,
+    attr_id               varchar(64) NOT NULL,
+    interval_mode         smallint    NOT NULL,   -- 区间模式(FRONT=1 前标[S,E) / BACK=2 后标(L,R],§7.1 AdmIntervalMode.code 作 DB↔enum 转换);进 PK 多 mode 并存
+    avg_value        double precision,            -- 全量均值（未达阈值分支取）
+    avg_value_valid  double precision,            -- §3.7 仅有效样本均值（达阈值分支取）
+    min_value        double precision,
+    max_value        double precision,
+    sample_count     bigint,
+    valid_count      bigint,                       -- §3.7 有效样本数（阈值分子）
+    total_count      bigint,                       -- §3.7 非空值计数（minute 阈值分母）
+    statuses_summary text,                         -- 规范化组合去重（app 物化 SQL string_agg(DISTINCT statuses_text, ',')）
+    unit             varchar(64),                  -- STORAGE 业务标准单位（UnitInfo.getFullUnitString key 形式，物化时从 adm_config_unit STORAGE 行取；denormalize 便审计/降级展示）
+    is_valid         boolean,                       -- 判定层（2026-08-11 S3 新增）：桶是否达本粒度有效阈值（minute marker-based / 5min≥0.75 / hour≥45 / day≥20）；级联父桶 mean-of-valid 只计 is_valid=true 子桶；前端不读此列（展示走 statuses_summary 标记层）
+    CONSTRAINT pk_stat_minute PRIMARY KEY (data_time, logic_device_unique_id, attr_id, interval_mode)
+    ) PARTITION BY RANGE (data_time);
 CREATE INDEX IF NOT EXISTS idx_stat_minute_logic_attr_time
     ON adm_data_stat_minute (logic_device_unique_id, attr_id, interval_mode, data_time DESC);
-COMMENT ON TABLE adm_data_stat_minute IS '分钟统计普通超表(层级基础层←raw;app 自管物化);§3.7 双态门控列 avg_value/avg_value_valid/valid_count/total_count;valid=有效样本(NORMAL+非空值);interval_mode 进 PK 多 mode 并存(BACK/FRONT);回补/reinit/调度 由 app INSERT…SELECT ON CONFLICT 自底向上重算;物化由 stat/engine/AdmStatAggregationEngine 驱动;is_valid 判定层（2026-08-11 S3，级联父桶 mean-of-valid 只计 is_valid=true 子桶，前端不读）;statuses_summary 标记层（前端展示，无效纯计数补 INSUFFICIENT）';
+COMMENT ON TABLE adm_data_stat_minute IS '分钟统计月度分区父表(层级基础层←raw;app 自管物化;PG 声明式 RANGE 分区按 UTC 月,分区由 AdmStatPartitionManager 写路径 ensure,无 DEFAULT 分区缺分区 INSERT 显式报错);§3.7 双态门控列 avg_value/avg_value_valid/valid_count/total_count;valid=有效样本(NORMAL+非空值);interval_mode 进 PK 多 mode 并存(BACK/FRONT);回补/reinit/调度 由 app INSERT…SELECT ON CONFLICT 自底向上重算;物化由 stat/engine/AdmStatAggregationEngine 驱动;is_valid 判定层（2026-08-11 S3，级联父桶 mean-of-valid 只计 is_valid=true 子桶，前端不读）;statuses_summary 标记层（前端展示，无效纯计数补 INSUFFICIENT）';
 
 -- 5 分钟统计（层级 ← minute；子分钟有效占比≥75% 计为有效子桶；物化时 FROM adm_data_stat_minute）
-CREATE TABLE adm_data_stat_5min (
-                                    data_time             timestamptz NOT NULL,
-                                    logic_device_unique_id varchar(64) NOT NULL,
-                                    attr_id               varchar(64) NOT NULL,
-                                    interval_mode         smallint    NOT NULL,
-                                    avg_value        double precision,
-                                    avg_value_valid  double precision,
-                                    min_value        double precision,
-                                    max_value        double precision,
-                                    sample_count     bigint,
-                                    valid_count      bigint,
-                                    total_count      bigint,
-                                    statuses_summary text,
-                                    unit             varchar(64),
-                                    is_valid         boolean,                       -- 判定层（2026-08-11 S3 新增）：5min 桶达有效子分钟占比≥0.75 阈值；级联 hour 物化时只计 is_valid=true 子桶；前端不读此列（展示走 statuses_summary 标记层）
-                                    CONSTRAINT pk_stat_5min PRIMARY KEY (data_time, logic_device_unique_id, attr_id, interval_mode)
-);
-SELECT create_hypertable('adm_data_stat_5min', 'data_time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+CREATE TABLE IF NOT EXISTS adm_data_stat_5min (
+                                                  data_time             timestamptz NOT NULL,
+                                                  logic_device_unique_id varchar(64) NOT NULL,
+    attr_id               varchar(64) NOT NULL,
+    interval_mode         smallint    NOT NULL,
+    avg_value        double precision,
+    avg_value_valid  double precision,
+    min_value        double precision,
+    max_value        double precision,
+    sample_count     bigint,
+    valid_count      bigint,
+    total_count      bigint,
+    statuses_summary text,
+    unit             varchar(64),
+    is_valid         boolean,                       -- 判定层（2026-08-11 S3 新增）：5min 桶达有效子分钟占比≥0.75 阈值；级联 hour 物化时只计 is_valid=true 子桶；前端不读此列（展示走 statuses_summary 标记层）
+    CONSTRAINT pk_stat_5min PRIMARY KEY (data_time, logic_device_unique_id, attr_id, interval_mode)
+    ) PARTITION BY RANGE (data_time);
 CREATE INDEX IF NOT EXISTS idx_stat_5min_logic_attr_time
     ON adm_data_stat_5min (logic_device_unique_id, attr_id, interval_mode, data_time DESC);
-COMMENT ON TABLE adm_data_stat_5min IS '5分钟统计普通超表(层级←minute;子分钟有效占比≥75%计有效子桶;§3.7 输出阈值 valid_count/total_count≥0.75;mean-of-means 均值);interval_mode 进 PK 多 mode 并存;物化由 app INSERT…SELECT ON CONFLICT 驱动;is_valid 判定层（2026-08-11 S3，达占比≥0.75 阈值；级联 hour mean-of-valid 只计 true 子桶；前端不读）';
+COMMENT ON TABLE adm_data_stat_5min IS '5分钟统计月度分区父表(层级←minute;子分钟有效占比≥75%计有效子桶;§3.7 输出阈值 valid_count/total_count≥0.75;mean-of-means 均值;PG 声明式月度分区,分区由 AdmStatPartitionManager ensure);interval_mode 进 PK 多 mode 并存;物化由 app INSERT…SELECT ON CONFLICT 驱动;is_valid 判定层（2026-08-11 S3，达占比≥0.75 阈值；级联 hour mean-of-valid 只计 true 子桶；前端不读）';
 
 -- 小时统计（层级 ← minute；子分钟有效占比≥75% 计为有效子桶；输出阈值 valid_count≥45 GB/T 有效分钟；物化时 FROM adm_data_stat_minute）
-CREATE TABLE adm_data_stat_hour (
-                                    data_time             timestamptz NOT NULL,
-                                    logic_device_unique_id varchar(64) NOT NULL,
-                                    attr_id               varchar(64) NOT NULL,
-                                    interval_mode         smallint    NOT NULL,
-                                    avg_value        double precision,
-                                    avg_value_valid  double precision,
-                                    min_value        double precision,
-                                    max_value        double precision,
-                                    sample_count     bigint,
-                                    valid_count      bigint,
-                                    total_count      bigint,
-                                    statuses_summary text,
-                                    unit             varchar(64),
-                                    is_valid         boolean,                       -- 判定层（2026-08-11 S3 新增）：hour 桶达有效分钟数≥45 阈值（GB/T）；级联 day 物化时只计 is_valid=true 子桶；O₃-8h 窗桶（attr_id=o3_8h）同口径（窗内有效小时≥6）；前端不读此列
-                                    CONSTRAINT pk_stat_hour PRIMARY KEY (data_time, logic_device_unique_id, attr_id, interval_mode)
-);
-SELECT create_hypertable('adm_data_stat_hour', 'data_time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+CREATE TABLE IF NOT EXISTS adm_data_stat_hour (
+                                                  data_time             timestamptz NOT NULL,
+                                                  logic_device_unique_id varchar(64) NOT NULL,
+    attr_id               varchar(64) NOT NULL,
+    interval_mode         smallint    NOT NULL,
+    avg_value        double precision,
+    avg_value_valid  double precision,
+    min_value        double precision,
+    max_value        double precision,
+    sample_count     bigint,
+    valid_count      bigint,
+    total_count      bigint,
+    statuses_summary text,
+    unit             varchar(64),
+    is_valid         boolean,                       -- 判定层（2026-08-11 S3 新增）：hour 桶达有效分钟数≥45 阈值（GB/T）；级联 day 物化时只计 is_valid=true 子桶；O₃-8h 窗桶（attr_id=o3_8h）同口径（窗内有效小时≥6）；前端不读此列
+    CONSTRAINT pk_stat_hour PRIMARY KEY (data_time, logic_device_unique_id, attr_id, interval_mode)
+    ) PARTITION BY RANGE (data_time);
 CREATE INDEX IF NOT EXISTS idx_stat_hour_logic_attr_time
     ON adm_data_stat_hour (logic_device_unique_id, attr_id, interval_mode, data_time DESC);
-COMMENT ON TABLE adm_data_stat_hour IS '小时统计普通超表(层级←minute;子分钟有效占比≥75%计有效子桶;§3.7 输出阈值 valid_count≥45 GB/T 有效分钟);interval_mode 进 PK 多 mode 并存;物化由 app INSERT…SELECT ON CONFLICT 驱动;is_valid 判定层（2026-08-11 S3，达≥45 有效分钟阈值；级联 day mean-of-valid 只计 true 子桶；O₃-8h 窗桶 attr_id=o3_8h 同口径窗内≥6；前端不读）';
+COMMENT ON TABLE adm_data_stat_hour IS '小时统计月度分区父表(层级←minute;子分钟有效占比≥75%计有效子桶;§3.7 输出阈值 valid_count≥45 GB/T 有效分钟;PG 声明式月度分区,分区由 AdmStatPartitionManager ensure);interval_mode 进 PK 多 mode 并存;物化由 app INSERT…SELECT ON CONFLICT 驱动;is_valid 判定层（2026-08-11 S3，达≥45 有效分钟阈值；级联 day mean-of-valid 只计 true 子桶；O₃-8h 窗桶 attr_id=o3_8h 同口径窗内≥6；前端不读）';
 
 -- 日统计（层级 ← hour；子小时 valid_count≥45 计为有效子桶；输出阈值 valid_count≥20 GB/T 有效小时；物化时 FROM adm_data_stat_hour）
-CREATE TABLE adm_data_stat_day (
-                                   data_time             timestamptz NOT NULL,
-                                   logic_device_unique_id varchar(64) NOT NULL,
-                                   attr_id               varchar(64) NOT NULL,
-                                   interval_mode         smallint    NOT NULL,
-                                   avg_value        double precision,
-                                   avg_value_valid  double precision,
-                                   min_value        double precision,
-                                   max_value        double precision,
-                                   sample_count     bigint,
-                                   valid_count      bigint,
-                                   total_count      bigint,
-                                   statuses_summary text,
-                                   unit             varchar(64),
-                                   is_valid         boolean,                       -- 判定层（2026-08-11 S3 新增）：day 桶达有效小时数≥20 阈值（GB/T）；O₃-8h 日桶（attr_id=o3_8h）同口径（17 窗有效窗≥13）；前端不读此列（展示走 statuses_summary 标记层）
-                                   CONSTRAINT pk_stat_day PRIMARY KEY (data_time, logic_device_unique_id, attr_id, interval_mode)
-);
-SELECT create_hypertable('adm_data_stat_day', 'data_time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+CREATE TABLE IF NOT EXISTS adm_data_stat_day (
+                                                 data_time             timestamptz NOT NULL,
+                                                 logic_device_unique_id varchar(64) NOT NULL,
+    attr_id               varchar(64) NOT NULL,
+    interval_mode         smallint    NOT NULL,
+    avg_value        double precision,
+    avg_value_valid  double precision,
+    min_value        double precision,
+    max_value        double precision,
+    sample_count     bigint,
+    valid_count      bigint,
+    total_count      bigint,
+    statuses_summary text,
+    unit             varchar(64),
+    is_valid         boolean,                       -- 判定层（2026-08-11 S3 新增）：day 桶达有效小时数≥20 阈值（GB/T）；O₃-8h 日桶（attr_id=o3_8h）同口径（17 窗有效窗≥13）；前端不读此列（展示走 statuses_summary 标记层）
+    CONSTRAINT pk_stat_day PRIMARY KEY (data_time, logic_device_unique_id, attr_id, interval_mode)
+    ) PARTITION BY RANGE (data_time);
 CREATE INDEX IF NOT EXISTS idx_stat_day_logic_attr_time
     ON adm_data_stat_day (logic_device_unique_id, attr_id, interval_mode, data_time DESC);
-COMMENT ON TABLE adm_data_stat_day IS '日统计普通超表(层级←hour;子小时 valid_count≥45 计有效子桶;输出阈值 valid_count≥20 GB/T 有效小时);interval_mode 进 PK 多 mode 并存;物化由 app INSERT…SELECT ON CONFLICT 驱动;is_valid 判定层（2026-08-11 S3，达≥20 有效小时阈值；O₃-8h 日桶 attr_id=o3_8h 同口径 17 窗≥13；前端不读）';
+COMMENT ON TABLE adm_data_stat_day IS '日统计月度分区父表(层级←hour;子小时 valid_count≥45 计有效子桶;输出阈值 valid_count≥20 GB/T 有效小时;PG 声明式月度分区,分区由 AdmStatPartitionManager ensure);interval_mode 进 PK 多 mode 并存;物化由 app INSERT…SELECT ON CONFLICT 驱动;is_valid 判定层（2026-08-11 S3，达≥20 有效小时阈值；O₃-8h 日桶 attr_id=o3_8h 同口径 17 窗≥13；前端不读）';
 
--- ===== stat 普通超表压缩（替换旧连续聚合视图 ALTER MATERIALIZED VIEW ... SET compress）=====
--- segmentby=series 加速按设备+参数查询；orderby=data_time DESC 最新在前。SET 幂等（重复执行无副作用）。
-ALTER TABLE adm_data_stat_minute SET (timescaledb.compress, timescaledb.compress_segmentby = 'logic_device_unique_id, attr_id', timescaledb.compress_orderby = 'data_time DESC');
-ALTER TABLE adm_data_stat_5min   SET (timescaledb.compress, timescaledb.compress_segmentby = 'logic_device_unique_id, attr_id', timescaledb.compress_orderby = 'data_time DESC');
-ALTER TABLE adm_data_stat_hour   SET (timescaledb.compress, timescaledb.compress_segmentby = 'logic_device_unique_id, attr_id', timescaledb.compress_orderby = 'data_time DESC');
-ALTER TABLE adm_data_stat_day    SET (timescaledb.compress, timescaledb.compress_segmentby = 'logic_device_unique_id, attr_id', timescaledb.compress_orderby = 'data_time DESC');
+-- ===== stat 表压缩已移除（2026-08-14 月度分区化，替代旧 stat SET compress 块）=====
+-- stat 四表改 PG 声明式月度分区裸表：月表内直接 UPDATE/DELETE（回补免 decompress→modify→recompress 三步舞，
+-- 旧块曾致回补 M3-Phase8 双路径复杂化）；空间回收改 DROP TABLE 整月表。Timescale 压缩仅保留 raw（adm_data_sample）。
 
 -- ===== refresh policy 已删（连续聚合视图退场，refresh 改 app 调度器 AdmStatRefreshScheduler）=====
 
@@ -734,29 +737,18 @@ CREATE INDEX IF NOT EXISTS idx_compute_log_window ON adm_stat_compute_log (granu
 CREATE INDEX IF NOT EXISTS idx_compute_log_started ON adm_stat_compute_log (started_at DESC);
 COMMENT ON TABLE adm_stat_compute_log IS '统计计算执行审计(每次计算逐粒度一行);元数据+摘要不存每桶明细(明细在 stat 表);window_start/end 按前后标开闭;配置快照(interval_mode/rounding/default_precision)固化本次算法;trigger_source 标触发源;status+error 追溯失败';
 
--- ===== §4.3 压缩策略（N 天前 chunk 自动压缩；raw=7 天近窗可回补 / stat 晚压体积小）=====
--- raw=7 天（近 7 天可自由 INSERT 回补，超 7 天压缩只读）；stat 晚压（统计聚合后体积小）。幂等守卫。
+-- ===== §4.3 压缩策略（N 天前 chunk 自动压缩；仅 raw——stat 已月度分区化不压缩）=====
+-- raw=7 天（近 7 天可自由 INSERT 回补，超 7 天压缩只读）；stat 四表 2026-08-14 起 PG 月度分区裸表，无压缩策略
+-- （旧 stat 30/365/3650 天策略随分区化一并移除）。幂等守卫。
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM timescaledb_information.jobs WHERE proc_name = 'policy_compression' AND hypertable_name = 'adm_data_sample') THEN
     PERFORM add_compression_policy('adm_data_sample',     INTERVAL '7 days');
 END IF;
-  IF NOT EXISTS (SELECT 1 FROM timescaledb_information.jobs WHERE proc_name = 'policy_compression' AND hypertable_name = 'adm_data_stat_minute') THEN
-    PERFORM add_compression_policy('adm_data_stat_minute', INTERVAL '30 days');
-END IF;
-  IF NOT EXISTS (SELECT 1 FROM timescaledb_information.jobs WHERE proc_name = 'policy_compression' AND hypertable_name = 'adm_data_stat_5min') THEN
-    PERFORM add_compression_policy('adm_data_stat_5min',   INTERVAL '30 days');
-END IF;
-  IF NOT EXISTS (SELECT 1 FROM timescaledb_information.jobs WHERE proc_name = 'policy_compression' AND hypertable_name = 'adm_data_stat_hour') THEN
-    PERFORM add_compression_policy('adm_data_stat_hour',   INTERVAL '365 days');
-END IF;
-  IF NOT EXISTS (SELECT 1 FROM timescaledb_information.jobs WHERE proc_name = 'policy_compression' AND hypertable_name = 'adm_data_stat_day') THEN
-    PERFORM add_compression_policy('adm_data_stat_day',    INTERVAL '3650 days');  -- 日统计长期保留不压或晚压
-END IF;
 END $$;
 
 -- ===== §4.4 retention（次要；压缩已解决空间，retention 仅清极老原始明细）=====
--- 原始明细 2 年后清理；stat 普通超表长期保留供历史查询与上报（无 retention）。幂等守卫。
+-- 原始明细 2 年后清理；stat 月度分区表长期保留供历史查询与上报（无 retention；极老月份按需 DROP 整月表）。幂等守卫。
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM timescaledb_information.jobs WHERE proc_name = 'policy_retention' AND hypertable_name = 'adm_data_sample') THEN
