@@ -15,6 +15,8 @@ import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.quartz.domain.SysJob;
 import com.ruoyi.quartz.domain.SysJobLog;
 import com.ruoyi.quartz.service.ISysJobLogService;
+import com.ecat.core.Utils.Mdc.TraceContext;
+import java.util.Map;
 
 /**
  * 抽象quartz调用
@@ -32,6 +34,25 @@ public abstract class AbstractQuartzJob implements Job
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException
+    {
+        // 任务作用域 traceId（arch-review 25 号杠杆②）：每次任务执行生成一个 ULID 入
+        // quartz Worker 线程 MDC，执行结束恢复——单次任务（AggregationDataTask 等全部
+        // 定时任务）的日志可用同一 id 串起因果链。落点选本抽象基类 execute 漏斗
+        // （全部 Job 必经），与 JobListener 等价且只此一处；不改 quartz Scheduler 配置。
+        Map<String, String> previousMdc = TraceContext.capture();
+        try
+        {
+            TraceContext.setTraceId(TraceContext.generateTraceId());
+            doExecuteWithTrace(context);
+        }
+        finally
+        {
+            TraceContext.restore(previousMdc);
+        }
+    }
+
+    /** 原执行编排（在任务作用域 traceId 的 MDC 内运行）。 */
+    private void doExecuteWithTrace(JobExecutionContext context)
     {
         SysJob sysJob = new SysJob();
         BeanUtils.copyBeanProp(sysJob, context.getMergedJobDataMap().get(ScheduleConstants.TASK_PROPERTIES));

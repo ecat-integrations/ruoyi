@@ -31,5 +31,11 @@
       <groupId>com.ecat</groupId>
       <artifactId>ecat-core</artifactId>
     </dependency>
+    <!-- 单测（版本由父 dependencyManagement 锁定）：AbstractQuartzJob trace 作用域契约 -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
