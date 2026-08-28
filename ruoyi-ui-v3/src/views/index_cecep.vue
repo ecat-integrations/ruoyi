@@ -137,6 +137,18 @@
               <div class="s_title" style="height: 1.8rem; line-height: 1.8rem">
                 【大气环境监测】
               </div>
+              <div class="aq-unit-switch" role="group" aria-label="空气浓度单位">
+                <button
+                  type="button"
+                  :class="{ active: aqUnitMode !== 'volume' }"
+                  @click="setAqUnit('mass')"
+                >标准</button>
+                <button
+                  type="button"
+                  :class="{ active: aqUnitMode === 'volume' }"
+                  @click="setAqUnit('volume')"
+                >体积</button>
+              </div>
               <div class="s_time">{{ nowTime }}</div>
             </div>
 
@@ -148,33 +160,16 @@
                     >{{ item.name }}:</span
                   >
                 </div> -->
-                <div
-                  style="
-                  font-weight: bold;
-                  font-size: 14px;
-                  text-align: center;
-                  color: #fff;
-                  margin-top: 1rem;
-                "
-
-                >
+                <div class="dh_value_row">
                 <span
                   :class="{
                      'cy_val_no_inner': item.datastatus === -1,
                      'cy_val_success_inner': item.datastatus === 1,
                      'cy_val_error_inner': item.datastatus === 2
                    }">{{ item.value }}</span>
+                <span v-if="item.unit" class="dh_unit">{{ item.unit }}</span>
                 </div>
-                <div
-                  style="
-                  margin-top: 1rem;
-                  height: 2rem;
-                  line-height: 2rem;
-                  text-align: center;
-                  background: #ccc;
-                  color: #000;
-                "
-                >
+                <div class="dh_name_bar">
                 <span
                   :class="{
                      'nostatus': item.status !== 1,
@@ -528,6 +523,7 @@ import date from "@/utils/date";
 import { ElMessage } from 'element-plus';
 import { recordPageVisit, getHomepageDisplayMode, saveHomepageDisplayMode } from '@/utils/pageState';
 import DeviceListComponent from './index_list.vue';
+import { loadDashboardAqUnit, saveDashboardAqUnit } from '@/views/index/dashboardAqUnit'
 export default {
   name: "viewSet",
   components: {
@@ -537,6 +533,7 @@ export default {
     return {
       // 首页显示模式：false=大屏模式，true=设备管理模式
       isDeviceListMode: true,
+      aqUnitMode: loadDashboardAqUnit(),
       // 设备数据 - 用于设备管理模式
       deviceData: [],
       nowTime: "",
@@ -1501,7 +1498,7 @@ export default {
     }, 1000);
     // 获取实时数据
     this.timeIntervalId2 = setInterval(() => {
-      getNowData().then(res => {
+      getNowData(this.aqUnitMode || undefined).then(res => {
         console.log(res);
         this.dataList = res.data;
         this.handleData3(res.data)
@@ -1629,6 +1626,17 @@ export default {
     }
   },
   methods: {
+    setAqUnit(mode) {
+      if (this.aqUnitMode === mode) {
+        return;
+      }
+      this.aqUnitMode = mode;
+      saveDashboardAqUnit(mode);
+      getNowData(this.aqUnitMode || undefined).then(res => {
+        this.dataList = res.data;
+        this.handleData3(res.data);
+      });
+    },
     handleData3(datas){
       let data_dict = {};
       // 组织数据
@@ -2281,6 +2289,30 @@ body {
 .dq_para {
   height: 10rem;
 }
+.aq-unit-switch {
+  display: flex;
+  align-items: center;
+  margin-left: 0.6rem;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  border-radius: 3px;
+  overflow: hidden;
+  height: 1.5rem;
+  align-self: center;
+}
+.aq-unit-switch button {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  padding: 0 0.55rem;
+  height: 100%;
+  cursor: pointer;
+  line-height: 1.5rem;
+}
+.aq-unit-switch button.active {
+  background: rgba(0, 229, 255, 0.22);
+  color: #fff;
+}
 .m_view {
   height: 22rem;
   padding: 0.2rem;
@@ -2309,6 +2341,36 @@ body {
   text-align: left;
   color: #fff;
   border: 1px solid rgb(127, 127, 127);
+  display: flex;
+  flex-direction: column;
+}
+.dh_value_row {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  min-height: 0;
+  font-weight: bold;
+  font-size: 14px;
+  color: #fff;
+  line-height: 1.1;
+}
+.dh_unit {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.85;
+  white-space: nowrap;
+  line-height: 1;
+}
+.dh_name_bar {
+  flex-shrink: 0;
+  height: 1.7rem;
+  line-height: 1.7rem;
+  text-align: center;
+  background: #ccc;
+  color: #000;
 }
 /* 分层光晕呼吸灯效果 */
 .successstatus,
