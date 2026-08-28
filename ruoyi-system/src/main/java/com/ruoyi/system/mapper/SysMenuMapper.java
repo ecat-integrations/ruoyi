@@ -121,5 +121,21 @@ public interface SysMenuMapper
      * @param parentId 父菜单ID
      * @return 结果
      */
-    public SysMenu checkMenuNameUnique(@Param("menuName") String menuName, @Param("parentId") Long parentId);
+    public SysMenu checkMenuNameUnique(@Param("menuName") String menuName, @Param("parentId") Long parentId,
+            @Param("menuId") Long menuId, @Param("ecatSync") boolean ecatSync);
+
+    /**
+     * 按备注精确查询（ecat-sync 业务键）
+     */
+    public SysMenu selectMenuByRemark(@Param("remark") String remark);
+
+    /**
+     * 按权限标识查询（复用已有 F 按钮，如 ADM 决策 C 种子）
+     */
+    public SysMenu selectMenuByPerms(@Param("perms") String perms);
+
+    /**
+     * ecat 同步的目录/菜单（不含按钮），供侧边栏套用菜单管理的显示/停用。
+     */
+    public List<SysMenu> selectEcatSyncMenus();
 }

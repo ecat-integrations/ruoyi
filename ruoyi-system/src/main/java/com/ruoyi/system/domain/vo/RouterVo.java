@@ -56,6 +56,11 @@ public class RouterVo
      */
     private List<RouterVo> children;
 
+    /**
+     * 显示顺序（sys_menu.order_num），供前端侧边栏与 ecat 动态菜单合并排序
+     */
+    private Integer orderNum;
+
     public String getName()
     {
         return name;
@@ -144,5 +149,15 @@ public class RouterVo
     public void setChildren(List<RouterVo> children)
     {
         this.children = children;
+    }
+
+    public Integer getOrderNum()
+    {
+        return orderNum;
+    }
+
+    public void setOrderNum(Integer orderNum)
+    {
+        this.orderNum = orderNum;
     }
 }

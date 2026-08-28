@@ -26,6 +26,13 @@ export const getWebIntegrationModules = (query) => {
   })
 }
 
+export const getWebIntegrationMenuFlags = () => {
+  return request({
+    url: '/webintegration/menu-flags',
+    method: 'get'
+  })
+}
+
 // 获取指定或全部的web集成模块路由
 /*[
   {

@@ -150,6 +150,13 @@ WHERE "menu_id" IN (500)
 COMMIT;
 
 
+-- =============================================
+-- 6. sys_dict_data：字典映射添加
+-- =============================================
+INSERT INTO "public"."sys_dict_data" VALUES (249, 230, '洁净度报警', '23', 'alarm_type', NULL, 'default', NULL, '0', 'Admin7s9k2G5', '2026-06-05 14:36:06.9299', NULL, NULL, NULL);
+INSERT INTO "public"."sys_dict_data" VALUES (250, 9, '设备控制', 'DeviceAttributeControl', 'sys_job_group', NULL, 'danger', NULL, '0', 'Admin7s9k2G5', '2026-08-05 15:39:54.321697', 'Admin7s9k2G5', '2026-08-05 15:43:55.22284', NULL);
+
+
 -- ADM 鉴权权限行（决策 C，2026-08-08；AC14 全对齐 2026-08-08 bug-record-20260808-231014）：
 -- env-air-device-manager 全部 controller 逐方法 @PreAuthorize 的权限 key（含 AirDeviceController /air_device/* 11 端点）。
 -- 落 ruoyi sys_menu（perm 管理用；菜单显示由动态 jar module-config.json 负责，故本处仅建隐藏父目录 + F 按钮 perms，不重复侧边栏）。
@@ -226,13 +233,14 @@ CREATE TABLE IF NOT EXISTS adm_rule_limit
     attr_id                varchar(64)  NOT NULL,                 -- logic attr id（如 so2/concentration）
     min_value              numeric(18,6),                          -- 下限；NULL = 不设下限
     max_value              numeric(18,6),                          -- 上限；NULL = 不设上限
-    limit_unit             varchar(32),                            -- 限值单位；判定时与采样 nativeUnit 换算后比
+    limit_unit             varchar(64),                            -- 限值单位；判定时与采样 nativeUnit 换算后比
     throttle_minutes       integer,                                -- 报警频率限流周期（分钟）；NULL = 每次越界都记
     created_at             timestamptz   NOT NULL DEFAULT now(),   -- BaseEntity.createTime
     updated_at             timestamptz   NOT NULL DEFAULT now(),   -- BaseEntity.updateTime
     CONSTRAINT uk_rule_limit_logic_attr UNIQUE (logic_device_unique_id, attr_id)  -- mapper upsert ON CONFLICT 依赖
     );
 COMMENT ON TABLE  adm_rule_limit IS 'ADM 限值规则;粒度(logic_device,attr)唯一;min/max 同 NULL=不判定;upsert 走 uk_rule_limit_logic_attr';
+COMMENT ON COLUMN adm_rule_limit.limit_unit IS '限值单位(UnitInfo.getFullUnitString(),如 AirVolumeUnit.PPB);判定时换算到采样 native 再比';
 COMMENT ON COLUMN adm_rule_limit.throttle_minutes IS '报警限流周期(分钟);NULL=每次越界都记 alarm;非 NULL=同周期内同(device,attr)只记一次';
 
 -- ===== §2 报警规则主表 adm_alarm_rule（界面 3；报警大类容器，恒值是当前判定算法；每参数槽一行）=====
