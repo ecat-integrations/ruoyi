@@ -173,6 +173,8 @@ public class SysMenuServiceImpl implements ISysMenuService
             router.setPath(getRouterPath(menu));
             router.setComponent(getComponent(menu));
             router.setQuery(menu.getQuery());
+            router.setOrderNum(menu.getOrderNum());
+            router.setMenuId(menu.getMenuId());
             router.setMeta(new MetaVo(menu.getMenuName(), menu.getIcon(), StringUtils.equals("1", menu.getIsCache()), menu.getPath()));
             List<SysMenu> cMenus = menu.getChildren();
             if (StringUtils.isNotEmpty(cMenus) && UserConstants.TYPE_DIR.equals(menu.getMenuType()))
@@ -338,12 +340,31 @@ public class SysMenuServiceImpl implements ISysMenuService
     public boolean checkMenuNameUnique(SysMenu menu)
     {
         Long menuId = StringUtils.isNull(menu.getMenuId()) ? -1L : menu.getMenuId();
-        SysMenu info = menuMapper.checkMenuNameUnique(menu.getMenuName(), menu.getParentId());
+        boolean ecatSync = isEcatSyncMenu(menu);
+        SysMenu info = menuMapper.checkMenuNameUnique(menu.getMenuName(), menu.getParentId(), menuId, ecatSync);
         if (StringUtils.isNotNull(info) && info.getMenuId().longValue() != menuId.longValue())
         {
             return UserConstants.NOT_UNIQUE;
         }
         return UserConstants.UNIQUE;
+    }
+
+    /**
+     * ecat 同步菜单与若依原菜单允许同名（如两棵「设备管理」），查重只在各自族内进行。
+     */
+    private boolean isEcatSyncMenu(SysMenu menu)
+    {
+        if (StringUtils.startsWith(menu.getRemark(), "ecat-sync:"))
+        {
+            return true;
+        }
+        Long menuId = menu.getMenuId();
+        if (StringUtils.isNotNull(menuId) && menuId.longValue() > 0)
+        {
+            SysMenu db = menuMapper.selectMenuById(menuId);
+            return db != null && StringUtils.startsWith(db.getRemark(), "ecat-sync:");
+        }
+        return false;
     }
 
     /**

@@ -83,11 +83,18 @@ function resolvePath(routePath, routeQuery) {
   if (isExternal(props.basePath)) {
     return props.basePath
   }
+  const combined = isAbsoluteRoutePath(routePath)
+    ? routePath
+    : (props.basePath + '/' + (routePath || ''))
   if (routeQuery) {
     let query = JSON.parse(routeQuery);
-    return { path: getNormalPath(props.basePath + '/' + routePath), query: query }
+    return { path: getNormalPath(combined), query: query }
   }
-  return getNormalPath(props.basePath + '/' + routePath)
+  return getNormalPath(combined)
+}
+
+function isAbsoluteRoutePath(routePath) {
+  return typeof routePath === 'string' && routePath.startsWith('/')
 }
 
 function hasTitle(title){

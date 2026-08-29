@@ -1,6 +1,7 @@
 package com.ruoyi.system.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.system.domain.SysRoleMenu;
 
 /**
@@ -41,4 +42,14 @@ public interface SysRoleMenuMapper
      * @return 结果
      */
     public int batchRoleMenu(List<SysRoleMenu> roleMenuList);
+
+    /**
+     * 角色是否已绑定该菜单
+     */
+    public int countRoleMenu(@Param("roleId") Long roleId, @Param("menuId") Long menuId);
+
+    /**
+     * 按菜单删除角色绑定（ecat-sync 清理旧 F 行）
+     */
+    public int deleteRoleMenuByMenuId(@Param("menuId") Long menuId);
 }

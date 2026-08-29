@@ -66,19 +66,29 @@ export function getCodeImg() {
   })
 }
 
-// 获取实时数据
-export function getNowData() {
+// 获取实时数据。aqUnit 不传则保持原接口；mass/standard=质量浓度，volume=体积浓度
+export function getNowData(aqUnit) {
+  const params = {}
+  if (aqUnit) {
+    params.aqUnit = aqUnit
+  }
   return request({
     url: '/nowdata/list',
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 
 /** 固定逻辑设备大屏专用（含 uniqueId / bindKey，不影响 /nowdata/list） */
-export function getDashboardList() {
+export function getDashboardList(aqUnit) {
+  const params = {}
+  if (aqUnit) {
+    params.aqUnit = aqUnit
+  }
   return request({
     url: '/nowdata/dashboard-list',
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 // devicedebug

@@ -1,10 +1,8 @@
 package com.ecat.adapter.ruoyi;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
@@ -23,8 +21,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
+import com.ecat.adapter.ruoyi.menu.EcatMenuSyncService;
 import com.ecat.adapter.ruoyi.utils.JarTools;
-// import com.ecat.core.EcatCore;
+import com.ecat.adapter.ruoyi.utils.Utf8Json;
 import com.ecat.core.Integration.IntegrationBase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -49,6 +48,9 @@ public class EcatRuoyiAdapter implements ApplicationContextAware {
 
     @Autowired
     private StaticResourceDynamicRegistry srdRegistry;
+
+    @Autowired(required = false)
+    private EcatMenuSyncService menuSyncService;
 
     private ApplicationContext context;
 
@@ -132,6 +134,11 @@ public class EcatRuoyiAdapter implements ApplicationContextAware {
                 // 创建当前模块信息并存储
                 WebIntegrationInfo currentInfo = new WebIntegrationInfo(
                         integrationName, moduleName, publicPath, mtype);
+                List<Map<String, Object>> moduleRoutes = objectMapper.convertValue(
+                        subModule.get("module_routes"),
+                        new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {
+                        });
+                syncModuleMenus(currentInfo, integrationName, moduleName, moduleRoutes);
                 webIntegrationInfoMap.computeIfAbsent(integrationName, k -> new ArrayList<>())
                         .add(currentInfo);
             }
@@ -145,6 +152,29 @@ public class EcatRuoyiAdapter implements ApplicationContextAware {
 
         } catch (Exception e) {
             log.error("加载 Vue 模块失败: ", e);
+        }
+    }
+
+    /**
+     * 把 module-config 路由同步进 sys_menu，并记下页面级权限供 webintegration 过滤。
+     * 同步失败不影响 Vue 静态资源加载。
+     */
+    private void syncModuleMenus(WebIntegrationInfo info, String integrationName, String moduleName,
+            List<Map<String, Object>> moduleRoutes) {
+        if (menuSyncService == null) {
+            log.warn("EcatMenuSyncService 未注入，跳过 sys_menu 同步: {}", integrationName);
+            return;
+        }
+        try {
+            List<String> accessPerms = menuSyncService.sync(integrationName, moduleName, moduleRoutes);
+            info.setAccessPerms(accessPerms);
+        } catch (Exception e) {
+            log.error("同步集成[{}] 模块[{}] 菜单到 sys_menu 失败，仍尝试收集权限", integrationName, moduleName, e);
+            try {
+                info.setAccessPerms(menuSyncService.collectAccessPerms(integrationName, moduleName, moduleRoutes));
+            } catch (Exception ignored) {
+                // keep empty accessPerms → 对已登录用户可见（兼容未声明 permissions 的旧 jar）
+            }
         }
     }
 
@@ -212,20 +242,8 @@ public class EcatRuoyiAdapter implements ApplicationContextAware {
                 throw new IOException("JSON entry not found in JAR: " + jsonEntryPath);
             }
 
-            // 读取条目内容
-            try (InputStream inputStream = jar.getInputStream(entry);
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-
-                StringBuilder jsonContent = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    jsonContent.append(line);
-                }
-                ObjectMapper objectMapper = new ObjectMapper();
-                // 解析 JSON 为 Map
-                return objectMapper.readValue(jsonContent.toString(),
-                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
-                        });
+            try (InputStream inputStream = jar.getInputStream(entry)) {
+                return Utf8Json.readMap(inputStream);
             }
         }
     }

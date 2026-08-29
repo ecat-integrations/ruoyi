@@ -5,7 +5,8 @@ import Layout from '@/layout/index'
 import ParentView from '@/components/ParentView'
 import InnerLink from '@/layout/components/InnerLink'
 import { app } from '@/main.js'
-import { getWebIntegrationModuleRouters } from '@/utils/ecat/api/integration'
+import { getWebIntegrationModuleRouters, getWebIntegrationMenuFlags } from '@/utils/ecat/api/integration'
+import { applyEcatMenuDisplay, reparentEcatRoutes, sortRoutesByOrderNum } from '@/utils/ecat/applyEcatMenuDisplay'
 
 // 匹配views里面所有的.vue文件
 const modules = import.meta.glob('./../../views/**/*.vue')
@@ -65,28 +66,35 @@ const usePermissionStore = defineStore(
             const res = await getRouters();  // 原 getRouters 调用改为 await
             // const originalRoutes = JSON.parse(JSON.stringify(res.data));  // 保留原始数据副本
 
-            // 2. 获取所有集成模块的 Web 路由
-            const webIntegrationRoutes = await getWebIntegrationModuleRouters(app, router, []);  // 空数组表示获取全部集成
+            // 2. 获取所有集成模块的 Web 路由，以及菜单管理中的显示/停用
+            const [webIntegrationRoutes, flagsRes] = await Promise.all([
+              getWebIntegrationModuleRouters(app, router, []),
+              getWebIntegrationMenuFlags().catch(() => ({ data: {} }))
+            ]);
+            const menuFlags = flagsRes && flagsRes.data ? flagsRes.data : {};
 
-            // 3. 从集成结果中提取所有 web 类型的路由
+            // 3. 从集成结果中提取所有 web 类型的路由，并套用 sys_menu.visible / status
             const extractedWebRoutes = webIntegrationRoutes.flatMap(integrationItem => {
               const [integrationName, moduleTypes] = Object.entries(integrationItem)[0];
               return moduleTypes
                 .filter(typeItem => typeItem.mtype === 'web')  // 只筛选 web 类型模块
-                .flatMap(typeItem => typeItem.route);  // 提取路由数组
+                .flatMap(typeItem => applyEcatMenuDisplay(typeItem.route || [], integrationName, menuFlags));
             });
+            const permittedWebRoutes = filterIntegrationRoutes(extractedWebRoutes)
 
-            // 4. 合并集成路由与后端原始路由（假设路由结构兼容）
-            // const mergedRoutes = [...originalRoutes, ...extractedWebRoutes]
+            // 4. 侧边栏/顶栏按 sys_menu.parent_id 重组；vue-router 仍用 JSON 默认树注册，避免改 URL
+            const nativeRouters = JSON.parse(JSON.stringify(res.data))
+            const sidebarData = reparentEcatRoutes(nativeRouters, permittedWebRoutes, menuFlags)
+            const routerData = [...JSON.parse(JSON.stringify(res.data)), ...permittedWebRoutes]
+            const defaultData = reparentEcatRoutes(
+              JSON.parse(JSON.stringify(res.data)),
+              permittedWebRoutes,
+              menuFlags
+            )
 
-            // 5. 执行原有的路由处理逻辑（使用合并后的路由）
-            const sdata = [...JSON.parse(JSON.stringify(res.data)), ...extractedWebRoutes]
-            const rdata = [...JSON.parse(JSON.stringify(res.data)), ...extractedWebRoutes]
-            const defaultData = [...JSON.parse(JSON.stringify(res.data)), ...extractedWebRoutes];
-
-            const sidebarRoutes = filterAsyncRouter(sdata);
-            const rewriteRoutes = filterAsyncRouter(rdata, false, true);
-            const defaultRoutes = filterAsyncRouter(defaultData);
+            const sidebarRoutes = filterAsyncRouter(sortRoutesByOrderNum(sidebarData));
+            const rewriteRoutes = filterAsyncRouter(sortRoutesByOrderNum(routerData), false, true);
+            const defaultRoutes = filterAsyncRouter(sortRoutesByOrderNum(defaultData));
             const asyncRoutes = filterDynamicRoutes(dynamicRoutes);
 
             asyncRoutes.forEach(route => { router.addRoute(route) });
@@ -198,6 +206,40 @@ export function filterDynamicRoutes(routes) {
     }
   })
   return res
+}
+
+/**
+ * 按用户权限过滤 ecat 集成路由。目录在仍有可见子路由时保留；未声明 permissions 的路由对已登录用户可见。
+ */
+export function filterIntegrationRoutes(routes) {
+  if (!routes || !routes.length) {
+    return []
+  }
+  const result = []
+  for (const route of routes) {
+    const hasChildDef = Array.isArray(route.children) && route.children.length > 0
+    if (hasChildDef) {
+      const children = filterIntegrationRoutes(route.children)
+      if (children.length === 0) {
+        continue
+      }
+      result.push({ ...route, children })
+      continue
+    }
+    if (hasRoutePermission(route)) {
+      result.push(route)
+    }
+  }
+  return result
+}
+
+function hasRoutePermission(route) {
+  const raw = route.permissions || (route.meta && route.meta.permissions)
+  if (raw == null || (Array.isArray(raw) && raw.length === 0)) {
+    return true
+  }
+  const list = Array.isArray(raw) ? raw : [raw]
+  return auth.hasPermiOr(list)
 }
 
 export const loadView = (view) => {
