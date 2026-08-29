@@ -9,8 +9,12 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -42,7 +46,9 @@ import java.util.jar.JarFile;
 
 // ecat 原创首次完整实现按需动态加载springboot的component和mybatis的mapper
 
+@lombok.extern.slf4j.Slf4j
 public class DynamicJarLoader {
+
     private final ApplicationContext applicationContext;
     private final URLClassLoader classLoader;
     private final RuoyiClassLoaderHelper ecatCLoaderHelper;
@@ -127,7 +133,12 @@ public class DynamicJarLoader {
     // 注册B包的@RestController和@Service Bean
     private void registerSpringBeans(List<Class<?>> classes) {
         for (Class<?> clazz : classes) {
-            if (isCandidateForRegistration(clazz) && !clazz.isInterface()) {
+            if (clazz.isInterface()) {
+                continue;
+            }
+            // 白名单外 bean 注解先点名（E4-3）：静默跳过变装载期可见
+            auditNonWhitelistedBeanAnnotation(clazz);
+            if (isCandidateForRegistration(clazz)) {
                 String beanName = clazz.getSimpleName().substring(0, 1).toLowerCase()
                         + clazz.getSimpleName().substring(1);
                 BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(clazz);
@@ -145,6 +156,44 @@ public class DynamicJarLoader {
     // 判断类是否需要注册（@RestController或@Service）
     private boolean isCandidateForRegistration(Class<?> clazz) {
         return clazz.isAnnotationPresent(RestController.class) || clazz.isAnnotationPresent(Service.class);
+    }
+
+    /**
+     * 白名单外 Spring bean 语义注解点名（E4-3，package-private 供单测直接调）：本装载器只注册
+     * @RestController/@Service，Spring 惯性标 @Component/@Controller/@Repository/@Configuration
+     * 的类会被静默跳过——运行期 NoSuchBeanDefinition，且单测手动 new 完全遮蔽（历史实证坑：
+     * 动态 jar 单例一律 @Service 非 @Component）。装载期 log.error 点名类名并指路，把
+     * 「静默跳过」变「装载即可见」——集成作者不需要预先知道白名单也会被日志引到正确写法。
+     */
+    static void auditNonWhitelistedBeanAnnotation(Class<?> clazz) {
+        String annotation = directBeanStereotypeOutsideWhitelist(clazz);
+        if (annotation != null) {
+            log.error("动态 jar 类 {} 标注了 {}，但 DynamicJarLoader 只注册 @RestController/@Service——"
+                    + "该类不会被注册为 Spring bean（运行期 NoSuchBeanDefinition 风险）。"
+                    + "请改标 @Service（单例）或 @RestController（控制器），或把该类移出 bean 扫描。",
+                    clazz.getName(), annotation);
+        }
+    }
+
+    /**
+     * 直接标注的白名单外 bean stereotype 全限定名；无则 null。
+     * 只认直接标注（Class.isAnnotationPresent 不穿透 meta-annotation）：@Service/@RestController
+     * 本身是 @Component 的 meta 标注，若用 Spring 注解工具扫描会误伤全部合法白名单类。
+     */
+    private static String directBeanStereotypeOutsideWhitelist(Class<?> clazz) {
+        if (clazz.isAnnotationPresent(Component.class)) {
+            return Component.class.getName();
+        }
+        if (clazz.isAnnotationPresent(Controller.class)) {
+            return Controller.class.getName();
+        }
+        if (clazz.isAnnotationPresent(Repository.class)) {
+            return Repository.class.getName();
+        }
+        if (clazz.isAnnotationPresent(Configuration.class)) {
+            return Configuration.class.getName();
+        }
+        return null;
     }
 
     // 注册B包的MyBatis Mapper（兼容多XML或无XML）
