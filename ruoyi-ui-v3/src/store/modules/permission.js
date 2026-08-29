@@ -6,7 +6,7 @@ import ParentView from '@/components/ParentView'
 import InnerLink from '@/layout/components/InnerLink'
 import { app } from '@/main.js'
 import { getWebIntegrationModuleRouters, getWebIntegrationMenuFlags } from '@/utils/ecat/api/integration'
-import { applyEcatMenuDisplay, sortRoutesByOrderNum } from '@/utils/ecat/applyEcatMenuDisplay'
+import { applyEcatMenuDisplay, reparentEcatRoutes, sortRoutesByOrderNum } from '@/utils/ecat/applyEcatMenuDisplay'
 
 // 匹配views里面所有的.vue文件
 const modules = import.meta.glob('./../../views/**/*.vue')
@@ -82,14 +82,19 @@ const usePermissionStore = defineStore(
             });
             const permittedWebRoutes = filterIntegrationRoutes(extractedWebRoutes)
 
-            // 4. 合并集成路由与后端原始路由，并按 sys_menu.order_num 排序
-            const sdata = sortRoutesByOrderNum([...JSON.parse(JSON.stringify(res.data)), ...permittedWebRoutes])
-            const rdata = sortRoutesByOrderNum([...JSON.parse(JSON.stringify(res.data)), ...permittedWebRoutes])
-            const defaultData = sortRoutesByOrderNum([...JSON.parse(JSON.stringify(res.data)), ...permittedWebRoutes]);
+            // 4. 侧边栏/顶栏按 sys_menu.parent_id 重组；vue-router 仍用 JSON 默认树注册，避免改 URL
+            const nativeRouters = JSON.parse(JSON.stringify(res.data))
+            const sidebarData = reparentEcatRoutes(nativeRouters, permittedWebRoutes, menuFlags)
+            const routerData = [...JSON.parse(JSON.stringify(res.data)), ...permittedWebRoutes]
+            const defaultData = reparentEcatRoutes(
+              JSON.parse(JSON.stringify(res.data)),
+              permittedWebRoutes,
+              menuFlags
+            )
 
-            const sidebarRoutes = filterAsyncRouter(sdata);
-            const rewriteRoutes = filterAsyncRouter(rdata, false, true);
-            const defaultRoutes = filterAsyncRouter(defaultData);
+            const sidebarRoutes = filterAsyncRouter(sortRoutesByOrderNum(sidebarData));
+            const rewriteRoutes = filterAsyncRouter(sortRoutesByOrderNum(routerData), false, true);
+            const defaultRoutes = filterAsyncRouter(sortRoutesByOrderNum(defaultData));
             const asyncRoutes = filterDynamicRoutes(dynamicRoutes);
 
             asyncRoutes.forEach(route => { router.addRoute(route) });

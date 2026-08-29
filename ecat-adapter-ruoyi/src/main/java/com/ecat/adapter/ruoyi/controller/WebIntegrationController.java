@@ -107,7 +107,7 @@ public class WebIntegrationController extends BaseController {
     }
 
     /**
-     * ecat 菜单的显示/停用标志（remark → {visible, status}），供侧边栏覆盖 module-config 里写死的 hidden。
+     * ecat 菜单运行时标志（remark → visible/status/orderNum/parentId），供侧边栏覆盖 module-config 默认树。
      */
     @GetMapping("/menu-flags")
     public AjaxResult getMenuFlags() {

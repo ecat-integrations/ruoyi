@@ -58,4 +58,17 @@ public final class EcatMenuKeys {
         }
         return updateBy == null || updateBy.isEmpty() || CREATE_BY.equals(updateBy);
     }
+
+    /**
+     * 同步时是否用 JSON 父子关系覆盖库中的 parent_id。
+     * 在菜单管理里改过上级（updateBy 非 ecat-sync）则保留。
+     */
+    public static boolean shouldRefreshParent(Long currentParentId, Long specParentId, String updateBy) {
+        long current = currentParentId == null ? 0L : currentParentId.longValue();
+        long spec = specParentId == null ? 0L : specParentId.longValue();
+        if (current == spec) {
+            return false;
+        }
+        return updateBy == null || updateBy.isEmpty() || CREATE_BY.equals(updateBy);
+    }
 }

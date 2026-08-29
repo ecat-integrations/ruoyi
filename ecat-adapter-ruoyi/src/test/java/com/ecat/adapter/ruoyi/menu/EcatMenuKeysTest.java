@@ -37,6 +37,14 @@ public class EcatMenuKeysTest {
     }
 
     @Test
+    public void keepOpsMovedParent() {
+        assertFalse(EcatMenuKeys.shouldRefreshParent(100L, 0L, "admin"));
+        assertTrue(EcatMenuKeys.shouldRefreshParent(100L, 0L, EcatMenuKeys.CREATE_BY));
+        assertTrue(EcatMenuKeys.shouldRefreshParent(100L, 0L, null));
+        assertFalse(EcatMenuKeys.shouldRefreshParent(0L, 0L, "admin"));
+    }
+
+    @Test
     public void frontendPrefixedRouteNameMapsToRemarkKey() {
         String integration = "integration-env-device-manager";
         String frontendName = integration + "_device_control";

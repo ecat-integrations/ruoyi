@@ -20,7 +20,7 @@ import com.ruoyi.system.mapper.SysRoleMenuMapper;
  * 将 vue-modules/module-config.json 幂等同步到 sys_menu。
  * <p>
  * 业务键为 remark=ecat-sync:{integration}/{module}/{route}；F 按钮可按 perms 复用已有行（ADM 决策 C 种子）。
- * 再次同步不覆盖运维改过的 visible / order_num / menu_name / icon / status。
+ * 再次同步不覆盖改过的 visible / order_num / menu_name / icon / status / parent_id。
  */
 @Service
 public class EcatMenuSyncService {
@@ -121,7 +121,9 @@ public class EcatMenuSyncService {
     private void updateStructural(SysMenu existing, EcatMenuSpec spec, Long parentId) {
         SysMenu patch = new SysMenu();
         patch.setMenuId(existing.getMenuId());
-        patch.setParentId(parentId);
+        if (EcatMenuKeys.shouldRefreshParent(existing.getParentId(), parentId, existing.getUpdateBy())) {
+            patch.setParentId(parentId);
+        }
         patch.setPath(spec.getPath());
         patch.setPerms(spec.getPerms() == null ? "" : spec.getPerms());
         patch.setMenuType(spec.getMenuType());
@@ -150,14 +152,20 @@ public class EcatMenuSyncService {
     }
 
     /**
-     * 菜单管理里对 ecat 行改过的 visible / status / order_num，供前端侧边栏按若依规则套用。
-     * visible: 0 显示 1 隐藏；status: 0 正常 1 停用。
+     * 菜单管理里对 ecat 行改过的 visible / status / order_num / parent_id，供前端侧边栏按若依规则套用。
+     * visible: 0 显示 1 隐藏；status: 0 正常 1 停用；parentId=0 表示主类目。
      */
     public Map<String, Map<String, String>> listDisplayFlags() {
         List<SysMenu> menus = menuMapper.selectEcatSyncMenus();
         Map<String, Map<String, String>> flags = new HashMap<>();
         if (menus == null) {
             return flags;
+        }
+        Map<Long, SysMenu> ecatById = new HashMap<>();
+        for (SysMenu menu : menus) {
+            if (menu.getMenuId() != null) {
+                ecatById.put(menu.getMenuId(), menu);
+            }
         }
         for (SysMenu menu : menus) {
             if (menu.getRemark() == null || menu.getRemark().isEmpty()) {
@@ -167,6 +175,14 @@ public class EcatMenuSyncService {
             flag.put("visible", trimFlag(menu.getVisible(), "0"));
             flag.put("status", trimFlag(menu.getStatus(), "0"));
             flag.put("orderNum", menu.getOrderNum() == null ? "0" : String.valueOf(menu.getOrderNum()));
+            Long menuId = menu.getMenuId();
+            Long parentId = menu.getParentId() == null ? 0L : menu.getParentId();
+            flag.put("menuId", menuId == null ? "" : String.valueOf(menuId));
+            flag.put("parentId", String.valueOf(parentId));
+            SysMenu parent = ecatById.get(parentId);
+            if (parent != null && EcatMenuKeys.isEcatSyncRemark(parent.getRemark())) {
+                flag.put("parentRemark", parent.getRemark());
+            }
             flags.put(menu.getRemark(), flag);
         }
         return flags;

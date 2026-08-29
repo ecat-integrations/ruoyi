@@ -61,6 +61,11 @@ public class RouterVo
      */
     private Integer orderNum;
 
+    /**
+     * 菜单 ID，供 ecat 侧边栏按 sys_menu.parent_id 挂到对应若依节点
+     */
+    private Long menuId;
+
     public String getName()
     {
         return name;
@@ -159,5 +164,15 @@ public class RouterVo
     public void setOrderNum(Integer orderNum)
     {
         this.orderNum = orderNum;
+    }
+
+    public Long getMenuId()
+    {
+        return menuId;
+    }
+
+    public void setMenuId(Long menuId)
+    {
+        this.menuId = menuId;
     }
 }
