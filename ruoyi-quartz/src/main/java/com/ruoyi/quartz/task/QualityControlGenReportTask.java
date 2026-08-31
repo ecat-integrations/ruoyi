@@ -3,13 +3,11 @@ package com.ruoyi.quartz.task;
 import com.ecat.core.EcatCore;
 import com.ecat.core.Integration.IIntegrationTaskManagement;
 import com.ecat.core.Task.Task;
-import com.ruoyi.quartz.service.ISysJobService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,9 +19,6 @@ import java.util.Map;
 @Component("qualityControlGenReportTask")
 public class QualityControlGenReportTask
 {
-    @Autowired
-    private ISysJobService jobService;
-
     @Autowired
     private EcatCore core;
 

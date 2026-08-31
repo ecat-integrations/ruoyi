@@ -4,27 +4,20 @@ package com.ruoyi.quartz.task;
 import com.ecat.core.EcatCore;
 import com.ecat.core.Integration.IIntegrationTaskManagement;
 import com.ecat.core.Task.Task;
-import com.ruoyi.quartz.service.ISysJobService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 @Component("ExecuteSiChuanHj212RuleTask")
 public class ExecuteSiChuanHj212RuleTask {
     @Autowired
-    private ISysJobService jobService;
-
-    @Autowired
     private EcatCore core;
-    private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    // private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private static final Logger log = LoggerFactory.getLogger(ExecuteSiChuanHj212RuleTask.class);
 

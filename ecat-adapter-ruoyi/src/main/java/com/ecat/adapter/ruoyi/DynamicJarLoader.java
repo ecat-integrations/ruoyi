@@ -51,7 +51,6 @@ public class DynamicJarLoader {
 
     private final ApplicationContext applicationContext;
     private final URLClassLoader classLoader;
-    private final RuoyiClassLoaderHelper ecatCLoaderHelper;
     private final DefaultListableBeanFactory beanFactory;
     private final RequestMappingHandlerMapping handlerMapping;
     private final Set<Class<?>> registeredMappers = ConcurrentHashMap.newKeySet(); // 线程安全集合
@@ -60,7 +59,6 @@ public class DynamicJarLoader {
     public DynamicJarLoader(ApplicationContext applicationContext, URLClassLoader classLoader, RuoyiClassLoaderHelper ecatCLoaderHelper) {
         this.applicationContext = applicationContext;
         this.classLoader = classLoader;
-        this.ecatCLoaderHelper = ecatCLoaderHelper;
         this.beanFactory = (DefaultListableBeanFactory) ((ConfigurableApplicationContext) applicationContext)
                 .getBeanFactory();
         // beanFactory.setBeanClassLoader(ecatCLoaderHelper.getClassLoader());

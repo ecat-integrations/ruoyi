@@ -15,7 +15,6 @@ import javax.servlet.ServletContext;
 import java.util.Collections;
 import java.util.Map;
 
-import org.springframework.stereotype.Component;
 
 // 静态资源动态加载器
 // https://blog.csdn.net/lqzkcx3/article/details/122641111

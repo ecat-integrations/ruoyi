@@ -3,7 +3,6 @@ package com.ruoyi.quartz.task;
 import com.ecat.core.EcatCore;
 import com.ecat.core.Integration.IIntegrationTaskManagement;
 import com.ecat.core.Task.Task;
-import com.ruoyi.quartz.service.ISysJobService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +23,6 @@ import java.util.Map;
 @Component("aggregationDataTask")
 public class AggregationDataTask
 {
-    @Autowired
-    private ISysJobService jobService;
-
     @Autowired
     private EcatCore core;
     private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -83,7 +79,7 @@ public class AggregationDataTask
         } else {
             // 获取当前时间
             Calendar calendar = Calendar.getInstance();
-            Date now = calendar.getTime();
+            calendar.getTime(); // Date now
             if(aggregationMinutes == 1440){
                 calendar.set(Calendar.HOUR_OF_DAY, 0);
             }

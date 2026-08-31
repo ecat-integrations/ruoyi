@@ -4,7 +4,6 @@ import com.ecat.core.EcatCore;
 import com.ecat.core.Integration.IIntegrationTaskManagement;
 
 import com.ecat.core.Task.Task;
-import com.ruoyi.quartz.service.ISysJobService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +20,6 @@ import java.util.Map;
 @Component("qualityControlTask")
 public class QualityControlTask
 {
-    @Autowired
-    private ISysJobService jobService;
-
     @Autowired
     private EcatCore core;
 
