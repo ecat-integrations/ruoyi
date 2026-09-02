@@ -44,6 +44,7 @@
 import Fuse from 'fuse.js'
 import { getNormalPath } from '@/utils/ruoyi'
 import { isHttp } from '@/utils/validate'
+import { joinRoutePath } from '@/utils/ecat/applyEcatMenuDisplay'
 import usePermissionStore from '@/store/modules/permission'
 
 const search = ref('')
@@ -117,9 +118,9 @@ function generateRoutes(routes, basePath = '', prefixTitle = []) {
   for (const r of routes) {
     // skip hidden router
     if (r.hidden) { continue }
-    const p = r.path.length > 0 && r.path[0] === '/' ? r.path : '/' + r.path
+    // ecat reparent 后子路由常为绝对 path，不能再拼到 basePath 上，否则会重复前缀导致 404
     const data = {
-      path: !isHttp(r.path) ? getNormalPath(basePath + p) : r.path,
+      path: !isHttp(r.path) ? getNormalPath(joinRoutePath(basePath, r.path)) : r.path,
       title: [...prefixTitle],
       icon: ''
     }
@@ -156,9 +157,17 @@ function querySearch(query) {
   }
 }
 
+function refreshSearchPool() {
+  searchPool.value = generateRoutes(routes.value || [])
+}
+
 onMounted(() => {
-  searchPool.value = generateRoutes(routes.value)
+  refreshSearchPool()
 })
+
+watch(routes, () => {
+  refreshSearchPool()
+}, { deep: true })
 
 watch(searchPool, (list) => {
   initFuse(list)
