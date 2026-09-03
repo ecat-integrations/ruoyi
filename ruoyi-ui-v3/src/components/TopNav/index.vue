@@ -35,6 +35,7 @@
 <script setup>
 import { constantRoutes } from "@/router"
 import { isHttp } from '@/utils/validate'
+import { joinRoutePath } from '@/utils/ecat/applyEcatMenuDisplay'
 import useAppStore from '@/store/modules/app'
 import useSettingsStore from '@/store/modules/settings'
 import usePermissionStore from '@/store/modules/permission'
@@ -73,35 +74,61 @@ const topMenus = computed(() => {
   return topMenus;
 })
 
-// 设置子路由
+// 设置子路由（拷贝后组装，避免原地改写 ecat 绝对 path 导致 404）
 const childrenMenus = computed(() => {
   let childrenMenus = [];
-  routers.value.map((router) => {
-    for (let item in router.children) {
-      if (router.children[item].parentPath === undefined) {
-        if(router.path === "/") {
-          router.children[item].path = "/" + router.children[item].path;
-        } else {
-          if(!isHttp(router.children[item].path)) {
-            router.children[item].path = router.path + "/" + router.children[item].path;
-          }
+  routers.value.map((menu) => {
+    if (!menu.children) {
+      return;
+    }
+    for (let item in menu.children) {
+      const source = menu.children[item];
+      const child = { ...source };
+      if (child.parentPath === undefined) {
+        if (!isHttp(child.path)) {
+          // 已是 / 开头的绝对路径（ecat reparent 后常见）保持原 path，勿再拼父级
+          child.path = joinRoutePath(menu.path, child.path);
         }
-        router.children[item].parentPath = router.path;
+        child.parentPath = menu.path;
       }
-      childrenMenus.push(router.children[item]);
+      childrenMenus.push(child);
     }
   })
   return constantRoutes.concat(childrenMenus);
 })
+
+/** 根据当前 URL 解析应激活的一级 TopNav path */
+function resolveActiveTopPath(path) {
+  if (!path) {
+    return path;
+  }
+  // 优先：子菜单自身 path（含 ecat 绝对路径）命中后回推 parentPath
+  const matchedChildren = childrenMenus.value
+    .filter(item => item.path && (item.path === path || path.startsWith(item.path + '/')))
+    .sort((a, b) => String(b.path).length - String(a.path).length);
+  if (matchedChildren.length && matchedChildren[0].parentPath !== undefined && matchedChildren[0].parentPath !== '/') {
+    return matchedChildren[0].parentPath;
+  }
+  // 其次：最长前缀匹配的一级菜单（兼容 /ecat-integrations/... 多级 path）
+  const matchedTops = topMenus.value
+    .filter(item => item.path && (item.path === path || path.startsWith(item.path + '/')))
+    .sort((a, b) => String(b.path).length - String(a.path).length);
+  if (matchedTops.length) {
+    return matchedTops[0].path;
+  }
+  // 回退：若依原逻辑取首段
+  const tmpPath = path.substring(1);
+  const slash = tmpPath.indexOf('/');
+  return slash > 0 ? '/' + tmpPath.substring(0, slash) : path;
+}
 
 // 默认激活的菜单
 const activeMenu = computed(() => {
   const path = route.path;
   let activePath = path;
   if (path !== undefined && path.lastIndexOf("/") > 0 && hideList.indexOf(path) === -1) {
-    const tmpPath = path.substring(1, path.length);
     if (!route.meta.link) {
-      activePath = "/" + tmpPath.substring(0, tmpPath.indexOf("/"));
+      activePath = resolveActiveTopPath(path);
       appStore.toggleSideBarHide(false);
     }
   } else if(!route.children) {
