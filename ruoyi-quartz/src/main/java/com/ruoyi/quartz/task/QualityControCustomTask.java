@@ -35,7 +35,7 @@ public class QualityControCustomTask
                     String gas_concentration, String stdGasInPortName, String targetFlowLpm){
 
         IIntegrationTaskManagement envQualityControlCustomTask = (IIntegrationTaskManagement) core.getIntegrationRegistry()
-                .getIntegration("integration-env-quality-control-manager");
+                .getIntegration("integration-env-qc-manager");
         Task wantedTask = envQualityControlCustomTask.getTaskExecutor().getTask("EnvQualityControlCustomTask");
 
         // 整合参数

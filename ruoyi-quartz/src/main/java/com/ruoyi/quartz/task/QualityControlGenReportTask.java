@@ -27,7 +27,7 @@ public class QualityControlGenReportTask
     public void run(String triggerType, String beginTime, String endTime){
 
         IIntegrationTaskManagement envQualityControlTask = (IIntegrationTaskManagement) core.getIntegrationRegistry()
-                .getIntegration("integration-env-quality-control-manager");
+                .getIntegration("integration-env-qc-manager");
         Task wantedTask = envQualityControlTask.getTaskExecutor().getTask("EnvQualityControlGenReportTask");
 
         // 整合参数

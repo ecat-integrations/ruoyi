@@ -35,7 +35,7 @@ public class QualityControlTask
     public void run(String triggerType, String parameter, String qualityControlType, String calculatedValue, String targetFlowLpm){
 
         IIntegrationTaskManagement envQualityControlTask = (IIntegrationTaskManagement) core.getIntegrationRegistry()
-                .getIntegration("integration-env-quality-control-manager");
+                .getIntegration("integration-env-qc-manager");
         Task wantedTask = envQualityControlTask.getTaskExecutor().getTask("EnvQualityControlTask");
 
         // 数值转化
