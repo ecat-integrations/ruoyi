@@ -413,7 +413,7 @@
                         :show-text="false"
                       />
                     </div>
-                  <span class="cy_unit">{{ calculatePercentage(item) }}%/{{ item.materialRemainCapacity }}{{item.materialCapacityUnit}}</span>
+                  <span class="cy_unit" :title="item.materialCapacityUnit">{{ calculatePercentage(item) }}%/{{ item.materialRemainCapacity }}{{ formatUnit(item.materialCapacityUnit) }}</span>
 <!--                  <span class="cy_name">{{ item.name }}:</span-->
 <!--                  ><span class="cy_val"><span-->
 <!--                  :class="{-->
@@ -422,6 +422,19 @@
 <!--                     'cy_val_error_inner': item.datastatus === 2-->
 <!--                   }">{{ item.value }}</span></span-->
 <!--                ><span class="cy_unit">{{ item.unit }}</span>-->
+                </div>
+                <div class="cy_text" :class="{
+                     'nostatus': item.status !== 1,
+                     'successstatus': item.status === 1
+                   }" v-for="(item, index) of middleRightTwoGas" :key="'gas-' + index">
+                  <span class="cy_name">{{ item.name }}:</span
+                  ><span class="cy_val"><span
+                  :class="{
+                     'cy_val_no_inner': item.datastatus === -1,
+                     'cy_val_success_inner': item.datastatus === 1,
+                     'cy_val_error_inner': item.datastatus === 2
+                   }">{{ item.value }}</span></span
+                ><span class="cy_unit">{{ item.unit }}</span>
                 </div>
               </div>
             </div>
@@ -1485,6 +1498,33 @@ export default {
           "valuestatus": -1
         }
       ],//中间底部右侧第二列
+      middleRightTwoGas:[
+        {
+          "name": "SO2钢瓶气剩余压力",
+          "value": null,
+          "unit": null,
+          "status": -1,
+          "id": "sms-qc-gas_cylinder1_pressure",
+          "type": "value",
+          "valuestatus": -1
+        },{
+          "name": "NO钢瓶气剩余压力",
+          "value": null,
+          "unit": null,
+          "status": -1,
+          "id": "sms-qc-gas_cylinder2_pressure",
+          "type": "value",
+          "valuestatus": -1
+        },{
+          "name": "CO钢瓶气剩余压力",
+          "value": null,
+          "unit": null,
+          "status": -1,
+          "id": "sms-qc-gas_cylinder3_pressure",
+          "type": "value",
+          "valuestatus": -1
+        }
+      ],//中间底部右侧第三列（钢瓶气压力）
       alertKeywords:["报警","异常","关"],
       alarmNotityList:[], // 报警队列
       alarmNotityCount:3,
@@ -1722,6 +1762,9 @@ export default {
       this.middleRightTwo.forEach(item => {
         this.analysisData(item, data_dict);
       })
+      this.middleRightTwoGas.forEach(item => {
+        this.analysisData(item, data_dict);
+      })
 
     // 遍历 [key, value] 对
       for (const [key, value] of Object.entries(this.middleTwoDict)) {
@@ -1937,6 +1980,11 @@ export default {
       if (ratio < 0.2) return 'exception';
       if (ratio < 0.5) return 'warning';
       return 'success';
+    },
+    // 容量单位只显示前两个字符，超出部分用省略号代替，减少占位
+    formatUnit(unit){
+      if (!unit) return '';
+      return unit.length > 2 ? unit.slice(0, 2) + '…' : unit;
     }
   },
 };
