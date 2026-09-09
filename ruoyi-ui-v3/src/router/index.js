@@ -45,6 +45,11 @@ export const constantRoutes = [
     hidden: true
   },
   {
+    path: '/login_jiami',
+    component: () => import('@/views/login_jiami'),
+    hidden: true
+  },
+  {
     path: '/register',
     component: () => import('@/views/register'),
     hidden: true

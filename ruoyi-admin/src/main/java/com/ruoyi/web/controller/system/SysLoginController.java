@@ -57,6 +57,21 @@ public class SysLoginController
     }
 
     /**
+     * 加密令牌自动登录（跳过验证码，账号密码鉴权不变）
+     *
+     * @param loginBody 登录信息（仅需 username/password）
+     * @return 结果
+     */
+    @PostMapping("/login/token")
+    public AjaxResult loginByToken(@RequestBody LoginBody loginBody)
+    {
+        AjaxResult ajax = AjaxResult.success();
+        String token = loginService.loginWithoutCaptcha(loginBody.getUsername(), loginBody.getPassword());
+        ajax.put(Constants.TOKEN, token);
+        return ajax;
+    }
+
+    /**
      * 获取用户信息
      * 
      * @return 用户信息

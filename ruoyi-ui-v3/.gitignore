@@ -26,3 +26,7 @@ yarn.lock
 # Auto-added essential ignore rules
 *.log
 target/
+
+.env.development
+.env.production
+.env.staging

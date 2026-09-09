@@ -585,7 +585,7 @@ export default {
   data() {
     return {
       // 首页显示模式：'device-list'=设备列表模式，'dashboard'=大屏模式，'station-preview'=全域控制视图模式
-      displayMode: 'device-list',
+      displayMode: 'dashboard',
       aqUnitMode: loadDashboardAqUnit(),
       // 设备数据 - 用于设备管理模式
       deviceData: [],

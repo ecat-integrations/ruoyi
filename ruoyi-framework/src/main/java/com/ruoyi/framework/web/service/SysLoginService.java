@@ -65,6 +65,26 @@ public class SysLoginService
     {
         // 验证码校验
         validateCaptcha(username, code, uuid);
+        return authenticate(username, password);
+    }
+
+    /**
+     * 加密令牌自动登录：跳过验证码，账号密码鉴权与正式登录一致
+     *
+     * @param username 用户名
+     * @param password 密码
+     * @return 结果
+     */
+    public String loginWithoutCaptcha(String username, String password)
+    {
+        return authenticate(username, password);
+    }
+
+    /**
+     * 账号密码鉴权并签发 JWT（与验证码无关）
+     */
+    private String authenticate(String username, String password)
+    {
         // 登录前置校验
         loginPreCheck(username, password);
         // 用户验证

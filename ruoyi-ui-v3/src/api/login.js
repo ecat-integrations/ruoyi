@@ -18,6 +18,22 @@ export function login(username, password, code, uuid) {
     data: data
   })
 }
+
+// 加密令牌自动登录（跳过验证码，鉴权与 /login 相同）
+export function loginByToken(username, password) {
+  return request({
+    url: '/login/token',
+    headers: {
+      isToken: false,
+      repeatSubmit: false
+    },
+    method: 'post',
+    data: {
+      username,
+      password
+    }
+  })
+}
 // 查询history列表
 // export function getNowData(query) {
 //   return request({

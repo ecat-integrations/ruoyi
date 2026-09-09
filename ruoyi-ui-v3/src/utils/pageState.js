@@ -11,7 +11,7 @@ const DEFAULT_STATE = {
     autoSwitch: false,
     rememberPosition: true
   },
-  homepageDisplayMode: 'device-list', // 默认设备列表模式
+  homepageDisplayMode: 'dashboard', // 默认大屏模式
   dashboardVersion: 'legacy' // 'station' 新版站房大屏 | 'legacy' 经典大屏（默认）
 };
 

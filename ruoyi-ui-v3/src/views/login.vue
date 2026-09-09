@@ -1,15 +1,30 @@
 <template>
   <div class="login">
-    <!-- 页面加载中 -->
-    <div v-if="pageLoading" class="page-loading-container">
+    <!-- 加密令牌自动登录 -->
+    <div v-if="tokenAutoLogging" class="token-loading-container">
+      <div class="loading-content">
+        <el-icon class="loading-icon"><RefreshRight /></el-icon>
+        <p class="token-loading-text">{{ tokenLoadingMessage }}</p>
+      </div>
+    </div>
+
+    <!-- 页面加载中（验证码） -->
+    <div v-else-if="pageLoading && formEnabled" class="page-loading-container">
       <el-icon class="is-loading" :size="50">
         <Loading />
       </el-icon>
       <p class="loading-text">加载中...</p>
     </div>
+
+    <!-- 仅 auto_token 且无 token / 失败时的提示 -->
+    <div v-else-if="!formEnabled" class="token-loading-container">
+      <div class="loading-content">
+        <p class="token-loading-text">{{ tokenLoadingMessage || '请通过加密链接访问' }}</p>
+      </div>
+    </div>
     
     <!-- 登录表单 -->
-    <el-form v-show="!pageLoading" ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
+    <el-form v-show="formEnabled && !pageLoading && !tokenAutoLogging" ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
       <h3 class="title">{{ title }}</h3>
       <el-form-item prop="username">
         <el-input
@@ -65,13 +80,13 @@
           <span v-else>登 录 中...</span>
         </el-button>
         <div style="float: right;" v-if="register">
-          <router-link class="link-type" :to="'/register'">立即注册</router-link>
+          <router-link class="link-type" to="/register">立即注册</router-link>
         </div>
       </el-form-item>
     </el-form>
     <!--  底部  -->
     <div class="el-login-footer">
-      <span>Copyright © 2018-2025 ruoyi.vip All Rights Reserved.</span>
+      <span>Copyright © 2018-2026 ecat group All Rights Reserved.</span>
     </div>
   </div>
 </template>
@@ -81,7 +96,14 @@ import { getCodeImg } from "@/api/login";
 import Cookies from "js-cookie";
 import { encrypt, decrypt } from "@/utils/jsencrypt";
 import useUserStore from '@/store/modules/user'
-import { Loading } from '@element-plus/icons-vue'
+import { Loading, RefreshRight } from '@element-plus/icons-vue'
+import {
+  parseAccountPwd,
+  isLoginTokenEnabled,
+  isLoginFormEnabled,
+  isLoginPrefillEnabled,
+  getLoginPrefillCredentials
+} from '@/utils/loginToken'
 
 const title = import.meta.env.VITE_APP_TITLE;
 const userStore = useUserStore();
@@ -89,9 +111,14 @@ const route = useRoute();
 const router = useRouter();
 const { proxy } = getCurrentInstance();
 
+const formEnabled = isLoginFormEnabled();
+const tokenEnabled = isLoginTokenEnabled();
+const prefillEnabled = isLoginPrefillEnabled();
+const prefill = getLoginPrefillCredentials();
+
 const loginForm = ref({
-  username: "Admin7s9k2G5",
-  password: "7sK2pG9dR3tQ",
+  username: prefillEnabled ? (prefill.username || '') : '',
+  password: prefillEnabled ? (prefill.password || '') : '',
   rememberMe: false,
   code: "",
   uuid: ""
@@ -105,45 +132,99 @@ const loginRules = {
 
 const codeUrl = ref("");
 const loading = ref(false);
-const pageLoading = ref(true); // 页面加载状态
-// 验证码开关
+const pageLoading = ref(formEnabled);
+const codeLoading = ref(false);
 const captchaEnabled = ref(true);
-// 注册开关
 const register = ref(false);
 const redirect = ref(undefined);
 
+const tokenAutoLogging = ref(false);
+const tokenLoadingMessage = ref('正在加载中...');
+let tokenLoginStarted = false;
+
 watch(route, (newRoute) => {
-    redirect.value = newRoute.query && newRoute.query.redirect;
+  redirect.value = newRoute.query && newRoute.query.redirect;
+  maybeStartTokenAutoLogin();
 }, { immediate: true });
+
+function buildPostLoginQuery(query) {
+  return Object.keys(query || {}).reduce((acc, cur) => {
+    if (cur !== 'redirect' && cur !== 'token') {
+      acc[cur] = query[cur];
+    }
+    return acc;
+  }, {});
+}
+
+function navigateAfterLogin() {
+  const query = route.query || {};
+  router.replace({ path: redirect.value || "/", query: buildPostLoginQuery(query) });
+}
+
+function fallbackAfterTokenFailure(message) {
+  tokenAutoLogging.value = false;
+  tokenLoadingMessage.value = message || '登录失败，请检查登录信息';
+  if (formEnabled) {
+    pageLoading.value = true;
+    getCode();
+  }
+}
+
+async function handleTokenAutoLogin(tokenStr) {
+  tokenAutoLogging.value = true;
+  tokenLoadingMessage.value = '正在解析登录信息...';
+  try {
+    const { account, password } = parseAccountPwd(tokenStr);
+    loginForm.value.username = account;
+    loginForm.value.password = password;
+    tokenLoadingMessage.value = '正在自动登录...';
+    await userStore.loginByToken({ username: account, password });
+    navigateAfterLogin();
+  } catch (error) {
+    console.error('自动登录失败:', error);
+    const msg = (error && error.message) || '登录失败，请检查登录信息';
+    fallbackAfterTokenFailure(msg);
+  }
+}
+
+function maybeStartTokenAutoLogin() {
+  const tokenStr = (route.query && route.query.token) || '';
+  if (!tokenStr) {
+    if (!formEnabled) {
+      tokenLoadingMessage.value = '请通过加密链接访问';
+    }
+    return;
+  }
+  if (!tokenEnabled) {
+    if (!formEnabled) {
+      tokenLoadingMessage.value = '未启用加密令牌登录';
+    }
+    return;
+  }
+  if (tokenLoginStarted) {
+    return;
+  }
+  tokenLoginStarted = true;
+  handleTokenAutoLogin(tokenStr);
+}
 
 function handleLogin() {
   proxy.$refs.loginRef.validate(valid => {
     if (valid) {
       loading.value = true;
-      // 勾选了需要记住密码设置在 cookie 中设置记住用户名和密码
       if (loginForm.value.rememberMe) {
         Cookies.set("username", loginForm.value.username, { expires: 30 });
         Cookies.set("password", encrypt(loginForm.value.password), { expires: 30 });
         Cookies.set("rememberMe", loginForm.value.rememberMe, { expires: 30 });
       } else {
-        // 否则移除
         Cookies.remove("username");
         Cookies.remove("password");
         Cookies.remove("rememberMe");
       }
-      // 调用action的登录方法
       userStore.login(loginForm.value).then(() => {
-        const query = route.query;
-        const otherQueryParams = Object.keys(query).reduce((acc, cur) => {
-          if (cur !== "redirect") {
-            acc[cur] = query[cur];
-          }
-          return acc;
-        }, {});
-        router.push({ path: redirect.value || "/", query: otherQueryParams });
+        navigateAfterLogin();
       }).catch(() => {
         loading.value = false;
-        // 重新获取验证码
         if (captchaEnabled.value) {
           getCode();
         }
@@ -152,32 +233,34 @@ function handleLogin() {
   });
 }
 
-let retryTimer = null; // 重试定时器
+let retryTimer = null;
 
 function getCode() {
-  // 清除之前的定时器
+  if (!formEnabled) {
+    return;
+  }
   if (retryTimer) {
     clearInterval(retryTimer);
     retryTimer = null;
   }
-  
+  codeLoading.value = true;
   getCodeImg().then(res => {
     captchaEnabled.value = res.captchaEnabled === undefined ? true : res.captchaEnabled;
     if (captchaEnabled.value) {
       codeUrl.value = "data:image/gif;base64," + res.img;
       loginForm.value.uuid = res.uuid;
     }
-    // 成功后关闭加载状态并清除定时器
     pageLoading.value = false;
+    codeLoading.value = false;
     if (retryTimer) {
       clearInterval(retryTimer);
       retryTimer = null;
     }
   }).catch(error => {
     console.error('获取验证码失败:', error);
-    // 请求失败时，禁用验证码功能
     captchaEnabled.value = false;
-    // 设置定时器每 5 秒重试一次
+    codeLoading.value = false;
+    pageLoading.value = false;
     retryTimer = setInterval(() => {
       console.log('重试获取验证码...');
       getCode();
@@ -192,11 +275,12 @@ function getCookie() {
   loginForm.value = {
     username: username === undefined ? loginForm.value.username : username,
     password: password === undefined ? loginForm.value.password : decrypt(password),
-    rememberMe: rememberMe === undefined ? false : Boolean(rememberMe)
+    rememberMe: rememberMe === undefined ? false : Boolean(rememberMe),
+    code: loginForm.value.code,
+    uuid: loginForm.value.uuid
   };
 }
 
-// 组件卸载时清除定时器
 onUnmounted(() => {
   if (retryTimer) {
     clearInterval(retryTimer);
@@ -204,8 +288,15 @@ onUnmounted(() => {
   }
 });
 
-getCode();
-getCookie();
+if (formEnabled) {
+  getCookie();
+  // 有 token 自动登录时先不拉验证码，失败回退再拉
+  if (!(tokenEnabled && route.query && route.query.token)) {
+    getCode();
+  } else {
+    pageLoading.value = false;
+  }
+}
 </script>
 
 <style lang='scss' scoped>
@@ -282,5 +373,36 @@ getCookie();
     color: #fff;
     font-size: 16px;
   }
+}
+.token-loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  z-index: 9999;
+}
+.loading-content {
+  text-align: center;
+}
+.loading-icon {
+  font-size: 36px;
+  animation: rotating 2s linear infinite;
+  margin-bottom: 20px;
+  display: block;
+}
+@keyframes rotating {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.token-loading-text {
+  font-size: 24px;
+  color: #606266;
+  margin: 0;
+  font-weight: 500;
 }
 </style>

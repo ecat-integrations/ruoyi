@@ -110,8 +110,8 @@ public class SecurityConfig
             // 注解标记允许匿名访问的url
             .authorizeHttpRequests((requests) -> {
                 permitAllUrl.getUrls().forEach(url -> requests.antMatchers(url).permitAll());
-                // 对于登录login 注册register 验证码captchaImage 允许匿名访问
-                requests.antMatchers("/login", "/register", "/captchaImage", "/mock/**").permitAll()
+                // 对于登录login / login/token 注册register 验证码captchaImage 允许匿名访问
+                requests.antMatchers("/login", "/login/token", "/register", "/captchaImage", "/mock/**").permitAll()
                     // 允许ruoyi-ui web访问
                     .antMatchers(HttpMethod.GET, "/web/**").permitAll()
                     // 允许访问ecat-integrations的资源
