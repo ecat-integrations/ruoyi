@@ -172,10 +172,10 @@ export function useTaskOrchestration(props) {
   }
 
   /**
-   * 更新当前任务
-   * @returns {Promise<boolean>} 更新是否成功
+   * 更新当前任务（调用方负责确认）
+   * @returns {boolean} 更新是否成功
    */
-  const updateCurrentTask = async () => {
+  const updateCurrentTask = () => {
     if (!validateTaskSteps()) return false
 
     const task = savedTasks.value.find(t => t.id === currentEditingTaskId.value)
@@ -184,30 +184,13 @@ export function useTaskOrchestration(props) {
       return false
     }
 
-    try {
-      // 确认覆盖
-      await ElMessageBox.confirm(
-        `是否要覆盖任务 "${task.name}"？`,
-        '确认更新',
-        {
-          confirmButtonText: '确认',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-      )
+    task.steps = JSON.parse(JSON.stringify(taskSteps.value))
+    task.updateTime = new Date().toISOString()
+    persistTasks()
 
-      // 更新任务
-      task.steps = JSON.parse(JSON.stringify(taskSteps.value))
-      task.updateTime = new Date().toISOString()
-      persistTasks()
-
-      addExecutionLog(`任务更新成功：${task.name}`, 'success')
-      ElMessage.success('任务已更新')
-      return true
-    } catch {
-      // 用户取消
-      return false
-    }
+    addExecutionLog(`任务更新成功：${task.name}`, 'success')
+    ElMessage.success('任务已更新')
+    return true
   }
 
   /**
@@ -501,41 +484,10 @@ export function useTaskOrchestration(props) {
 
   // ==================== 清空操作 ====================
   /**
-   * 清空任务步骤
+   * 清空任务步骤（调用方负责确认）
    */
-  const clearTask = async () => {
+  const clearTask = () => {
     if (taskSteps.value.length === 0) return
-
-    // 如果正在编辑任务，先确认是否放弃修改
-    if (currentEditingTaskId.value) {
-      try {
-        await ElMessageBox.confirm(
-          '当前正在编辑已有任务，确定要清空步骤吗？',
-          '提示',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-          }
-        )
-      } catch {
-        return
-      }
-    } else {
-      try {
-        await ElMessageBox.confirm(
-          '确定要清空所有任务步骤吗？',
-          '提示',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-          }
-        )
-      } catch {
-        return
-      }
-    }
 
     taskSteps.value = []
     currentEditingTaskId.value = null

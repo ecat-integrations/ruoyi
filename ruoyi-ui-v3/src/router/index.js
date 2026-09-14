@@ -73,13 +73,14 @@ export const constantRoutes = [
   {
     path: '',
     component: Layout,
-    redirect: '/index',
     children: [
       {
         path: '/index',
         component: () => import('@/views/index'),
         name: 'Index',
-        meta: { title: '首页', icon: 'dashboard', affix: true }
+        // 注意：不在此处写死 affix。固定标签由 TagsView 按解析出的首页（homePath）动态决定，
+        // 否则默认首页改成集成页面时，会出现“首页标签”与落地页不一致（且多出一个固定标签）。
+        meta: { title: '首页', icon: 'dashboard' }
       },
       {
         path: '/station',

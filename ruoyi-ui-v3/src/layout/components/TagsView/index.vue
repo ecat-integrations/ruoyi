@@ -43,7 +43,7 @@
 
 <script setup>
 import ScrollPane from './ScrollPane'
-import { getNormalPath } from '@/utils/ruoyi'
+import { buildHomeTag, normalizeRoutePath } from '@/utils/homeRoute'
 import useTagsViewStore from '@/store/modules/tagsView'
 import useSettingsStore from '@/store/modules/settings'
 import usePermissionStore from '@/store/modules/permission'
@@ -60,7 +60,6 @@ const route = useRoute();
 const router = useRouter();
 
 const visitedViews = computed(() => useTagsViewStore().visitedViews);
-const routes = computed(() => usePermissionStore().routes);
 const theme = computed(() => useSettingsStore().theme);
 
 watch(route, () => {
@@ -97,12 +96,13 @@ function isAffix(tag) {
   return tag.meta && tag.meta.affix
 }
 
+/** 当前解析出的首页路径（关不掉的固定标签就是它） */
+function homeTagPath() {
+  return normalizeRoutePath(usePermissionStore().homePath || '/index')
+}
+
 function isFirstView() {
-  try {
-    return selectedTag.value.fullPath === '/index' || selectedTag.value.fullPath === '/station' || selectedTag.value.fullPath === visitedViews.value[1].fullPath
-  } catch (err) {
-    return false
-  }
+  return selectedTag.value.path === homeTagPath()
 }
 
 function isLastView() {
@@ -113,30 +113,17 @@ function isLastView() {
   }
 }
 
-function filterAffixTags(routes, basePath = '') {
-  let tags = []
-  routes.forEach(route => {
-    if (route.meta && route.meta.affix) {
-      const tagPath = getNormalPath(basePath + '/' + route.path)
-      tags.push({
-        fullPath: tagPath,
-        path: tagPath,
-        name: route.name,
-        meta: { ...route.meta }
-      })
-    }
-    if (route.children) {
-      const tempTags = filterAffixTags(route.children, route.path)
-      if (tempTags.length >= 1) {
-        tags = [...tags, ...tempTags]
-      }
-    }
-  })
-  return tags
+/**
+ * 固定标签（关不掉的那个）= 当前解析出的首页，而不是写死 /index。
+ * 否则默认首页配成集成页面后，“全部关闭/关闭其他”仍会把用户丢回 /index。
+ */
+function buildHomeTags() {
+  const tag = buildHomeTag(router.getRoutes(), usePermissionStore().homePath)
+  return tag ? [tag] : []
 }
 
 function initTags() {
-  const res = filterAffixTags(routes.value);
+  const res = buildHomeTags();
   affixTags.value = res;
   for (const tag of res) {
     // Must have tag name

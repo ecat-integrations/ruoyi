@@ -11,8 +11,7 @@ const DEFAULT_STATE = {
     autoSwitch: false,
     rememberPosition: true
   },
-  homepageDisplayMode: 'dashboard', // 默认大屏模式
-  dashboardVersion: 'legacy' // 'station' 新版站房大屏 | 'legacy' 经典大屏（默认）
+  homepageDisplayMode: 'dashboard' // 默认大屏模式
 };
 
 /**
@@ -149,22 +148,4 @@ export function clearHomepageDisplayMode() {
   };
   savePageState(newState);
   return newState;
-}
-
-/**
- * 大屏版本偏好：station（新版）| legacy（经典）
- */
-export function saveDashboardVersion(version) {
-  const currentState = getPageState();
-  const newState = {
-    ...currentState,
-    dashboardVersion: version
-  };
-  savePageState(newState);
-  return newState;
-}
-
-export function getDashboardVersion() {
-  const state = getPageState();
-  return state.dashboardVersion || 'legacy';
 }

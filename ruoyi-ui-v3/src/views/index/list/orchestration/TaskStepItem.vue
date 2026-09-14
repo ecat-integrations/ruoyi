@@ -24,27 +24,29 @@
           :disabled="disabled"
           size="small"
           text
+          icon="ArrowUp"
+          title="上移"
           @click="emit('move-up')"
-        >
-          <i class="ArrowUp"></i>
-        </el-button>
+        />
         <el-button
           :disabled="disabled"
           size="small"
           text
+          icon="ArrowDown"
+          title="下移"
           @click="emit('move-down')"
-        >
-          <i class="ArrowDown"></i>
-        </el-button>
+        />
         <el-button
+          class="step-delete-btn"
           :disabled="disabled"
           size="small"
-          text
+          circle
           type="danger"
+          plain
+          icon="Minus"
+          title="删除此步骤"
           @click="emit('delete')"
-        >
-          <i class="Delete"></i>
-        </el-button>
+        />
       </div>
     </div>
 
@@ -348,6 +350,30 @@ function handleDelayTimeChange(value) {
 .step-actions {
   display: flex;
   gap: 4px;
+  align-items: center;
+}
+
+.step-delete-btn {
+  margin-left: 4px;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  font-size: 14px;
+  border-color: var(--el-color-danger-light-5, #fab6b6);
+  color: var(--el-color-danger, #f56c6c);
+  background-color: var(--el-color-danger-light-9, #fef0f0);
+}
+
+.step-delete-btn:hover:not(:disabled),
+.step-delete-btn:focus:not(:disabled) {
+  border-color: var(--el-color-danger, #f56c6c);
+  color: #fff;
+  background-color: var(--el-color-danger, #f56c6c);
+}
+
+.step-delete-btn:disabled {
+  opacity: 0.45;
 }
 
 .step-content {

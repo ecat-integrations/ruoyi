@@ -6,24 +6,43 @@
       class="dashboard-content"
       :style="{ '--sec-deg': secHandDeg + 'deg' }"
     >
-      <!-- 返回列表页按钮 - 始终存在于DOM，通过透明度控制显示 -->
-      <div 
-        class="back-to-list-btn" 
+      <!-- 返回列表页按钮：半透明浮动，鼠标闲置一段时间后淡出。
+           定位用相对大屏内容定位，避免“按钮跑出大屏区域、压住左侧菜单”。 -->
+      <button
+        type="button"
+        class="back-to-list-btn"
         :class="{ 'btn-visible': isBackButtonVisible }"
+        title="返回列表页"
+        aria-label="返回列表页"
         @click="handleReturnToList"
       >
-        <span class="back-icon">←</span>
-        <span class="back-text">返回列表页</span>
-      </div>
+        <svg
+          class="back-icon"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M3.5 12 L10 5.5 L10 9.2 L20.5 9.2 L20.5 14.8 L10 14.8 L10 18.5 Z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
       
       <div class="head">
         <div style="position: relative">
           <div class="logo" v-triple-click="handleLogoTripleClick"></div>
           <div class="title">数智化无人运维监控平台</div>
           <div class="nav">
-            <div class="nav_item_alarm" id="alarmopen"  @click="handleTripleClick">
-              <span class="version-number">软件版本号:V1.0.3</span>
-            </div>
+            <!-- 报警通知开关的隐性入口：右上角一块 160×80 的透明热区。
+                 用双击而非单击 —— 该区域紧邻标题栏，单击极易误触。 -->
+            <div class="nav_item_alarm" id="alarmopen" @dblclick="handleAlarmToggle"></div>
   <!--          <div class="nav_item" @click="addNewElement()">设置界面</div>-->
   <!--          <div class="nav_item" @click="handleRoute('/')">首页</div>-->
   <!--          <div-->
@@ -2082,7 +2101,8 @@ export default {
       const date = new Date(isoString);
       return date.toLocaleString();
     },
-    handleTripleClick() {
+    // 双击右上角热区开关报警通知（绑定在 .nav_item_alarm 的 @dblclick 上）
+    handleAlarmToggle() {
       const message = `已${this.alarmOpen ? '关闭' : '开启'}报警通知`;
       ElMessage({
         message: message,
@@ -2378,19 +2398,9 @@ export default {
   border-color: rgba(0, 229, 255, 0.65);
 }
 
-.version-number {
-  animation: version-soft-pulse 3.2s ease-in-out infinite;
-}
-
-@keyframes version-soft-pulse {
-  0%, 100% { opacity: 0.78; }
-  50% { opacity: 1; }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .dashboard-content .head::after,
   .s_title::after,
-  .version-number,
   .dashboard-content .s_box,
   .dashboard-content .dh_data_panel,
   .cy_val_error_inner,
@@ -2431,44 +2441,60 @@ export default {
   flex-direction: column;
 }
 
-/* 返回列表页按钮样式 */
+/* 返回列表页按钮样式
+   半透明圆形浮动按钮：默认只显示一个箭头，尽量不干扰大屏视觉。
+   关键点：absolute 锚定到大屏内容区（.dashboard-content 为 relative），
+   不能用 fixed —— 否则相对视口定位会压住侧边栏/顶栏。 */
 .back-to-list-btn {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  z-index: 9999;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 6px;
-  color: #fff;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 17px;
+  line-height: 1;
   cursor: pointer;
   opacity: 0; /* 默认透明 */
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, background-color 0.2s ease, border-color 0.2s ease;
   user-select: none;
-  pointer-events: auto; /* 始终可点击 */
-}
-
-.back-to-list-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
-  border-color: rgba(255, 255, 255, 0.5);
+  pointer-events: none; /* 隐藏时不拦截点击（避免点到“看不见的按钮”） */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .back-to-list-btn.btn-visible {
   opacity: 1; /* 显示状态 */
+  pointer-events: auto;
+}
+
+.back-to-list-btn:hover,
+.back-to-list-btn:focus-visible {
+  background: rgba(0, 229, 255, 0.18);
+  border-color: rgba(0, 229, 255, 0.65);
+  color: #fff;
+}
+
+.back-to-list-btn:focus-visible {
+  outline: 1px solid rgba(0, 229, 255, 0.65);
+  outline-offset: 2px;
 }
 
 .back-icon {
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.back-text {
-  font-size: 14px;
-  font-weight: 500;
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
 }
 .progress-container {
   display: flex;
@@ -2529,6 +2555,7 @@ export default {
   cursor: pointer;
   width: 80px;
 }
+/* 报警通知开关的隐性热区：透明无内容，双击切换。固定宽高确保热区不随内容塌陷。 */
 .nav_item_alarm {
   line-height: 55px;
   padding-top: 2px;
@@ -2635,12 +2662,6 @@ export default {
   background-clip: text;
   /* 仅保留渐变位移；去掉多层 text-shadow 动画（每帧重绘代价高） */
   animation: gradientShift 18s linear infinite;
-}
-.version-number {
-  color: #ffd700; /* 金色文字 */
-  font-size: 14px; /* 字体大小 */
-  font-weight: bold; /* 字体加粗 */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 文字阴影 */
 }
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }

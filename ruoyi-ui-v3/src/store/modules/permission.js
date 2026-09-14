@@ -7,6 +7,11 @@ import InnerLink from '@/layout/components/InnerLink'
 import { app } from '@/main.js'
 import { getWebIntegrationModuleRouters, getWebIntegrationMenuFlags } from '@/utils/ecat/api/integration'
 import { applyEcatMenuDisplay, reparentEcatRoutes, sortRoutesByOrderNum } from '@/utils/ecat/applyEcatMenuDisplay'
+import { getConfigKey } from '@/api/system/config'
+import { resolveHomePath as resolveHomePathByRules } from '@/utils/homeRoute'
+
+// 部署级默认首页配置键：留空时回退到内置首页 /index
+export const HOME_CONFIG_KEY = 'ecat.web.home'
 
 // 匹配views里面所有的.vue文件
 const modules = import.meta.glob('./../../views/**/*.vue')
@@ -19,7 +24,11 @@ const usePermissionStore = defineStore(
       addRoutes: [],
       defaultRoutes: [],
       topbarRouters: [],
-      sidebarRouters: []
+      sidebarRouters: [],
+      // 登录后默认打开的首页路由（动态路由注册完成后解析）
+      homePath: '',
+      // 部署级配置值（sys_config: ecat.web.home）
+      configuredHomePath: ''
     }),
     actions: {
       setRoutes(routes) {
@@ -59,6 +68,18 @@ const usePermissionStore = defineStore(
           (item) => item.path !== routePath
         );
       },
+      setConfiguredHomePath(path) {
+        this.configuredHomePath = path == null ? '' : String(path).trim();
+      },
+      /**
+       * 解析首页路径，必须在动态路由 addRoute 完成后调用。
+       * 优先级：部署级配置（ecat.web.home）→ 内置 /index。
+       * 不读取 localStorage 本机偏好，保证同一部署下所有用户落地页一致。
+       */
+      resolveHomePath() {
+        this.homePath = resolveHomePathByRules(router, this.configuredHomePath);
+        return this.homePath;
+      },
       generateRoutes(roles) {
         return new Promise(async (resolve) => {  // 改为 async 函数以支持 await
           try {
@@ -67,11 +88,13 @@ const usePermissionStore = defineStore(
             // const originalRoutes = JSON.parse(JSON.stringify(res.data));  // 保留原始数据副本
 
             // 2. 获取所有集成模块的 Web 路由，以及菜单管理中的显示/停用
-            const [webIntegrationRoutes, flagsRes] = await Promise.all([
+            const [webIntegrationRoutes, flagsRes, homeConfigRes] = await Promise.all([
               getWebIntegrationModuleRouters(app, router, []),
-              getWebIntegrationMenuFlags().catch(() => ({ data: {} }))
+              getWebIntegrationMenuFlags().catch(() => ({ data: {} })),
+              getConfigKey(HOME_CONFIG_KEY).catch(() => null)
             ]);
             const menuFlags = flagsRes && flagsRes.data ? flagsRes.data : {};
+            this.setConfiguredHomePath(extractConfigValue(homeConfigRes));
 
             // 3. 从集成结果中提取所有 web 类型的路由，并套用 sys_menu.visible / status
             const extractedWebRoutes = webIntegrationRoutes.flatMap(integrationItem => {
@@ -251,6 +274,21 @@ export const loadView = (view) => {
     }
   }
   return res
+}
+
+/**
+ * 若依 /system/config/configKey/{key} 通过 success(String) 返回，值落在 msg 字段；
+ * 兼容未来改为 data 包装的返回。
+ */
+function extractConfigValue(res) {
+  if (res == null) {
+    return ''
+  }
+  const raw = res.msg != null ? res.msg : res.data
+  if (raw == null) {
+    return ''
+  }
+  return typeof raw === 'string' ? raw.trim() : String(raw).trim()
 }
 
 export default usePermissionStore

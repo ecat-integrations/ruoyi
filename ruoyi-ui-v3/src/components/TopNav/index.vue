@@ -44,8 +44,9 @@ import usePermissionStore from '@/store/modules/permission'
 const visibleNumber = ref(null);
 // 当前激活菜单的 index
 const currentIndex = ref(null);
-// 隐藏侧边栏路由
-const hideList = ['/index', '/station', '/user/profile'];
+// 隐藏侧边栏路由：仅用于「路径层级较深但本身是一级独立页面」的情况（如 /user/profile）。
+// 注意：首页不要写死在这里——首页路径由 homePath/ecat.web.home 决定，且 /index 多带父级菜单。
+const hideList = ['/user/profile'];
 
 const appStore = useAppStore()
 const settingsStore = useSettingsStore()

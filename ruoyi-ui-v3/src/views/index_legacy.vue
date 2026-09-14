@@ -7,9 +7,9 @@
           <div class="logo" v-triple-click="handleLogoTripleClick"></div>
           <div class="title">数智化无人运维监控平台</div>
           <div class="nav">
-            <div class="nav_item_alarm" id="alarmopen"  @click="handleTripleClick">
-              <span class="version-number">软件版本号:V1.0.3</span>
-            </div>
+            <!-- 报警通知开关的隐性入口：右上角透明热区，双击切换（单击易误触）。
+                 版本号不在此重复展示：导航栏在任何页面都已展示，单一来源避免不一致。 -->
+            <div class="nav_item_alarm" id="alarmopen" @dblclick="handleAlarmToggle"></div>
   <!--          <div class="nav_item" @click="addNewElement()">设置界面</div>-->
   <!--          <div class="nav_item" @click="handleRoute('/')">首页</div>-->
   <!--          <div-->
@@ -1786,7 +1786,8 @@ export default {
       const date = new Date(isoString);
       return date.toLocaleString();
     },
-    handleTripleClick() {
+    // 双击右上角热区开关报警通知（绑定在 .nav_item_alarm 的 @dblclick 上）
+    handleAlarmToggle() {
       const message = `已${this.alarmOpen ? '关闭' : '开启'}报警通知`;
       ElMessage({
         message: message,
@@ -1931,6 +1932,7 @@ export default {
   cursor: pointer;
   width: 80px;
 }
+/* 报警通知开关的隐性热区：透明无内容，双击切换。固定宽高确保热区不随内容塌陷。 */
 .nav_item_alarm {
   line-height: 55px;
   padding-top: 2px;
@@ -2138,12 +2140,6 @@ export default {
     gradientShift 12s ease infinite, /* 加速动画周期，提升活跃度 */
     glowEffect 3s ease-in-out infinite; /* 延长发光动画周期，减少闪烁感 */
   text-shadow: 0 0 18px rgba(255, 255, 255, 0.4); /* 增强文字光晕，提升边缘清晰度 */
-}
-.version-number {
-  color: #ffd700; /* 金色文字 */
-  font-size: 14px; /* 字体大小 */
-  font-weight: bold; /* 字体加粗 */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* 文字阴影 */
 }
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }

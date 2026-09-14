@@ -2,14 +2,8 @@
   <div class="device-list-wrapper">
     <DevicePanel
       :device-data="deviceData"
-      @open-orchestration="isOrchestrationModalShow = true"
       @return-to-dashboard="handleReturnToDashboard"
       @switch-to-station-preview="handleSwitchToStationPreview"
-    />
-
-    <OrchestrationModal
-      v-model="isOrchestrationModalShow"
-      :device-data="deviceData"
     />
   </div>
 </template>
@@ -20,7 +14,6 @@ import { getNowData } from '@/api/login'
 import { recordPageVisit } from '@/utils/pageState'
 import useSettingsStore from '@/store/modules/settings'
 import DevicePanel from './index/list/components/DevicePanel.vue'
-import OrchestrationModal from './index/list/orchestration/OrchestrationModal.vue'
 import { useDeviceData } from './index/list/composables/useDeviceData'
 import { initStatusMapper } from '@/views/index/list/utils/statusMapper'
 
@@ -43,9 +36,6 @@ const { proxy } = getCurrentInstance()
 
 // 主题设置
 const settingsStore = useSettingsStore()
-
-// 编排弹窗状态
-const isOrchestrationModalShow = ref(false)
 
 // 字典加载状态
 const isDictLoaded = ref(false)

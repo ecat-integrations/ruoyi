@@ -6,6 +6,14 @@
 
     <div class="right-menu">
       <template v-if="appStore.device !== 'mobile'">
+        <site-name id="site-name" />
+
+        <!-- <el-tooltip v-if="appVersionLabel" :content="`核心版本 ${appVersionLabel}`" effect="dark" placement="bottom"> -->
+          <div id="ecat-version" class="right-menu-item version-item">
+            <span class="version-badge">{{ appVersionLabel }}</span>
+          </div>
+        <!-- </el-tooltip> -->
+
         <header-search id="header-search" class="right-menu-item" />
 
         <el-tooltip content="源码地址" effect="dark" placement="bottom">
@@ -66,9 +74,11 @@ import Hamburger from '@/components/Hamburger'
 import Screenfull from '@/components/Screenfull'
 import SizeSelect from '@/components/SizeSelect'
 import HeaderSearch from '@/components/HeaderSearch'
+import { appVersionLabel } from '@/utils/appVersion'
 import RuoYiGit from '@/components/RuoYi/Git'
 import RuoYiDoc from '@/components/RuoYi/Doc'
 import RuoYiConfigFlow from '@/components/RuoYi/ConfigFlow'
+import SiteName from '@/components/RuoYi/SiteName'
 import useAppStore from '@/store/modules/app'
 import useUserStore from '@/store/modules/user'
 import useSettingsStore from '@/store/modules/settings'
@@ -101,7 +111,8 @@ function logout() {
     type: 'warning'
   }).then(() => {
     userStore.logOut().then(() => {
-      location.href = '/index';
+      // 回到根路径，由路由守卫统一解析默认首页
+      location.href = '/';
     })
   }).catch(() => { });
 }
@@ -188,6 +199,31 @@ function toggleTheme() {
           &:hover {
             transform: scale(1.15);
           }
+        }
+      }
+    }
+
+    .right-menu-item.version-item {
+      display: flex;
+      align-items: center;
+
+      .version-badge {
+        display: inline-block;
+        height: 20px;
+        line-height: 18px;
+        padding: 0 8px;
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        border: 1px solid currentColor;
+        border-radius: 10px;
+        opacity: 0.5;
+        user-select: none;
+        transition: opacity 0.3s ease, background 0.3s ease;
+
+        &:hover {
+          opacity: 0.9;
+          background: rgba(127, 127, 127, 0.12);
         }
       }
     }

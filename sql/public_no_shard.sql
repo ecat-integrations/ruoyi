@@ -2060,6 +2060,7 @@ INSERT INTO "public"."sys_config" VALUES (2, '用户管理-账号初始密码', 
 INSERT INTO "public"."sys_config" VALUES (3, '主框架页-侧边栏主题', 'sys.index.sideTheme', 'theme-dark', 'Y', 'admin', '2021-05-26 18:56:31', 'admin', NULL, '深色主题theme-dark，浅色主题theme-light');
 INSERT INTO "public"."sys_config" VALUES (4, '账号自助-验证码开关', 'sys.account.captchaEnabled', 'true', 'Y', 'admin', '2025-02-14 02:51:47.23521', 'admin', NULL, '是否开启验证码功能（true开启，false关闭）');
 INSERT INTO "public"."sys_config" VALUES (5, '账号自助-是否开启用户注册功能', 'sys.account.registerUser', 'false', 'Y', 'admin', '2025-02-14 02:51:47.274963', 'admin', NULL, '是否开启注册用户功能（true开启，false关闭）');
+INSERT INTO "public"."sys_config" VALUES (6, 'Web端-默认首页路由', 'ecat.web.home', '', 'N', 'admin', current_timestamp, 'admin', NULL, '登录后默认打开的页面路由；留空回退内置首页 /index。如 /ecat-integrations/integration-env-air-device-manager/air-device-manager/index/monitor_home');
 
 -- ----------------------------
 -- Table structure for sys_dept
@@ -3078,7 +3079,34 @@ COMMENT ON TABLE "public"."sys_role_menu" IS '角色和菜单关联表';
 -- ----------------------------
 -- Records of sys_role_menu
 -- ----------------------------
+INSERT INTO "public"."sys_role_menu" VALUES (2, 501);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1042);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1043);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1044);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1045);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 2);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 109);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1046);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1047);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1048);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 110);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1049);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1050);
 INSERT INTO "public"."sys_role_menu" VALUES (2, 2001);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1052);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1053);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1054);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 111);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 112);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 113);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 114);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1055);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1056);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1057);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1058);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1059);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1060);
+INSERT INTO "public"."sys_role_menu" VALUES (2, 1051);
 INSERT INTO "public"."sys_role_menu" VALUES (2, 2002);
 INSERT INTO "public"."sys_role_menu" VALUES (2, 2034);
 INSERT INTO "public"."sys_role_menu" VALUES (2, 2035);
@@ -3155,33 +3183,6 @@ INSERT INTO "public"."sys_role_menu" VALUES (2, 500);
 INSERT INTO "public"."sys_role_menu" VALUES (2, 1039);
 INSERT INTO "public"."sys_role_menu" VALUES (2, 1040);
 INSERT INTO "public"."sys_role_menu" VALUES (2, 1041);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 501);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1042);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1043);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1044);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1045);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 2);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 109);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1046);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1047);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1048);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 110);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1049);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1050);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1051);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1052);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1053);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1054);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 111);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 112);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 113);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 114);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1055);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1056);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1057);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1058);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1059);
-INSERT INTO "public"."sys_role_menu" VALUES (2, 1060);
 
 -- ----------------------------
 -- Table structure for sys_user
@@ -3601,7 +3602,10 @@ SELECT setval('"public"."stid"', 29, true);
 -- ----------------------------
 ALTER SEQUENCE "public"."sys_config_config_id_seq"
 OWNED BY "public"."sys_config"."config_id";
-SELECT setval('"public"."sys_config_config_id_seq"', 100, false);
+-- 校正主键序列：上方种子数据显式指定了 config_id，而序列不会因显式插入而推进。
+-- 用 MAX(config_id) 自动取号，避免种子数据增长后手写常量变成"过期值"（会主键冲突）。
+SELECT setval('"public"."sys_config_config_id_seq"',
+              (SELECT COALESCE(MAX(config_id), 1) FROM "public"."sys_config"), true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -3650,7 +3654,9 @@ SELECT setval('"public"."sys_logininfor_info_id_seq"', 635, true);
 -- ----------------------------
 ALTER SEQUENCE "public"."sys_menu_menu_id_seq"
 OWNED BY "public"."sys_menu"."menu_id";
-SELECT setval('"public"."sys_menu_menu_id_seq"', 2074, true);
+-- 校正主键序列：种子数据与运行期 ecat-sync 都显式指定 menu_id，序列不会随之推进。改为按 MAX(menu_id) 自动取号。
+SELECT setval('"public"."sys_menu_menu_id_seq"',
+              (SELECT COALESCE(MAX(menu_id), 1) FROM "public"."sys_menu"), true);
 
 -- ----------------------------
 -- Alter sequences owned by

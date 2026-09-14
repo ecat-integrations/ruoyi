@@ -55,14 +55,6 @@
           />
           <span class="kind-label" :class="{ active: deviceKind === 'logical' }">逻辑设备</span>
         </div>
-
-        <el-button
-          type="primary"
-          @click="$emit('open-orchestration')"
-          icon="Sort"
-        >
-          设备控制编排
-        </el-button>
       </div>
     </div>
 
@@ -86,9 +78,37 @@
     </div>
     <EmptyState v-else />
 
+    <!-- 设备控制编排：右侧页签抽屉（物理/逻辑共用，约半宽） -->
+    <div
+      v-show="!donghuanOpen"
+      class="orchestration-shell"
+      :class="{ open: orchestrationOpen }"
+    >
+      <button
+        type="button"
+        class="orchestration-tab"
+        :class="{ open: orchestrationOpen }"
+        :title="orchestrationOpen ? '收起设备控制编排' : '展开设备控制编排'"
+        @click="toggleOrchestration"
+      >
+        <span class="orchestration-tab__text">编排</span>
+      </button>
+
+      <aside class="orchestration-drawer" aria-label="设备控制任务编排">
+        <div class="orchestration-drawer__head">
+          <span>设备控制任务编排</span>
+        </div>
+        <OrchestrationModal
+          ref="orchestrationPanelRef"
+          :device-data="deviceData"
+          @close="closeOrchestration"
+        />
+      </aside>
+    </div>
+
     <!-- 逻辑模式：右上动环页签切入切出站房设备 -->
     <div
-      v-if="isLogicalView"
+      v-if="isLogicalView && !orchestrationOpen"
       class="donghuan-shell"
       :class="{ open: donghuanOpen }"
       :style="donghuanShellStyle"
@@ -131,9 +151,9 @@
     </div>
 
     <div
-      v-if="isLogicalView && donghuanOpen"
-      class="donghuan-mask"
-      @click="closeDonghuan"
+      v-if="orchestrationOpen || (isLogicalView && donghuanOpen)"
+      class="side-drawer-mask"
+      @click="closeActiveSideDrawer"
     />
 
     <ManualTagDialog
@@ -149,6 +169,7 @@ import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue'
 import DeviceCard from './DeviceCard.vue'
 import EmptyState from './EmptyState.vue'
 import ManualTagDialog from './ManualTagDialog.vue'
+import OrchestrationModal from '../orchestration/OrchestrationModal.vue'
 import { useDeviceCardDragSort } from '../composables/useDeviceCardDragSort'
 import {
   loadDeviceListView,
@@ -166,7 +187,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['open-orchestration', 'return-to-dashboard', 'switch-to-station-preview'])
+defineEmits(['return-to-dashboard', 'switch-to-station-preview'])
 
 const appStore = useAppStore()
 const { applyCachedOrder, handleDragEnd: saveDragEnd, moveDeviceToFirst } = useDeviceCardDragSort()
@@ -176,6 +197,8 @@ const orderedDevices = ref(applyCachedOrder(props.deviceData || []))
 /** @type {import('vue').Ref<'physical'|'logical'>} */
 const deviceKind = ref('physical')
 const donghuanOpen = ref(false)
+const orchestrationOpen = ref(false)
+const orchestrationPanelRef = ref(null)
 const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1280)
 
 const SIDEBAR_OPEN_WIDTH = 200
@@ -227,6 +250,11 @@ function persistView() {
 }
 
 function toggleDonghuan() {
+  if (!donghuanOpen.value) {
+    // 与编排互斥：展开动环前先尝试收起编排
+    if (orchestrationOpen.value && !tryCloseOrchestration()) return
+    orchestrationOpen.value = false
+  }
   donghuanOpen.value = !donghuanOpen.value
   persistView()
 }
@@ -235,6 +263,38 @@ function closeDonghuan() {
   if (!donghuanOpen.value) return
   donghuanOpen.value = false
   persistView()
+}
+
+function tryCloseOrchestration() {
+  const panel = orchestrationPanelRef.value
+  if (panel && typeof panel.tryClose === 'function') {
+    return panel.tryClose()
+  }
+  return true
+}
+
+function toggleOrchestration() {
+  if (orchestrationOpen.value) {
+    if (!tryCloseOrchestration()) return
+    orchestrationOpen.value = false
+    return
+  }
+  donghuanOpen.value = false
+  persistView()
+  orchestrationOpen.value = true
+}
+
+function closeOrchestration() {
+  if (!tryCloseOrchestration()) return
+  orchestrationOpen.value = false
+}
+
+function closeActiveSideDrawer() {
+  if (orchestrationOpen.value) {
+    closeOrchestration()
+    return
+  }
+  closeDonghuan()
 }
 
 onMounted(() => {
@@ -542,6 +602,9 @@ function handleManualTagSuccess(data) {
   display: flex;
   gap: 12px;
   align-items: center;
+  margin-left: auto;
+  /* 仅避开右侧 26px 竖向页签，尽量贴右 */
+  margin-right: 10px;
 }
 
 .device-kind-switch {
@@ -570,6 +633,117 @@ function handleManualTagSuccess(data) {
   color: #9059ff;
 }
 
+/* —— 设备控制编排侧栏（青绿，约半宽） —— */
+.orchestration-shell {
+  position: fixed;
+  top: 84px;
+  right: 0;
+  bottom: 4px;
+  z-index: 40;
+  display: flex;
+  align-items: stretch;
+  width: 50vw;
+  max-width: 880px;
+  min-width: 360px;
+  transform: translateX(calc(100% - 26px));
+  transition: transform 0.38s cubic-bezier(0.22, 0.8, 0.28, 1);
+  pointer-events: none;
+}
+
+.orchestration-shell.open {
+  transform: translateX(0);
+}
+
+.orchestration-tab,
+.orchestration-drawer {
+  pointer-events: auto;
+}
+
+.orchestration-tab {
+  width: 26px;
+  flex-shrink: 0;
+  margin: 4px 0 0;
+  margin-right: -1px;
+  align-self: flex-start;
+  min-height: 64px;
+  padding: 10px 0;
+  border: 1px solid rgba(64, 158, 255, 0.48);
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  background: linear-gradient(
+    180deg,
+    rgba(64, 158, 255, 0.34) 0%,
+    rgba(64, 158, 255, 0.14) 100%
+  );
+  color: #409eff;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.orchestration-tab__text {
+  writing-mode: vertical-rl;
+  letter-spacing: 0.18em;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.orchestration-tab:hover {
+  color: #337ecc;
+  border-color: rgba(51, 126, 204, 0.62);
+  background: linear-gradient(
+    180deg,
+    rgba(64, 158, 255, 0.42) 0%,
+    rgba(64, 158, 255, 0.18) 100%
+  );
+}
+
+.orchestration-tab.open {
+  color: #337ecc;
+  border-color: rgba(51, 126, 204, 0.68);
+  background: linear-gradient(
+    180deg,
+    rgba(64, 158, 255, 0.46) 0%,
+    rgba(64, 158, 255, 0.2) 100%
+  );
+}
+
+.orchestration-drawer {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--el-bg-color, #fff);
+  border: 1px solid var(--el-border-color-light, #e4e7ed);
+  border-right: none;
+  border-radius: 16px 0 0 16px;
+  box-shadow: -6px 0 18px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.orchestration-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  min-height: 36px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--el-text-color-primary, #303133);
+  border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
+}
+
+.orchestration-drawer > :deep(.orchestration-panel) {
+  flex: 1;
+  min-height: 0;
+}
+
 /* 动环侧栏与窗口动态设置 */
 .donghuan-shell {
   position: fixed;
@@ -596,7 +770,8 @@ function handleManualTagSuccess(data) {
 .donghuan-tab {
   width: 26px;
   flex-shrink: 0;
-  margin: 28px 0 0;
+  /* 编排上移后，动环紧挨其下错开 */
+  margin: 80px 0 0;
   margin-right: -1px;
   align-self: flex-start;
   min-height: 64px;
@@ -611,10 +786,15 @@ function handleManualTagSuccess(data) {
   );
   color: #9059ff;
   cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease, margin 0.2s ease;
   opacity: 1;
   position: relative;
   z-index: 2;
+}
+
+/* 编排抽屉打开互斥时编排页签隐藏，动环页签回顶部 */
+.donghuan-shell.open .donghuan-tab {
+  margin-top: 4px;
 }
 
 .donghuan-tab__text {
@@ -754,7 +934,7 @@ function handleManualTagSuccess(data) {
   font-size: 14px;
 }
 
-.donghuan-mask {
+.side-drawer-mask {
   position: fixed;
   inset: 0;
   z-index: 35;
@@ -816,6 +996,17 @@ function handleManualTagSuccess(data) {
 
   .device-panel {
     margin-top: 50px;
+  }
+
+  .panel-controls {
+    margin-right: 8px;
+  }
+
+  .orchestration-shell {
+    top: 72px;
+    width: min(92vw, 520px);
+    min-width: 280px;
+    transform: translateX(calc(100% - 26px));
   }
 
   .donghuan-shell {

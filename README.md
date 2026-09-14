@@ -22,8 +22,6 @@ RuoYi管理后台（ruoyi-*系列 + ecat-adapter-ruoyi）
 ### V1 长度与协议约定
 
 - **账号、密码必须各为 12 位**（定长协议，与历史 `login_jiami` 一致）
-- 载荷形态：`offset(1位) + 账号密码交错串(24位) + checkBit(1位)`，再做 URL-safe Base64
-- `offset` 为 1–9 的整数，且 `offset + checkBit === 10`
 - 不满足 12 位的账号/密码无法生成或解析 V1 token（变长协议暂未实现）
 
 ### 如何生成 token
@@ -34,7 +32,7 @@ RuoYi管理后台（ruoyi-*系列 + ecat-adapter-ruoyi）
 import { buildLoginToken } from '@/utils/loginToken'
 
 // account / password 须各 12 位；offset 可选，默认 3（取值 1–9）
-const token = buildLoginToken('Admin7s9k2G5', '7sK2pG9dR3tQ', 3)
+const token = buildLoginToken('Admin1234567', '012345678912', 3)
 // 示例：M0Q6Z3ZwTmw1cXM6SnY8PGduVTU2Snc4VDc
 ```
 
