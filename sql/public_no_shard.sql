@@ -2217,9 +2217,10 @@ INSERT INTO "public"."sys_dict_data" VALUES (49, 1, '结束', '1', 'event_status
 INSERT INTO "public"."sys_dict_data" VALUES (69, 0, '零点核查', '0', 'quality_control_type', NULL, 'default', NULL, '0', 'admin', '2025-05-26 11:13:34.698961', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (70, 2, '线性核查', '2', 'quality_control_type', NULL, 'default', NULL, '0', 'admin', '2025-05-26 11:13:52.165704', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (71, 1, '跨度校准', '1', 'quality_control_type', NULL, 'default', NULL, '0', 'admin', '2025-05-26 11:14:10.132452', NULL, NULL, NULL);
-INSERT INTO "public"."sys_dict_data" VALUES (67, 0, '计划任务', '0', 'quality_control_task_type', NULL, 'default', NULL, '0', 'admin', '2025-05-26 11:10:30.583954', 'admin', '2025-08-04 16:54:46.449977', NULL);
-INSERT INTO "public"."sys_dict_data" VALUES (66, 1, '手动任务', '1', 'quality_control_task_type', NULL, 'default', NULL, '0', 'admin', '2025-05-26 11:09:44.965132', 'admin', '2025-08-04 16:54:54.146312', NULL);
+INSERT INTO "public"."sys_dict_data" VALUES (67, 0, '计划触发', '0', 'quality_control_task_type', NULL, 'default', NULL, '0', 'admin', '2025-05-26 11:10:30.583954', 'admin', '2026-09-15 14:55:00', NULL);
+INSERT INTO "public"."sys_dict_data" VALUES (66, 1, '手动触发', '1', 'quality_control_task_type', NULL, 'default', NULL, '0', 'admin', '2025-05-26 11:09:44.965132', 'admin', '2026-09-15 14:55:00', NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (68, 2, '现场任务', '2', 'quality_control_task_type', NULL, 'default', NULL, '0', 'admin', '2025-05-26 11:10:47.169554', 'admin', '2025-08-04 16:55:02.265462', NULL);
+INSERT INTO "public"."sys_dict_data" VALUES (251, 3, '远程平台触发', '3', 'quality_control_task_type', NULL, 'warning', NULL, '0', 'admin', '2026-09-15 14:55:00', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (74, 3, '设备间漏水', '3', 'env_alarm_type', NULL, 'default', NULL, '0', 'admin', '2025-05-26 11:14:41.820906', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (75, 4, '供电电源异常波动', '4', 'env_alarm_type', NULL, 'default', NULL, '0', 'admin', '2025-05-26 11:14:50.685013', NULL, NULL, NULL);
 INSERT INTO "public"."sys_dict_data" VALUES (76, 5, '稳压电源异常波动', '5', 'env_alarm_type', NULL, 'default', NULL, '0', 'admin', '2025-05-26 11:14:59.995441', NULL, NULL, NULL);
