@@ -34,10 +34,10 @@
 <!--        <el-tooltip content="布局大小" effect="dark" placement="bottom">-->
 <!--          <size-select id="size-select" class="right-menu-item hover-effect" />-->
 <!--        </el-tooltip>-->
-
-        <el-tooltip content="配置流" effect="dark" placement="bottom">
-          <ruo-yi-config-flow id="ruoyi-config-flow" class="right-menu-item hover-effect" />
-        </el-tooltip>
+<!--        -->
+<!--        <el-tooltip content="配置流" effect="dark" placement="bottom">-->
+<!--          <ruo-yi-config-flow id="ruoyi-config-flow" class="right-menu-item hover-effect" />-->
+<!--        </el-tooltip>-->
 
         <screenfull id="screenfull" class="right-menu-item hover-effect" />
       </template>

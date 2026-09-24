@@ -1839,6 +1839,7 @@ INSERT INTO "public"."sys_config" VALUES (2, '用户管理-账号初始密码', 
 INSERT INTO "public"."sys_config" VALUES (3, '主框架页-侧边栏主题', 'sys.index.sideTheme', 'theme-dark', 'Y', 'admin', '2021-05-26 18:56:31', 'admin', NULL, '深色主题theme-dark，浅色主题theme-light');
 INSERT INTO "public"."sys_config" VALUES (4, '账号自助-验证码开关', 'sys.account.captchaEnabled', 'true', 'Y', 'admin', '2025-02-14 02:51:47.23521', 'admin', NULL, '是否开启验证码功能（true开启，false关闭）');
 INSERT INTO "public"."sys_config" VALUES (5, '账号自助-是否开启用户注册功能', 'sys.account.registerUser', 'false', 'Y', 'admin', '2025-02-14 02:51:47.274963', 'admin', NULL, '是否开启注册用户功能（true开启，false关闭）');
+INSERT INTO "public"."sys_config" VALUES (6, 'Web端-默认首页路由', 'ecat.web.home', '', 'N', 'admin', current_timestamp, 'admin', NULL, '登录后默认打开的页面路由；留空回退内置首页 /index。如 /ecat-integrations/integration-env-air-device-manager/air-device-manager/index/monitor_home');
 
 -- ----------------------------
 -- Table structure for sys_dept
@@ -2513,6 +2514,8 @@ INSERT INTO "public"."sys_menu" VALUES (110, '任务管理', 2072, 2, 'job', 'mo
 INSERT INTO "public"."sys_menu" VALUES (2072, '任务管理', 0, 10, 'taskjob', NULL, NULL, '', 1, 0, 'M', '0', 0, NULL, 'job', 'admin', '2025-05-27 13:40:08.94874', 'admin', '2025-05-27 13:41:59.028487', NULL);
 INSERT INTO "public"."sys_menu" VALUES (2073, '日志管理', 0, 11, 'log', NULL, NULL, '', 1, 0, 'M', '0', 0, NULL, 'log', 'admin', '2025-05-28 15:59:23.086081', 'admin', '2025-05-28 15:59:33.295241', NULL);
 INSERT INTO "public"."sys_menu" VALUES (500, '操作日志', 2073, 1, 'operlog', 'monitor/operlog/index', '', '', 1, 0, 'C', '0', 0, 'monitor:operlog:list', 'form', 'admin', '2025-02-14 02:51:54.404905', 'admin', '2025-05-28 15:59:49.364251', '操作日志菜单');
+INSERT INTO "public"."sys_menu" VALUES (2074, '备份还原', 1, 10, 'backup', 'system/backup/index', NULL, 'Backup', 1, 0, 'C', '0', 0, 'system:backup:list', 'zip', 'admin', current_timestamp, '', NULL, '备份还原引导入口（默认仅管理员）');
+INSERT INTO "public"."sys_menu" VALUES (2075, '打开守护工具', 2074, 1, NULL, NULL, NULL, '', 1, 0, 'F', '0', 0, 'system:backup:open', '#', 'admin', current_timestamp, '', NULL, '打开守护工具的备份还原页');
 
 -- ----------------------------
 -- Table structure for sys_notice
@@ -3277,7 +3280,7 @@ SELECT setval('"public"."sys_logininfor_info_id_seq"', 635, true);
 -- ----------------------------
 ALTER SEQUENCE "public"."sys_menu_menu_id_seq"
 OWNED BY "public"."sys_menu"."menu_id";
-SELECT setval('"public"."sys_menu_menu_id_seq"', 2074, true);
+SELECT setval('"public"."sys_menu_menu_id_seq"', 2075, true);
 
 -- ----------------------------
 -- Alter sequences owned by

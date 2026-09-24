@@ -2693,6 +2693,8 @@ INSERT INTO "public"."sys_menu" VALUES (2157, '删除', 2153, 3, NULL, NULL, NUL
 INSERT INTO "public"."sys_menu" VALUES (2158, '导出', 2153, 4, NULL, NULL, NULL, '', 1, 0, 'F', '0', 0, 'realdata:realdata:export', '#', 'ecat-sync', '2026-09-01 02:12:32.263221', NULL, '2026-09-01 04:14:57.917685', 'ecat-sync:integration-env-data-manager/data-manager/realdata:realdata:realdata:export');
 INSERT INTO "public"."sys_menu" VALUES (2159, '历史数据', 2152, 1, 'hisdata', NULL, NULL, '', 1, 0, 'C', '0', 0, 'station:data:list', 'chart', 'ecat-sync', '2026-09-01 02:12:32.263221', NULL, '2026-09-01 04:14:57.917685', 'ecat-sync:integration-env-data-manager/data-manager/hisdata');
 INSERT INTO "public"."sys_menu" VALUES (2160, '趋势对比', 2152, 2, 'multi_param_data', NULL, NULL, '', 1, 0, 'C', '0', 0, 'station:data:list', 'druid', 'ecat-sync', '2026-09-01 02:12:32.263221', NULL, '2026-09-01 04:14:57.917685', 'ecat-sync:integration-env-data-manager/data-manager/multi_param_data');
+INSERT INTO "public"."sys_menu" VALUES (2161, '备份还原', 1, 10, 'backup', 'system/backup/index', NULL, 'Backup', 1, 0, 'C', '0', 0, 'system:backup:list', 'zip', 'admin', current_timestamp, '', NULL, '备份还原引导入口（默认仅管理员）');
+INSERT INTO "public"."sys_menu" VALUES (2162, '打开守护工具', 2161, 1, NULL, NULL, NULL, '', 1, 0, 'F', '0', 0, 'system:backup:open', '#', 'admin', current_timestamp, '', NULL, '打开守护工具的备份还原页');
 
 -- ----------------------------
 -- Table structure for sys_notice
