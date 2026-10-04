@@ -87,13 +87,17 @@
           </execution>
         </executions>
       </plugin>
+      <!-- japicmp 显式 skip(登记级豁免,与根 pom 门禁块配套):
+           对象=ruoyi-admin 模块的 japicmp 对比门(根 pom 声明经继承到达本模块);
+           理由(行为真话)=spring-boot repackage 把类移入 BOOT-INF/classes/,japicmp 只读
+           jar 根,对比恒空=静默假门;且本模块为应用宿主,无下游编译消费方;
+           批准人=用户(D39 拍板,2026-10-01);
+           移除条件=本模块放弃 spring-boot repackage 形态(改为可对比形态)时删除本块恢复执法 -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-        <version>3.1.0</version>
+        <groupId>com.github.siom79.japicmp</groupId>
+        <artifactId>japicmp-maven-plugin</artifactId>
         <configuration>
-          <failOnMissingWebXml>false</failOnMissingWebXml>
-          <warName>${project.artifactId}</warName>
+          <skip>true</skip>
         </configuration>
       </plugin>
     </plugins>

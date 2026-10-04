@@ -35,6 +35,11 @@
     <logback.version>1.2.13</logback.version>
     <spring-security.version>5.7.12</spring-security.version>
     <spring-framework.version>5.3.39</spring-framework.version>
+    <!-- japicmp skip 属性(门禁总开关,配置见 build/plugins 的 japicmp 声明):仅基线收集窗
+         (全员 4.0.0 发布前,CLI 全量传递)与登记过的运维逃生合法;CLI -Decat.japicmp.skip=true
+         按次覆写不落盘,仓级 pom 永久覆写=豁免须登记。ruoyi 无 parent 自治,japicmp 配置
+         引用本属性,须随门禁块自 ecat-project 4.0.0 一并拷贝在位 -->
+    <ecat.japicmp.skip>false</ecat.japicmp.skip>
   </properties>
   <!-- 依赖声明 -->
   <dependencyManagement>
@@ -126,6 +131,14 @@
           </exclusion>
         </exclusions>
       </dependency>
+      <!-- swagger-annotations 收敛 pin(收敛门首跑存量冲突处置,固化 mediation 现状):
+           springfox 3.0.0 树传递 1.5.20,ruoyi-admin 直申 swagger-models 1.6.2 传递 1.6.2;
+           现行 mediation 赢家=1.6.2(浅路径先赢)且生产运行于 1.6.2,pin=零行为变化单源化 -->
+      <dependency>
+        <groupId>io.swagger</groupId>
+        <artifactId>swagger-annotations</artifactId>
+        <version>1.6.2</version>
+      </dependency>
       <!-- io常用工具类 -->
       <dependency>
         <groupId>commons-io</groupId>
@@ -210,12 +223,6 @@
         <version>${ecat.core.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.ecat.adapter</groupId>
-        <artifactId>ecat-adapter-ruoyi</artifactId>
-        <version>${ecat.ruoyi.version}</version>
-      </dependency>
-
-      <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>4.13.2</version>
@@ -243,6 +250,98 @@
           <target>${java.version}</target>
           <encoding>${project.build.sourceEncoding}</encoding>
         </configuration>
+      </plugin>
+      <!-- 构建门禁:本地 mvnd 与云端 mvn 同一 pom 同源执法;执法点=validate(编译前最快失败)。
+           ruoyi 无 parent(自治形态),enforcer 不能经 ecat-project 4.0.0 继承,显式声明;
+           规则与 ecat-project 4.0.0 实装逐字一致(含 execution id),
+           双处漂移由 T-6-5 classpath 审计插件版本对账执法(D39 裁定入账) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.6.3</version>
+        <executions>
+          <execution>
+            <id>enforce-build-gates</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <!-- 依赖图模块内收敛。官方默认排除 provided/test 两个 scope,而 ecat-core 在
+                     全部集成仓是 provided——默认配置下 core 版本收敛零执法;收窄排除集到
+                     test,使 provided(含 ecat-core 整棵传递树)纳入收敛检查 -->
+                <dependencyConvergence>
+                  <excludedScopes>
+                    <scope>test</scope>
+                  </excludedScopes>
+                  <!-- 豁免登记(ruoyi 宿主栈 provided 域 spring 旧多版):org.springframework(.boot) 全族。
+                       存量多版本(5.3.19/5.3.20/5.3.27/5.3.39 + boot 2.5.15/2.7.12),
+                       宿主运行时自供、不进集成 jar fatjar lib/,不属集成 jar 收敛门执法面;
+                       清除条件=宿主 spring 栈统一治理卡落地。只减不增纪律 -->
+                  <excludes>
+                    <exclude>org.springframework:*</exclude>
+                    <exclude>org.springframework.boot:*</exclude>
+                  </excludes>
+                </dependencyConvergence>
+                <requireJavaVersion>
+                  <version>[1.8,)</version>
+                </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>[3.6.3,)</version>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- japicmp API 兼容门禁(参数族与 ecat-project 4.0.0 实装同源逐字拷贝):
+           任何仓 API 表面变化必须与版本号互相执法——MAJOR 级破坏必须升 major、MINOR 级必须升 minor,否则构建红。
+           基线=「严格小于当前版本的最高非 SNAPSHOT release」(本地 m2+远端通道合并解析,本地遮蔽远端,等版本不做基线)。
+           ignoreMissingOldVersion 必须显式 false:0.26.2 缺省行为是缺基线仅警告跳过(fail-open),显式 false 才缺基线即红(fail-closed)。
+           基线收集窗用 -Decat.japicmp.skip=true 跳过;封版后禁止带 flag 构建(产物不得发布)。
+           @Deprecated 豁免=D16 弃用窗执法(实测语义):弃用后移除=豁免(patch 可)、
+           双端已弃用元素变更=豁免、未弃用移除=必须升 major。
+           宣告弃用(无→有注解)=MAJOR 级(排除丢新侧→幻影 REMOVED),即弃用宣告实际成本=升 major。
+           嵌套 lib/ 三方 jar 不参与对比(japicmp 只读 jar 根),三方冲突执法归 classpath 审计(T-6-5)。 -->
+      <plugin>
+        <groupId>com.github.siom79.japicmp</groupId>
+        <artifactId>japicmp-maven-plugin</artifactId>
+        <version>0.26.2</version>
+        <configuration>
+          <skip>${ecat.japicmp.skip}</skip>
+          <parameter>
+            <!-- API 面=public+protected(库形态 API 语义;protected 嵌套类/成员是继承扩展面) -->
+            <accessModifier>protected</accessModifier>
+            <!-- 报告只输出有变化的类,降噪控时 -->
+            <onlyModified>true</onlyModified>
+            <!-- 必须为 false:@Deprecated 豁免依赖注解读取(E4) -->
+            <noAnnotations>false</noAnnotations>
+            <!-- 不分析合成成员(桥方法等),降噪 -->
+            <includeSynthetic>false</includeSynthetic>
+            <!-- 缺基线=红(实测 E2;勿删,删了变警告跳过) -->
+            <ignoreMissingOldVersion>false</ignoreMissingOldVersion>
+            <!-- @Deprecated 整体豁免(注解白名单,匹配新旧两侧元素,E4) -->
+            <excludes>
+              <exclude>@java.lang.Deprecated</exclude>
+            </excludes>
+            <!-- 被豁免元素的移除若殃及未豁免元素仍红,堵豁免漏洞 -->
+            <breakBuildIfCausedByExclusion>true</breakBuildIfCausedByExclusion>
+            <!-- 核心执法:变更级别 semver 判定(实测 E3) -->
+            <breakBuildBasedOnSemanticVersioning>true</breakBuildBasedOnSemanticVersioning>
+            <!-- 0.x 版本不享受放宽(全仓现无 0.x 线;显式 false 防意外放宽) -->
+            <breakBuildBasedOnSemanticVersioningForMajorVersionZero>false</breakBuildBasedOnSemanticVersioningForMajorVersionZero>
+          </parameter>
+          <!-- html 报告无消费方;diff/md/xml 三件保留(归因证据,E11) -->
+          <skipHtmlReport>true</skipHtmlReport>
+        </configuration>
+        <executions>
+          <execution>
+            <id>ecat-api-compat-gate</id>
+            <phase>verify</phase>
+            <goals><goal>cmp</goal></goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
