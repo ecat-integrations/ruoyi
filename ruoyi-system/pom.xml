@@ -16,5 +16,22 @@
       <groupId>com.ecat</groupId>
       <artifactId>ruoyi-common</artifactId>
     </dependency>
+    <!-- 启动守护单测依赖（急切缓存表缺失容错）：JUnit4 版本随父 pom 管理；
+         spring-jdbc/postgresql 仅测试面复现真实异常形态（BadSqlGrammarException 包 PSQLException） -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

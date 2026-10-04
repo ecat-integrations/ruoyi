@@ -37,5 +37,16 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- 启动守护单测依赖（急切任务装载表缺失容错）：测试面复现真实异常形态 -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

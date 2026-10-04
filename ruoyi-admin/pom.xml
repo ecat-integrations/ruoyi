@@ -68,6 +68,20 @@
       <groupId>com.ecat.adapter</groupId>
       <artifactId>ecat-adapter-ruoyi</artifactId>
     </dependency>
+    <!-- 启动守护测试依赖：JUnit4 版本随父 pom 管理。flyway-core 仅测试面模拟
+         「flyway 类可见」形态（生产运行时该类来自 core 类加载器层，本模块
+         BOOT-INF 无此 jar，依赖未声明形态保持不变），版本与 db-migration 轨对齐 -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <version>9.22.3</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

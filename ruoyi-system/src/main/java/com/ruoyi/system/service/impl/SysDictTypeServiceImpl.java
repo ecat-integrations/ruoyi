@@ -1,11 +1,15 @@
 package com.ruoyi.system.service.impl;
 
+import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.common.constant.UserConstants;
@@ -20,12 +24,14 @@ import com.ruoyi.system.service.ISysDictTypeService;
 
 /**
  * 字典 业务层处理
- * 
+ *
  * @author ruoyi
  */
 @Service
 public class SysDictTypeServiceImpl implements ISysDictTypeService
 {
+    private static final Logger log = LoggerFactory.getLogger(SysDictTypeServiceImpl.class);
+
     @Autowired
     private SysDictTypeMapper dictTypeMapper;
 
@@ -33,12 +39,46 @@ public class SysDictTypeServiceImpl implements ISysDictTypeService
     private SysDictDataMapper dictDataMapper;
 
     /**
-     * 项目启动时，初始化字典到缓存
+     * 项目启动时，初始化字典到缓存。
+     * 空库自举守护：sys_dict_* 表由桥侧迁移在建，而迁移要先拿到 Spring 就绪后的
+     * DataSource，本 @PostConstruct 又在 Spring 就绪前直查表（递归依赖）。表尚不存在
+     * （PostgreSQL SQLState 42P01）时跳过装载并日志显形，表建好后由类型查询的缓存
+     * 未命中路径按需回填，或下次重启全量装载；其余数据访问异常原样上抛，不得吞没。
      */
     @PostConstruct
     public void init()
     {
-        loadingDictCache();
+        try
+        {
+            loadingDictCache();
+        }
+        catch (DataAccessException e)
+        {
+            if (!isUndefinedTable(e))
+            {
+                throw e;
+            }
+            log.warn("sys_dict 表尚不存在（空库自举：迁移在建表前需先就绪 DataSource），"
+                    + "跳过启动字典缓存装载；表建好后按需回填或重启装载");
+        }
+    }
+
+    /**
+     * 判定异常链中是否携带「表不存在」（PostgreSQL SQLState 42P01）。
+     * 仅锚定该确定形态给予启动容错，其余异常不受豁免。
+     */
+    private boolean isUndefinedTable(DataAccessException e)
+    {
+        Throwable cursor = e;
+        while (cursor != null)
+        {
+            if (cursor instanceof SQLException && "42P01".equals(((SQLException) cursor).getSQLState()))
+            {
+                return true;
+            }
+            cursor = cursor.getCause();
+        }
+        return false;
     }
 
     /**

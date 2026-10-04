@@ -1,5 +1,6 @@
 package com.ruoyi.quartz.service.impl;
 
+import java.sql.SQLException;
 import java.util.List;
 import javax.annotation.PostConstruct;
 
@@ -8,7 +9,10 @@ import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.common.constant.ScheduleConstants;
@@ -21,12 +25,14 @@ import com.ruoyi.quartz.util.ScheduleUtils;
 
 /**
  * 定时任务调度信息 服务层
- * 
+ *
  * @author ruoyi
  */
 @Service
 public class SysJobServiceImpl implements ISysJobService
 {
+    private static final Logger log = LoggerFactory.getLogger(SysJobServiceImpl.class);
+
     @Autowired
     private Scheduler scheduler;
 
@@ -35,16 +41,52 @@ public class SysJobServiceImpl implements ISysJobService
 
     /**
      * 项目启动时，初始化定时器 主要是防止手动修改数据库导致未同步到定时任务处理（注：不能手动修改数据库ID和任务组名，否则会导致脏数据）
+     * 空库自举守护：sys_job 表由桥侧迁移在建，而迁移要先拿到 Spring 就绪后的
+     * DataSource，本 @PostConstruct 又在 Spring 就绪前直查表（递归依赖）。表尚不存在
+     * （PostgreSQL SQLState 42P01）时跳过装载并日志显形，表建好后由任务管理操作装载，
+     * 或下次重启装载；其余数据访问异常原样上抛，不得吞没。
      */
     @PostConstruct
     public void init() throws SchedulerException, TaskException
     {
         scheduler.clear();
-        List<SysJob> jobList = jobMapper.selectJobAll();
+        List<SysJob> jobList;
+        try
+        {
+            jobList = jobMapper.selectJobAll();
+        }
+        catch (DataAccessException e)
+        {
+            if (!isUndefinedTable(e))
+            {
+                throw e;
+            }
+            log.warn("sys_job 表尚不存在（空库自举：迁移在建表前需先就绪 DataSource），"
+                    + "跳过启动定时任务装载；表建好后按任务管理操作装载或重启装载");
+            return;
+        }
         for (SysJob job : jobList)
         {
             ScheduleUtils.createScheduleJob(scheduler, job);
         }
+    }
+
+    /**
+     * 判定异常链中是否携带「表不存在」（PostgreSQL SQLState 42P01）。
+     * 仅锚定该确定形态给予启动容错，其余异常不受豁免。
+     */
+    private boolean isUndefinedTable(DataAccessException e)
+    {
+        Throwable cursor = e;
+        while (cursor != null)
+        {
+            if (cursor instanceof SQLException && "42P01".equals(((SQLException) cursor).getSQLState()))
+            {
+                return true;
+            }
+            cursor = cursor.getCause();
+        }
+        return false;
     }
 
     /**

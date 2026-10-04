@@ -57,6 +57,13 @@ spring:
     basename: i18n/messages
   profiles:
     active: druid
+  # flyway 让位（迁移单轨语义固化）：全仓数据库迁移由桥侧 db-migration 统一承载，
+  # 本应用自带的 flyway 自动配置属重复轨。嵌入运行形态下 flyway 类经 core 类加载器层
+  # 对本上下文可见，Boot 见类即激活 FlywayAutoConfiguration，而本包内无 db/migration
+  # 脚本（各域脚本在域集成 jar 内）→ 启动即崩（空库全形态完整启动实测）。此处显式
+  # 关停与既有 SPRING_FLYWAY_ENABLED 环境键同源同值，环境键仍可按形态覆盖。
+  flyway:
+    enabled: false
   # quartz 调度线程池：ruoyi-quartz 的 ScheduleConfig 已整文件注释，实际走 Boot
   # QuartzAutoConfiguration 默认 RAMJobStore + SimpleThreadPool threadCount=10。
   # 目标部署（2C 32位单机）定时任务均为分钟级 tick（env-data-handle 聚合等），

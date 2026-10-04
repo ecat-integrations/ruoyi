@@ -1,9 +1,13 @@
 package com.ruoyi.system.service.impl;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import javax.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.annotation.DataSource;
 import com.ruoyi.common.constant.CacheConstants;
@@ -19,12 +23,14 @@ import com.ruoyi.system.service.ISysConfigService;
 
 /**
  * 参数配置 服务层实现
- * 
+ *
  * @author ruoyi
  */
 @Service
 public class SysConfigServiceImpl implements ISysConfigService
 {
+    private static final Logger log = LoggerFactory.getLogger(SysConfigServiceImpl.class);
+
     @Autowired
     private SysConfigMapper configMapper;
 
@@ -32,12 +38,46 @@ public class SysConfigServiceImpl implements ISysConfigService
     private RedisCache redisCache;
 
     /**
-     * 项目启动时，初始化参数到缓存
+     * 项目启动时，初始化参数到缓存。
+     * 空库自举守护：sys_config 表由桥侧迁移在建，而迁移要先拿到 Spring 就绪后的
+     * DataSource，本 @PostConstruct 又在 Spring 就绪前直查表（递归依赖）。表尚不存在
+     * （PostgreSQL SQLState 42P01）时跳过装载并日志显形，表建好后由键访问的缓存未命中
+     * 路径按需回填，或下次重启全量装载；其余数据访问异常原样上抛，不得吞没。
      */
     @PostConstruct
     public void init()
     {
-        loadingConfigCache();
+        try
+        {
+            loadingConfigCache();
+        }
+        catch (DataAccessException e)
+        {
+            if (!isUndefinedTable(e))
+            {
+                throw e;
+            }
+            log.warn("sys_config 表尚不存在（空库自举：迁移在建表前需先就绪 DataSource），"
+                    + "跳过启动参数缓存装载；表建好后按需回填或重启装载");
+        }
+    }
+
+    /**
+     * 判定异常链中是否携带「表不存在」（PostgreSQL SQLState 42P01）。
+     * 仅锚定该确定形态给予启动容错，其余异常不受豁免。
+     */
+    private boolean isUndefinedTable(DataAccessException e)
+    {
+        Throwable cursor = e;
+        while (cursor != null)
+        {
+            if (cursor instanceof SQLException && "42P01".equals(((SQLException) cursor).getSQLState()))
+            {
+                return true;
+            }
+            cursor = cursor.getCause();
+        }
+        return false;
     }
 
     /**
