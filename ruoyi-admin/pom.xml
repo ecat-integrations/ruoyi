@@ -71,6 +71,90 @@
   </dependencies>
   <build>
     <plugins>
+      <!-- 前端构建期自建(G2 形态):npm ci+build:prod 现产 dist,永不入库。
+           版本依据=1.15.4 为最后支持 Java 8 的插件线(2.0.x 实测要求 Java 17),
+           Node v22.22.0 LTS,双镜像 npmmirror;云端容器 glibc>=2.28 待上云首跑验证。
+           workingDirectory 锚定 ../ruoyi-ui-v3(零耦合独立前端仓,无 buildtools 依赖)。 -->
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>1.15.4</version>
+        <configuration>
+          <installDirectory>${project.build.directory}</installDirectory>
+          <workingDirectory>${project.basedir}/../ruoyi-ui-v3</workingDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <id>install-node-and-npm</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>install-node-and-npm</goal>
+            </goals>
+            <configuration>
+              <nodeVersion>v22.22.0</nodeVersion>
+              <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
+            </configuration>
+          </execution>
+          <execution>
+            <id>npm-ci</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>ci --registry=https://registry.npmmirror.com</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>npm-build-prod</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run build:prod</arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- dist 拷入静态资源(映射剥一层 static,保证 URL 与 index.html 引用一致;
+           *.gz 为 vite 压缩副产物,Spring Boot 不消费不拷入)。声明序在前端插件之后=
+           同绑 generate-resources 按 POM 声明序执行(先现产 dist 再拷贝,温环境防静默拷旧)。 -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.3.1</version>
+        <executions>
+          <execution>
+            <id>copy-ui-dist</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/../ruoyi-ui-v3/dist</directory>
+                  <includes>
+                    <include>*.html</include>
+                    <include>*.ico</include>
+                  </includes>
+                  <excludes>
+                    <exclude>*.gz</exclude>
+                  </excludes>
+                </resource>
+                <resource>
+                  <directory>${project.basedir}/../ruoyi-ui-v3/dist/static</directory>
+                  <excludes>
+                    <exclude>**/*.gz</exclude>
+                  </excludes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>

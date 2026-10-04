@@ -123,6 +123,8 @@ public class SecurityConfig
                     .antMatchers("/iclock/**").permitAll()
                     // 静态资源，可匿名访问
                     .antMatchers(HttpMethod.GET, "/", "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/profile/**").permitAll()
+                    // 前端入包静态资源(vite 产物 /static/** 命名空间含图片类 + favicon 两件;哈希文件名不可变,匿名可读与 /*.html 同量级)
+                    .antMatchers(HttpMethod.GET, "/static/**", "/favicon.ico", "/favicon.sms.ico").permitAll()
                     .antMatchers("/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/*/api-docs", "/druid/**").permitAll()
                     // 除上面外的所有请求全部需要鉴权认证
                     .anyRequest().authenticated();
