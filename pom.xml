@@ -365,6 +365,21 @@
         <enabled>false</enabled>
       </snapshots>
     </repository>
+    <!-- ECAT 公仓:ecat 坐标与 japicmp 历史基线的第一解析源,Aliyun/central 兜底三方坐标;
+         形态与 ecat-cloud backend/m2/settings.xml 的 ecat-public 通道一致 -->
+    <repository>
+      <id>ecat-public</id>
+      <name>ECAT Public Repository</name>
+      <url>https://mvn.ecat.bellyking.top/repository/public/</url>
+      <releases>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+        <checksumPolicy>warn</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
   </repositories>
   <pluginRepositories>
     <pluginRepository>
