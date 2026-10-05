@@ -33,6 +33,13 @@ public class ResourcesConfig implements WebMvcConfigurer
         registry.addResourceHandler(Constants.RESOURCE_PREFIX + "/**")
                 .addResourceLocations("file:" + RuoYiConfig.getProfile() + "/");
 
+        /** 前端入包静态资源:index.html 以相对路径 ./static/** 引用资产,经根路径解析为 /static/** URL;
+         *  Spring Boot 默认映射 /**→classpath:/static/ 会再拼一层 static(双层不存在→404),
+         *  此处显式映射与默认映射并存,两个 URL 面(/js/x 与 /static/js/x)等价可达;
+         *  SecurityConfig 已对 GET /static/** permitAll,匿名读与 /*.html 同量级。 */
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations("classpath:/static/");
+
         /** swagger配置 */
         registry.addResourceHandler("/swagger-ui/**")
                 .addResourceLocations("classpath:/META-INF/resources/webjars/springfox-swagger-ui/")
