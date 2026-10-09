@@ -1163,9 +1163,16 @@ SELECT create_hypertable(
                chunk_time_interval => INTERVAL '1 days'  -- 每块分区1天
        );
 -- 启用表级压缩配置
+-- 低版本兼容处理说明：
+-- Timescale 2.9 requires every primary-key / unique column in segmentby or orderby.
+-- his_data PK is (id, pick_time); the unique key also includes classify.
 ALTER TABLE his_data  SET (timescaledb.compress = true,
-                           timescaledb.compress_orderby = 'pick_time DESC',
-                           timescaledb.compress_segmentby = 'station_id, model_id');
+    timescaledb.compress_orderby = 'pick_time DESC, id',
+    timescaledb.compress_segmentby = 'station_id, model_id, classify');
+
+ALTER TABLE his_data  SET (timescaledb.compress = true,
+                           timescaledb.compress_orderby = 'pick_time DESC, id',
+                           timescaledb.compress_segmentby = 'station_id, model_id, classify');
 -- 创建自动压缩 大于7天的直接压缩
 SELECT add_compression_policy('his_data',compress_after => INTERVAL '7 day',if_not_exists => true);
 
