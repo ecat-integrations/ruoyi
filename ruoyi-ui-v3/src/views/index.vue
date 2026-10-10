@@ -590,6 +590,13 @@ import {
   notifyMaterialDisabledOnce
 } from '@/views/index/utils/materialAvailability'
 import { loadDashboardAqUnit, saveDashboardAqUnit } from '@/views/index/dashboardAqUnit'
+
+/** 与物资卡片页 readLiveAttrValue(GAS_PRESSURE_REMAINING) 同一测点，单位 kPa */
+const GAS_LIVE_PRESSURE_ID = {
+  '1': 'logicdevice_station.standard_gas.co-gas_pressure_remaining',
+  '2': 'logicdevice_station.standard_gas.so2-gas_pressure_remaining',
+  '3': 'logicdevice_station.standard_gas.nox-gas_pressure_remaining'
+}
 // 预加载状态字典
 initStatusMapper().catch(err => {
   console.warn('状态字典加载失败:', err)
@@ -2219,10 +2226,28 @@ export default {
         parsedContent: this.parseMaterialContentRaw(row && row.materialContent)
       };
     },
+    /**
+     * 钢瓶当前压力（kPa）。与物资卡片页一致：优先设备实时 gas_pressure_remaining，
+     * 测点尚未有值时退回 materialContent.pressureRemain。总量仍用库里的 total_pressure。
+     */
+    resolveGasPressureKpa(row) {
+      const liveId = GAS_LIVE_PRESSURE_ID[String(row && row.materialType)];
+      const liveItem = (this.middleRightTwo || []).find(item => item.id === liveId);
+      const liveRaw = liveItem && liveItem.value;
+      if (liveRaw != null && String(liveRaw).trim() !== '') {
+        const live = Number(liveRaw);
+        if (Number.isFinite(live)) {
+          return live;
+        }
+      }
+      const content = (row && row.parsedContent) || this.parseMaterialContentRaw(row && row.materialContent);
+      const snapshot = Number(content.pressureRemain);
+      return Number.isFinite(snapshot) ? snapshot : NaN;
+    },
     getMaterialRatio(row) {
       if (this.isGasCylinder(row)) {
         const content = (row && row.parsedContent) || this.parseMaterialContentRaw(row && row.materialContent);
-        const remain = Number(content.pressureRemain);
+        const remain = this.resolveGasPressureKpa(row);
         const total = Number(content.total_pressure);
         if (!Number.isFinite(remain) || !Number.isFinite(total) || total <= 0) {
           return 0;
@@ -2254,8 +2279,7 @@ export default {
     /** 钢瓶气：kPa → MPa 保留两位；纸带：剩余个数+单位 */
     formatMaterialRemain(row) {
       if (this.isGasCylinder(row)) {
-        const content = (row && row.parsedContent) || this.parseMaterialContentRaw(row && row.materialContent);
-        const kpa = Number(content.pressureRemain);
+        const kpa = this.resolveGasPressureKpa(row);
         if (!Number.isFinite(kpa)) {
           return '--MPa';
         }
