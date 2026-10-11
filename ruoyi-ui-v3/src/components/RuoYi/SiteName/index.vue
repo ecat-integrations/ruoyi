@@ -12,14 +12,46 @@
       @keyup.esc="cancel"
       @blur="commit"
     />
-    <div v-else class="site-name-display" :title="displayTitle" @dblclick="startEdit">
-      <span class="site-name-mark" aria-hidden="true">
-        <span class="site-name-mark__antenna" />
-        <span class="site-name-mark__body" />
-        <span class="site-name-mark__pulse" />
-      </span>
-      <span class="site-name-text" :class="{ 'is-placeholder': !isSiteNameSet }">{{ siteName }}</span>
-    </div>
+    <el-tooltip
+      v-else
+      v-model:visible="hintVisible"
+      :content="displayTitle"
+      effect="dark"
+      placement="bottom"
+      :enterable="false"
+      :show-after="0"
+      :hide-after="0"
+    >
+      <div
+        class="site-name-display"
+        @mouseenter="showHint"
+        @click="showHint"
+        @mouseleave="hideHint"
+        @dblclick="startEdit"
+      >
+        <span class="site-name-mark" aria-hidden="true">
+          <span class="site-name-mark__antenna" />
+          <svg class="site-name-mark__body" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path
+              d="M3 4.6V15 H7.2 M8.8 15 H13 V8 M1.6 8 H14.4"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+              stroke-linecap="butt"
+            />
+            <path
+              d="M7.2 15 V12.4 H8.8 V15"
+              stroke="currentColor"
+              stroke-width="1.15"
+              stroke-linejoin="round"
+              stroke-linecap="butt"
+            />
+          </svg>
+          <span class="site-name-mark__pulse" />
+        </span>
+        <span class="site-name-text" :class="{ 'is-placeholder': !isSiteNameSet }">{{ siteName }}</span>
+      </div>
+    </el-tooltip>
   </div>
 </template>
 
@@ -31,11 +63,23 @@ const { siteName, isSiteNameSet, setSiteName, placeholder } = useSiteName()
 const editing = ref(false)
 const draft = ref('')
 const inputRef = ref(null)
+const hintVisible = ref(false)
 
-/** 悬停提示：明确告知双击可编辑（未设置时措辞改为"设置"）。 */
+/** 悬停或单击都提示双击可编辑。 */
 const displayTitle = computed(() => (isSiteNameSet.value ? '双击修改站点名称' : '双击设置站点名称'))
 
+function showHint() {
+  if (!editing.value) {
+    hintVisible.value = true
+  }
+}
+
+function hideHint() {
+  hintVisible.value = false
+}
+
 function startEdit() {
+  hintVisible.value = false
   // 未设置时不预填占位提示词，否则用户得先删掉它才能输入
   draft.value = isSiteNameSet.value ? siteName.value : ''
   editing.value = true
@@ -122,6 +166,7 @@ function cancel() {
 }
 
 .site-name-mark {
+  --station-stroke: #303133;
   position: relative;
   flex-shrink: 0;
   width: 16px;
@@ -131,23 +176,19 @@ function cancel() {
 
   &__antenna {
     position: absolute;
-    left: 50%;
-    top: 1px;
-    width: 2px;
-    height: 6px;
-    margin-left: -1px;
-    border-radius: 1px;
-    background: currentColor;
-    opacity: 0.9;
+    left: 3px;
+    top: 4.6px;
+    width: 0;
+    height: 0;
 
     &::before,
     &::after {
       content: '';
       position: absolute;
       left: 50%;
-      width: 6px;
-      height: 6px;
-      margin-left: -3px;
+      width: 5px;
+      height: 5px;
+      margin-left: -2.5px;
       border: 1.5px solid #0ea5e9;
       border-bottom-color: transparent;
       border-left-color: transparent;
@@ -157,28 +198,25 @@ function cancel() {
     }
 
     &::before {
-      top: -4px;
+      top: -3px;
     }
 
     &::after {
-      top: -7px;
-      width: 10px;
-      height: 10px;
-      margin-left: -5px;
+      top: -5px;
+      width: 8px;
+      height: 8px;
+      margin-left: -4px;
       opacity: 0.5;
     }
   }
 
   &__body {
     position: absolute;
-    left: 2px;
-    right: 2px;
-    bottom: 0;
-    height: 8px;
-    border-radius: 2px 2px 1px 1px;
-    background: color-mix(in srgb, var(--navbar-text) 18%, transparent);
-    border: 1px solid color-mix(in srgb, var(--navbar-text) 55%, transparent);
-    box-shadow: none;
+    inset: 0;
+    width: 16px;
+    height: 16px;
+    overflow: visible;
+    color: var(--station-stroke);
   }
 
   /* 在线状态点恢复绿色呼吸灯 */
@@ -250,6 +288,10 @@ function cancel() {
 }
 
 html.dark {
+  .site-name-mark {
+    --station-stroke: #d4d4d8;
+  }
+
   .site-name-mark__antenna {
     &::before,
     &::after {
