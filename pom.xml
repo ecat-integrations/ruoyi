@@ -39,7 +39,9 @@
          (全员 4.0.0 发布前,CLI 全量传递)与登记过的运维逃生合法;CLI -Decat.japicmp.skip=true
          按次覆写不落盘,仓级 pom 永久覆写=豁免须登记。ruoyi 无 parent 自治,japicmp 配置
          引用本属性,须随门禁块自 ecat-project 4.0.0 一并拷贝在位 -->
-    <ecat.japicmp.skip>false</ecat.japicmp.skip>
+    <!-- 机制整备窗(2026-10-08 用户裁决暂停):与 ecat-project 总闸保持同态。
+         ruoyi 无 parent 自治,不能继承该总闸;漏同步会使从零构建在缺失 4.0.0 前基线时红。 -->
+    <ecat.japicmp.skip>true</ecat.japicmp.skip>
   </properties>
   <!-- 依赖声明 -->
   <dependencyManagement>
