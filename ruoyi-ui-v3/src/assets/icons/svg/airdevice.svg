@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="70 28 880 880" width="200" height="200">
+  <!-- Air monitoring device: wide sampling head on top, wide chassis with a screen cut out,
+       a trend curve, two keys and a base. Solid fills only; the screen is cut out via
+       fill-rule="evenodd" sub-paths (same technique as the monitor icon in this set).
+       The head is deliberately wide (~24% of the body) so the silhouette still reads as an
+       instrument rather than a plain display at 14px; viewBox is cropped tight so the glyph
+       keeps its visual weight next to square icons. -->
+  <path d="M400 60h200v60a100 100 0 0 1-200 0z"/>
+  <path d="M470 220h60v30h-60z"/>
+  <path fill-rule="evenodd" d="M85 250h850v560H85zM155 320h710v370H155z"/>
+  <path d="M190 600L320 470L450 560L580 400L710 490L830 410V455L710 535L580 445L450 605L320 515L190 645z"/>
+  <path d="M155 726h140v42H155z"/>
+  <path d="M345 726h140v42H345z"/>
+  <path d="M225 810h570v66H225z"/>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 150 904 780" width="200" height="200">
+  <!-- Air station building (single-storey): a wide low-pitched roof with eaves, two square
+       windows, a door and a ground line. Solid fills only; windows and the door are cut out
+       via fill-rule="evenodd" sub-paths (same technique as the monitor icon in this set).
+       Proportion is deliberately landscape (roof ~1.16x the total height) so the building
+       keeps enough visual width next to square icons; the viewBox is cropped tight to the
+       artwork bounds, which makes the glyph fill the full 1em sidebar slot horizontally. -->
+  <path d="M330 150h364l270 190H60z"/>
+  <path fill-rule="evenodd" d="M190 340h644v526H190zM270 404h160v104H270zM480 404h160v104H480zM648 566h166v300H648z"/>
+  <path d="M90 878h844v52H90z"/>
+</svg>
