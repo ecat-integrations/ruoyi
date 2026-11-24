@@ -199,7 +199,7 @@
                 >
               </div> -->
               <div v-if="item.qcStatus" class="dh_qc_bar">
-                {{ item.qcLabel ? '质控中 · ' + item.qcLabel : '质控中' }}
+                {{ item.qcLabel || '质控中' }}
               </div>
               <div class="dh_value_row">
                 <span
@@ -209,7 +209,7 @@
                      'cy_val_error_inner': item.datastatus === 2,
                      'cy_val_qc_inner': item.datastatus === 1 && item.qcStatus
                    }"
-                  :title="item.qcStatus ? '质控中：' + item.qcLabel : undefined">{{ item.value }}</span>
+                  :title="item.qcStatus ? (item.qcLabel || '质控中') : undefined">{{ item.value }}</span>
                 <span v-if="item.unit" class="dh_unit">{{ item.unit }}</span>
               </div>
               <div class="dh_name_bar">
@@ -219,7 +219,7 @@
                      'successstatus': item.status === 1 && !item.qcStatus,
                      'qcstatus': item.status === 1 && item.qcStatus
                    }"
-                  :title="item.qcStatus ? '质控中：' + item.qcLabel : undefined">{{ item.name }}<sub>{{ item.affix }}</sub></span
+                  :title="item.qcStatus ? (item.qcLabel || '质控中') : undefined">{{ item.name }}<sub>{{ item.affix }}</sub></span
                 >
               </div>
             </div>
