@@ -37,6 +37,8 @@ public class MaintenanceTask
         parameters.put("maintenanceMode", maintenanceMode);
 
         parameters.put("core", core);
+        // 定时任务触发的维护记录，维护人统一记为 system
+        parameters.put("operator", "系统自动触发");
         parameters.put("taskName", wantedTask.getTaskName());
         parameters.put("taskDescription", wantedTask.getDescription());
         // parameters.put("taskLastParameters", wantedTask.getLastParameters());

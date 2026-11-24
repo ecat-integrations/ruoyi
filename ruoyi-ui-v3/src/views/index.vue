@@ -187,27 +187,39 @@
 
           <div style="display: flex; margin-top: 0.8rem">
             <!-- <div id="bar-chart" style="width: 100%; height: 80%"></div> -->
-            <div v-for="item of middleOne" :key="item.index" class="dh_data_panel">
+            <div
+              v-for="item of middleOne"
+              :key="item.index"
+              class="dh_data_panel"
+              :class="{ 'is-qc': item.qcStatus }"
+            >
               <!-- <div class="text-align:left;">
                 <span style="font-weight: bold; font-size: 14px"
                   >{{ item.name }}:</span
                 >
               </div> -->
+              <div v-if="item.qcStatus" class="dh_qc_bar">
+                {{ item.qcLabel ? '质控中 · ' + item.qcLabel : '质控中' }}
+              </div>
               <div class="dh_value_row">
                 <span
                   :class="{
                      'cy_val_no_inner': item.datastatus === -1,
-                     'cy_val_success_inner': item.datastatus === 1,
-                     'cy_val_error_inner': item.datastatus === 2
-                   }">{{ item.value }}</span>
+                     'cy_val_success_inner': item.datastatus === 1 && !item.qcStatus,
+                     'cy_val_error_inner': item.datastatus === 2,
+                     'cy_val_qc_inner': item.datastatus === 1 && item.qcStatus
+                   }"
+                  :title="item.qcStatus ? '质控中：' + item.qcLabel : undefined">{{ item.value }}</span>
                 <span v-if="item.unit" class="dh_unit">{{ item.unit }}</span>
               </div>
               <div class="dh_name_bar">
                 <span
                   :class="{
                      'nostatus': item.status !== 1,
-                     'successstatus': item.status === 1
-                   }" >{{ item.name }}<sub>{{ item.affix }}</sub></span
+                     'successstatus': item.status === 1 && !item.qcStatus,
+                     'qcstatus': item.status === 1 && item.qcStatus
+                   }"
+                  :title="item.qcStatus ? '质控中：' + item.qcLabel : undefined">{{ item.name }}<sub>{{ item.affix }}</sub></span
                 >
               </div>
             </div>
@@ -597,6 +609,41 @@ const GAS_LIVE_PRESSURE_ID = {
   '2': 'logicdevice_station.standard_gas.so2-gas_pressure_remaining',
   '3': 'logicdevice_station.standard_gas.nox-gas_pressure_remaining'
 }
+
+/**
+ * 「质控中」属性状态 id 集合（后端 AttributeStatus#getId）。
+ * 与 env-air-device-manager 监控首页徽章的 qc 分组（质控/维护，琥珀色）同源：
+ * 维护/维修更换、校准、零点·跨度·准确度·流量·质量·转换效率检查及各类检定。
+ * /nowdata/list 的属性 status 由逻辑设备把 manual_status（质控流程写入）合并进主状态，故可直接判定。
+ */
+const AIR_QC_STATUS_IDS = new Set([
+  104, // MAINTENANCE
+  107, // CALIBRATION
+  112, 113, 114, 115, 116, 117, 118, // ZERO/SPAN/ACCURACY_CHECK · ZERO/SPAN_CALIBRATION · FLOW/QUALITY_CHECK
+  119, 120, 121, 122, 123, 124, // 各类检定 · 多点跨度 · 精密度 · 温度压力校准
+  125, 126 // DEVICE_REPLACEMENT · CONVERSION_CHECK
+])
+
+/** 质控状态 id → 卡片角标短名（对齐后端 AttributeStatus 释义，限 4 字内避免撑破卡片）。 */
+const AIR_QC_STATUS_LABELS = {
+  104: '维护',
+  107: '校准',
+  112: '零点检查',
+  113: '跨度检查',
+  114: '准确度',
+  115: '零点校准',
+  116: '跨度校准',
+  117: '流量检查',
+  118: '质量检查',
+  119: '零点漂移',
+  120: '跨度漂移',
+  121: '跨度重现',
+  122: '多点跨度',
+  123: '精密度',
+  124: '温压校准',
+  125: '设备更换',
+  126: '转换效率'
+}
 // 预加载状态字典
 initStatusMapper().catch(err => {
   console.warn('状态字典加载失败:', err)
@@ -677,22 +724,6 @@ export default {
           "unit": null,
           "status": -1,
           "id": "logicdevice_station.security_alarm-smoke_2",
-          "type": "value",
-          "valuestatus": -1
-        }, {
-          "name": "温感1状态",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "logicdevice_station.security_alarm-temp_alarm_1",
-          "type": "value",
-          "valuestatus": -1
-        }, {
-          "name": "温感2状态",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "logicdevice_station.security_alarm-temp_alarm_2",
           "type": "value",
           "valuestatus": -1
         }, {
@@ -974,14 +1005,6 @@ export default {
           "unit": null,
           "status": -1,
           "id": "logicdevice_station.air_conditioner.ac2-running_mode",
-          "type": "value",
-          "valuestatus": -1
-        }, {
-          "name": "零气继电器",
-          "value": null,
-          "unit": null,
-          "status": -1,
-          "id": "logicdevice_station.zero_gas_relay-relay_status",
           "type": "value",
           "valuestatus": -1
         },
@@ -1956,6 +1979,7 @@ export default {
             "value": attr.displayValue,
             "unit":attr.displayUnit,
             "status": status,
+            "attrStatus": attr.status,
             "id":attr.attributeID,
             "type": "value"
           };
@@ -2038,6 +2062,11 @@ export default {
       // item.value = data_dict[id]?.value;
       item.unit = data_dict[id]? data_dict[id].unit : null;
       item.status = data_dict[id] ? data_dict[id].status : 0;
+      // 质控中：数据在线且属性主状态属质控/维护族（校准、零点/跨度检查等），
+      // 仅「大气环境监测」面板按此换琥珀色（数值 + 状态灯 + 角标），其余面板保持原逻辑。
+      const attrStatus = Number(data_dict[id] && data_dict[id].attrStatus);
+      item.qcStatus = item.status === 1 && AIR_QC_STATUS_IDS.has(attrStatus);
+      item.qcLabel = item.qcStatus ? (AIR_QC_STATUS_LABELS[attrStatus] || '') : '';
       if(item.status == 1){
         if(this.alertKeywords.includes(item.value)){
           item.datastatus = 2
@@ -2430,6 +2459,7 @@ export default {
   .cy_val_error_inner,
   .successstatus::after,
   .errorstatus::after,
+  .qcstatus::after,
   .nostatus::after,
   .title {
     animation: none !important;
@@ -2638,6 +2668,14 @@ export default {
   position: relative;
   color: rgba(189, 189, 192, 0.99);
   text-shadow: 0 0 2px rgba(100, 100, 101, 0.6);
+}
+
+/* 质控中 - 琥珀色数值（与 env-air-device-manager 监控首页 qc 分组同色） */
+.cy_val_qc_inner {
+  display: inline-block;
+  position: relative;
+  color: #e6a23c;
+  text-shadow: 0 0 4px rgba(230, 162, 60, 0.75);
 }
 
 /* 错误状态 - 红色数值（仅告警保留轻量 opacity 动画） */
@@ -2884,6 +2922,7 @@ body {
   border: 1px solid rgb(127, 127, 127);
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 .dh_value_row {
   flex: 1;
@@ -2913,9 +2952,40 @@ body {
   background: #ccc;
   color: #000;
 }
+
+/* 质控中卡片：琥珀描边 + 顶部质控条，远看可辨 */
+.dh_data_panel.is-qc {
+  background: rgba(230, 162, 60, 0.06);
+  border-color: rgba(230, 162, 60, 0.85);
+  box-shadow: inset 0 0 14px rgba(230, 162, 60, 0.16), 0 0 10px rgba(230, 162, 60, 0.22);
+}
+
+.dh_data_panel.is-qc:hover {
+  border-color: #e6a23c;
+}
+
+/* 质控标识：脱离卡片框，显示在卡片上方的空白处 */
+.dh_qc_bar {
+  position: absolute;
+  bottom: calc(100% + 0.2rem);
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #ffb84d;
+  text-shadow: 0 0 6px rgba(230, 162, 60, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
 /* 分层光晕呼吸灯效果 */
 .successstatus,
 .errorstatus,
+.qcstatus,
 .nostatus {
   position: relative;
   padding-left: 1.2rem;
@@ -2923,6 +2993,7 @@ body {
 
 .successstatus::before,
 .errorstatus::before,
+.qcstatus::before,
 .nostatus::before {
   content: "";
   position: absolute;
@@ -2941,6 +3012,7 @@ body {
  */
 .successstatus::after,
 .errorstatus::after,
+.qcstatus::after,
 .nostatus::after {
   content: "";
   position: absolute;
@@ -2965,6 +3037,12 @@ body {
   background: rgba(243, 0, 0, 0.35);
   box-shadow: 0 0 6px 2px rgba(243, 0, 0, 0.45);
   animation: glow-pulse 1.2s infinite ease-in-out;
+}
+
+.qcstatus::before { background: #e6a23c; }
+.qcstatus::after {
+  background: rgba(230, 162, 60, 0.35);
+  box-shadow: 0 0 6px 2px rgba(230, 162, 60, 0.45);
 }
 
 .nostatus::before { background: #646465; }
